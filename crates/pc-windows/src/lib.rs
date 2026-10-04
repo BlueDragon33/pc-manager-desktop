@@ -287,6 +287,24 @@ fn map_inventory(raw: RawInventory) -> SystemInventory {
         })
         .collect::<Vec<_>>();
 
+    let memory = raw
+        .operating_system
+        .as_ref()
+        .map(|os| MemorySummary {
+            total_bytes: os
+                .total_visible_memory_size
+                .unwrap_or_default()
+                .saturating_mul(1024),
+            available_bytes: os
+                .free_physical_memory
+                .unwrap_or_default()
+                .saturating_mul(1024),
+        })
+        .unwrap_or(MemorySummary {
+            total_bytes: 0,
+            available_bytes: 0,
+        });
+
     let operating_system = match raw.operating_system {
         Some(os) => OperatingSystemSummary {
             name: non_empty(os.caption).unwrap_or_else(|| "Windows".to_string()),
@@ -308,24 +326,6 @@ fn map_inventory(raw: RawInventory) -> SystemInventory {
             }
         }
     };
-
-    let memory = raw
-        .operating_system
-        .as_ref()
-        .map(|os| MemorySummary {
-            total_bytes: os
-                .total_visible_memory_size
-                .unwrap_or_default()
-                .saturating_mul(1024),
-            available_bytes: os
-                .free_physical_memory
-                .unwrap_or_default()
-                .saturating_mul(1024),
-        })
-        .unwrap_or(MemorySummary {
-            total_bytes: 0,
-            available_bytes: 0,
-        });
 
     let cpu = CpuSummary {
         brand: raw
