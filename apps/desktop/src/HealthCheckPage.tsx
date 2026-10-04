@@ -92,7 +92,9 @@ function FindingCard({ finding }: { finding: HealthFinding }) {
 export function HealthCheckPage() {
   const [state, setState] = useState<ScanState>(() => {
     const report = loadLatestHealthReport();
-    return report ? { status: "complete", report } : { status: "idle", report: null };
+    return report
+      ? { status: "complete", report }
+      : { status: "idle", report: null };
   });
   const generationRef = useRef(0);
 
@@ -181,8 +183,8 @@ export function HealthCheckPage() {
           <div>
             <strong>Collecting a fresh Windows snapshot</strong>
             <span>
-              Storage and memory checks are read-only. No cleanup or optimization
-              runs during Health Check.
+              Storage and memory checks are read-only. No cleanup or
+              optimization runs during Health Check.
             </span>
           </div>
         </section>
@@ -218,12 +220,15 @@ export function HealthCheckPage() {
             <div>
               <p className="eyebrow">Current score</p>
               <h3>
-                {report.coveragePercent < 100 ? "Partial health score" : "Health score"}
+                {report.coveragePercent < 100
+                  ? "Partial health score"
+                  : "Health score"}
               </h3>
               <p className="muted">
-                {report.supportedCategories} of {report.totalCategories} categories
-                are supported in this version ({report.coveragePercent}% coverage).
-                Unsupported categories do not reduce the score.
+                {report.supportedCategories} of {report.totalCategories}{" "}
+                categories are supported in this version (
+                {report.coveragePercent}% coverage). Unsupported categories do
+                not reduce the score.
               </p>
             </div>
             <span className="status-badge neutral">
@@ -279,8 +284,8 @@ export function HealthCheckPage() {
               <div className="empty-health-state">
                 <strong>Supported checks look comfortable.</strong>
                 <span>
-                  Security, Updates, and Privacy remain unavailable in P3 and are
-                  not included in this score.
+                  Security, Updates, and Privacy remain unavailable in P3 and
+                  are not included in this score.
                 </span>
               </div>
             )}
@@ -306,8 +311,8 @@ export function HealthCheckPage() {
           <section className="empty-health-state">
             <strong>No completed Health Check yet.</strong>
             <span>
-              Run a scan to evaluate real storage and memory evidence. Nothing is
-              changed on the PC.
+              Run a scan to evaluate real storage and memory evidence. Nothing
+              is changed on the PC.
             </span>
           </section>
         )
