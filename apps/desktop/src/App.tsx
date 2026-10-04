@@ -46,9 +46,15 @@ export default function App() {
         <div className="status-panel">
           <h2>Foundation status</h2>
           <ul>
-            <li><span aria-hidden="true">✓</span> React UI</li>
-            <li><span aria-hidden="true">✓</span> Tauri shell</li>
-            <li><span aria-hidden="true">✓</span> Rust workspace</li>
+            <li>
+              <span aria-hidden="true">✓</span> React UI
+            </li>
+            <li>
+              <span aria-hidden="true">✓</span> Tauri shell
+            </li>
+            <li>
+              <span aria-hidden="true">✓</span> Rust workspace
+            </li>
           </ul>
         </div>
 
@@ -63,9 +69,18 @@ export default function App() {
             <>
               <p className="bridge-ok">Native bridge connected</p>
               <dl>
-                <div><dt>App ID</dt><dd>{state.info.appId}</dd></div>
-                <div><dt>Platform</dt><dd>{state.info.platform}</dd></div>
-                <div><dt>Device type</dt><dd>{state.info.deviceType}</dd></div>
+                <div>
+                  <dt>App ID</dt>
+                  <dd>{state.info.appId}</dd>
+                </div>
+                <div>
+                  <dt>Platform</dt>
+                  <dd>{state.info.platform}</dd>
+                </div>
+                <div>
+                  <dt>Device type</dt>
+                  <dd>{state.info.deviceType}</dd>
+                </div>
               </dl>
             </>
           )}
