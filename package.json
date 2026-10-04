@@ -12,8 +12,8 @@
     "lint": "npm --workspace @pc-manager/desktop run lint",
     "typecheck": "npm --workspace @pc-manager/desktop run typecheck",
     "test": "npm --workspace @pc-manager/desktop run test",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format": "prettier --write \"apps/desktop/**/*.{js,json,ts,tsx,css,html}\" package.json",
+    "format:check": "prettier --check \"apps/desktop/**/*.{js,json,ts,tsx,css,html}\" package.json"
   },
   "devDependencies": {
     "prettier": "^3.6.0"
