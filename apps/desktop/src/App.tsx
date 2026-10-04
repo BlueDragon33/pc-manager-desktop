@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { type AppInfo, getAppInfo } from "./appInfo";
+import { InventorySummary } from "./InventorySummary";
 import { NAV_ITEMS, getNavItem, type PageId } from "./navigation";
 import {
   readSidebarCollapsed,
@@ -84,6 +85,8 @@ function OverviewPage({
         </button>
       </section>
 
+      <InventorySummary />
+
       <section aria-labelledby="health-categories-heading">
         <div className="section-heading">
           <div>
@@ -162,7 +165,7 @@ function OverviewPage({
           </div>
           <div>
             <dt>Product phase</dt>
-            <dd>P1 — Application Shell</dd>
+            <dd>{appInfo?.phase ?? "P2"}</dd>
           </div>
         </dl>
       </section>
@@ -189,8 +192,8 @@ function PlaceholderPage({
         <div className="info-callout">
           <strong>No system data is being simulated.</strong>
           <span>
-            This screen is part of the P1 interface shell. Real Windows data and
-            actions arrive in later implementation phases.
+            This screen is part of the P2 read-only inventory foundation. Real
+            actions arrive only in later, separately gated phases.
           </span>
         </div>
       </section>
@@ -215,8 +218,8 @@ function SettingsPage({
         <p className="eyebrow">Appearance</p>
         <h2>Settings</h2>
         <p className="muted">
-          P1 stores only harmless local interface preferences. No system
-          settings are changed from this screen.
+          PC Manager stores only harmless local interface preferences here. No
+          Windows system settings are changed from this screen.
         </p>
 
         <fieldset className="setting-group">
@@ -380,7 +383,7 @@ export default function App() {
             <h1>{activeItem.label}</h1>
           </div>
           <div className="topbar-actions">
-            <span className="phase-chip">P1</span>
+            <span className="phase-chip">P2</span>
             <button
               className="icon-button"
               onClick={() =>

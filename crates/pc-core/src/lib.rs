@@ -1,5 +1,13 @@
 //! Platform-neutral domain models for PC Manager Desktop.
 
+mod inventory;
+
+pub use inventory::{
+    CpuSummary, DeviceIdentity, DiskVolume, InstalledApplication, InventoryError, InventoryWarning,
+    MemorySummary, NetworkAdapter, OperatingSystemSummary, ProcessEntry, ProcessSummary,
+    StartupItem, SystemInventory,
+};
+
 use serde::Serialize;
 
 /// Stable application identity exposed through the native bridge.
@@ -13,14 +21,14 @@ pub struct AppInfo {
 }
 
 impl AppInfo {
-    /// Returns the immutable identity used during the P0 foundation phase.
+    /// Returns the immutable identity for the current implementation phase.
     #[must_use]
-    pub const fn p0() -> Self {
+    pub const fn current() -> Self {
         Self {
             app_id: "pc-manager",
             platform: "windows",
             device_type: "desktop-native",
-            phase: "P0",
+            phase: "P2",
         }
     }
 }
@@ -30,12 +38,12 @@ mod tests {
     use super::AppInfo;
 
     #[test]
-    fn p0_identity_is_stable() {
-        let info = AppInfo::p0();
+    fn current_identity_is_stable() {
+        let info = AppInfo::current();
 
         assert_eq!(info.app_id, "pc-manager");
         assert_eq!(info.platform, "windows");
         assert_eq!(info.device_type, "desktop-native");
-        assert_eq!(info.phase, "P0");
+        assert_eq!(info.phase, "P2");
     }
 }

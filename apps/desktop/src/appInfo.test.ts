@@ -3,13 +3,13 @@ import { describe, expect, it } from "vitest";
 import { isAppInfo } from "./appInfo";
 
 describe("isAppInfo", () => {
-  it("accepts the P0 application identity", () => {
+  it("accepts the current application identity", () => {
     expect(
       isAppInfo({
         appId: "pc-manager",
         platform: "windows",
         deviceType: "desktop-native",
-        phase: "P0",
+        phase: "P2",
       }),
     ).toBe(true);
   });
@@ -20,7 +20,7 @@ describe("isAppInfo", () => {
         appId: "other-app",
         platform: "windows",
         deviceType: "desktop-native",
-        phase: "P0",
+        phase: "P2",
       }),
     ).toBe(false);
   });

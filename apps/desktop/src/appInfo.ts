@@ -4,7 +4,7 @@ export interface AppInfo {
   appId: "pc-manager";
   platform: "windows";
   deviceType: "desktop-native";
-  phase: "P0";
+  phase: string;
 }
 
 export function isAppInfo(value: unknown): value is AppInfo {
@@ -18,7 +18,8 @@ export function isAppInfo(value: unknown): value is AppInfo {
     candidate.appId === "pc-manager" &&
     candidate.platform === "windows" &&
     candidate.deviceType === "desktop-native" &&
-    candidate.phase === "P0"
+    typeof candidate.phase === "string" &&
+    candidate.phase.length > 0
   );
 }
 
