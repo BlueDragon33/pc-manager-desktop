@@ -1,7 +1,12 @@
 //! Platform-neutral domain models for PC Manager Desktop.
 
+mod health;
 mod inventory;
 
+pub use health::{
+    evaluate_health, HealthCategory, HealthCategoryResult, HealthFinding, HealthReport,
+    HealthSeverity, HealthStatus, RiskLevel,
+};
 pub use inventory::{
     CpuSummary, DeviceIdentity, DiskVolume, InstalledApplication, InventoryError, InventoryWarning,
     MemorySummary, NetworkAdapter, OperatingSystemSummary, ProcessEntry, ProcessSummary,
@@ -28,7 +33,7 @@ impl AppInfo {
             app_id: "pc-manager",
             platform: "windows",
             device_type: "desktop-native",
-            phase: "P2",
+            phase: "P3",
         }
     }
 }
@@ -44,6 +49,6 @@ mod tests {
         assert_eq!(info.app_id, "pc-manager");
         assert_eq!(info.platform, "windows");
         assert_eq!(info.device_type, "desktop-native");
-        assert_eq!(info.phase, "P2");
+        assert_eq!(info.phase, "P3");
     }
 }
