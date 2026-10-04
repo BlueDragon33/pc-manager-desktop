@@ -547,4 +547,17 @@ mod tests {
         assert_eq!(sum_optional([None, None].into_iter()), None);
         assert_eq!(sum_optional([Some(4), Some(6)].into_iter()), Some(10));
     }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn windows_inventory_provider_returns_real_machine_data() {
+        let inventory =
+            super::collect_system_inventory().expect("Windows inventory provider should run");
+
+        assert!(!inventory.device.hostname.trim().is_empty());
+        assert!(!inventory.operating_system.name.trim().is_empty());
+        assert!(inventory.memory.total_bytes > 0);
+        assert!(inventory.cpu.logical_cores > 0);
+        assert!(!inventory.volumes.is_empty());
+    }
 }
