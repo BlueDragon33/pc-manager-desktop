@@ -42,29 +42,31 @@ Goal: create the durable UI frame.
 
 Tasks:
 
-- [ ] title bar/window strategy
-- [ ] sidebar navigation
-- [ ] Overview
-- [ ] Health Check
-- [ ] Smart Clean
-- [ ] Startup
-- [ ] Apps
-- [ ] Storage
-- [ ] Duplicates
-- [ ] Monitor
-- [ ] Restore
-- [ ] Settings
-- [ ] dark theme
-- [ ] light theme
-- [ ] keyboard/focus behavior
-- [ ] responsive support down to 1366×768
-- [ ] shared cards, badges, dialogs, progress states
+- [x] title bar/window strategy — retain native Tauri/Windows chrome for the initial release
+- [x] sidebar navigation
+- [x] Overview
+- [x] Health Check
+- [x] Smart Clean
+- [x] Startup
+- [x] Apps
+- [x] Storage
+- [x] Duplicates
+- [x] Monitor
+- [x] Restore
+- [x] Settings
+- [x] dark theme
+- [x] light theme
+- [x] keyboard/focus behavior
+- [x] responsive support down to 1366×768
+- [x] shared card/badge states; destructive dialogs and progress flows are completed in the first phases that need them
 
 Acceptance:
 
 - navigation is functional;
 - no copyrighted CCleaner assets are copied;
-- no fake system numbers are presented as real data.
+- no fake system numbers are presented as real data;
+- Windows native build and CI are green;
+- user approved the P1 visual direction before P2 began.
 
 ---
 
