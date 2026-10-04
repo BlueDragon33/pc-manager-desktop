@@ -85,11 +85,7 @@ pub struct CleanupError {
 
 impl CleanupError {
     #[must_use]
-    pub fn new(
-        code: impl Into<String>,
-        message: impl Into<String>,
-        recoverable: bool,
-    ) -> Self {
+    pub fn new(code: impl Into<String>, message: impl Into<String>, recoverable: bool) -> Self {
         Self {
             code: code.into(),
             message: message.into(),
@@ -106,10 +102,7 @@ pub fn summarize_cleanup_plan(
     warnings: Vec<CleanupWarning>,
 ) -> CleanupScanSummary {
     let total_bytes = providers.iter().map(|provider| provider.bytes).sum();
-    let total_files = providers
-        .iter()
-        .map(|provider| provider.file_count)
-        .sum();
+    let total_files = providers.iter().map(|provider| provider.file_count).sum();
 
     CleanupScanSummary {
         plan_id,
@@ -124,9 +117,7 @@ pub fn summarize_cleanup_plan(
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        summarize_cleanup_plan, CleanupCategory, CleanupProviderSummary, CleanupWarning,
-    };
+    use super::{summarize_cleanup_plan, CleanupCategory, CleanupProviderSummary, CleanupWarning};
 
     #[test]
     fn scan_summary_aggregates_exact_provider_totals() {
