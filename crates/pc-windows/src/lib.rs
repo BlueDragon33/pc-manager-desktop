@@ -1,7 +1,10 @@
 //! Windows-specific system integration for PC Manager Desktop.
 //!
-//! P2 contains read-only inventory collection only. It never modifies the
-//! registry, starts uninstallers, changes startup state, or requests elevation.
+//! Windows integration remains non-destructive through P4A. Inventory and Smart Clean
+//! preview scanning never modify files, the registry, startup state, or privileges.
+
+mod cleanup;
+pub use cleanup::scan_cleanup_candidates;
 
 #[cfg(any(target_os = "windows", test))]
 use pc_core::InstalledApplication;
