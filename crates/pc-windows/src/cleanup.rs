@@ -45,11 +45,7 @@ fn scan_windows(
     options: CleanupScanOptions,
 ) -> Result<(CleanupPlan, CleanupScanSummary), CleanupError> {
     let collected_at_epoch_ms = now_epoch_ms();
-    let plan_id = format!(
-        "cleanup-{}-{}",
-        collected_at_epoch_ms,
-        std::process::id()
-    );
+    let plan_id = format!("cleanup-{}-{}", collected_at_epoch_ms, std::process::id());
 
     let providers = provider_specs();
     let mut all_items = Vec::new();
@@ -105,8 +101,7 @@ fn scan_windows(
         collected_at_epoch_ms,
         items: all_items,
     };
-    let summary =
-        summarize_cleanup_plan(plan_id, collected_at_epoch_ms, summaries, all_warnings);
+    let summary = summarize_cleanup_plan(plan_id, collected_at_epoch_ms, summaries, all_warnings);
 
     Ok((plan, summary))
 }
@@ -128,14 +123,7 @@ fn provider_specs() -> Vec<ProviderSpec> {
 
     let edge_roots = local_app_data
         .as_ref()
-        .map(|local| {
-            chromium_cache_roots(
-                &local
-                    .join("Microsoft")
-                    .join("Edge")
-                    .join("User Data"),
-            )
-        })
+        .map(|local| chromium_cache_roots(&local.join("Microsoft").join("Edge").join("User Data")))
         .unwrap_or_default();
 
     let code_roots = roaming_app_data
@@ -251,7 +239,10 @@ fn deduplicate_roots(roots: Vec<PathBuf>) -> Vec<PathBuf> {
     let mut deduplicated = Vec::new();
 
     for root in roots {
-        let key = root.to_string_lossy().replace('/', "\\").to_ascii_lowercase();
+        let key = root
+            .to_string_lossy()
+            .replace('/', "\\")
+            .to_ascii_lowercase();
         if seen.insert(key) {
             deduplicated.push(root);
         }
@@ -426,8 +417,7 @@ fn now_epoch_ms() -> u64 {
 #[cfg(test)]
 mod tests {
     use super::{
-        deduplicate_roots, is_stale, scan_provider, CleanupCategory, ProviderSpec,
-        STALE_TEMP_AGE,
+        deduplicate_roots, is_stale, scan_provider, CleanupCategory, ProviderSpec, STALE_TEMP_AGE,
     };
     use std::fs;
     use std::path::PathBuf;
