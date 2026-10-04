@@ -71,7 +71,10 @@ jobs:
         run: npm run build:frontend
 
       - name: Check formatting
-        run: npm run format:check
+        shell: bash
+        run: |
+          npm run format
+          git diff --exit-code
 
   rust:
     name: Rust checks
