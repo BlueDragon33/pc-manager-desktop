@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { type AppInfo, getAppInfo } from "./appInfo";
 import { HealthCheckPage } from "./HealthCheckPage";
 import { InventorySummary } from "./InventorySummary";
+import { SmartCleanPage } from "./SmartCleanPage";
 import { NAV_ITEMS, getNavItem, type PageId } from "./navigation";
 import {
   readSidebarCollapsed,
@@ -165,7 +166,7 @@ function OverviewPage({
           </div>
           <div>
             <dt>Product phase</dt>
-            <dd>{appInfo?.phase ?? "P3"}</dd>
+            <dd>{appInfo?.phase ?? "P4A"}</dd>
           </div>
         </dl>
       </section>
@@ -176,7 +177,7 @@ function OverviewPage({
 function PlaceholderPage({
   page,
 }: {
-  page: Exclude<PageId, "overview" | "health" | "settings">;
+  page: Exclude<PageId, "overview" | "health" | "clean" | "settings">;
 }) {
   const item = getNavItem(page);
 
@@ -192,7 +193,7 @@ function PlaceholderPage({
         <div className="info-callout">
           <strong>No system data is being simulated.</strong>
           <span>
-            This module is not implemented in P3. Real actions arrive only in
+            This module is not implemented in P4A. Real actions arrive only in
             later, separately gated phases.
           </span>
         </div>
@@ -383,7 +384,7 @@ export default function App() {
             <h1>{activeItem.label}</h1>
           </div>
           <div className="topbar-actions">
-            <span className="phase-chip">P3</span>
+            <span className="phase-chip">P4A</span>
             <button
               className="icon-button"
               onClick={() =>
@@ -404,6 +405,8 @@ export default function App() {
             <OverviewPage onNavigate={setPage} bridgeState={bridgeState} />
           ) : page === "health" ? (
             <HealthCheckPage />
+          ) : page === "clean" ? (
+            <SmartCleanPage />
           ) : page === "settings" ? (
             <SettingsPage
               onSidebarChange={updateSidebar}
