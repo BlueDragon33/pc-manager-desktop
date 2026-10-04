@@ -1,19 +1,28 @@
+use pc_core::{CleanupError, CleanupPlan, CleanupScanOptions, CleanupScanSummary};
+#[cfg(any(target_os = "windows", test))]
 use pc_core::{
-    summarize_cleanup_plan, CleanupCategory, CleanupError, CleanupPlan, CleanupPlanItem,
-    CleanupProviderSummary, CleanupScanOptions, CleanupScanSummary, CleanupWarning,
+    summarize_cleanup_plan, CleanupCategory, CleanupPlanItem, CleanupProviderSummary,
+    CleanupWarning,
 };
+#[cfg(any(target_os = "windows", test))]
 use std::collections::BTreeSet;
+#[cfg(any(target_os = "windows", test))]
 use std::fs;
+#[cfg(any(target_os = "windows", test))]
 use std::path::{Path, PathBuf};
 #[cfg(target_os = "windows")]
 use std::sync::atomic::{AtomicU64, Ordering};
+#[cfg(any(target_os = "windows", test))]
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+#[cfg(any(target_os = "windows", test))]
 const STALE_TEMP_AGE: Duration = Duration::from_secs(24 * 60 * 60);
+#[cfg(any(target_os = "windows", test))]
 const MAX_PROVIDER_WARNINGS: usize = 20;
 #[cfg(target_os = "windows")]
 static PLAN_SEQUENCE: AtomicU64 = AtomicU64::new(1);
 
+#[cfg(any(target_os = "windows", test))]
 #[derive(Debug, Clone)]
 struct ProviderSpec {
     id: &'static str,
@@ -245,6 +254,7 @@ fn chromium_cache_roots(user_data_root: &Path) -> Vec<PathBuf> {
     roots
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn deduplicate_roots(roots: Vec<PathBuf>) -> Vec<PathBuf> {
     let mut seen = BTreeSet::new();
     let mut deduplicated = Vec::new();
@@ -262,6 +272,7 @@ fn deduplicate_roots(roots: Vec<PathBuf>) -> Vec<PathBuf> {
     deduplicated
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn scan_provider(
     provider: &ProviderSpec,
     now_epoch_ms: u64,
@@ -320,6 +331,7 @@ fn scan_provider(
     )
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn scan_root(
     provider: &ProviderSpec,
     root: &Path,
@@ -399,6 +411,7 @@ fn scan_root(
     }
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn record_warning(warnings: &mut Vec<String>, message: String) {
     if warnings.len() < MAX_PROVIDER_WARNINGS {
         warnings.push(message);
@@ -407,6 +420,7 @@ fn record_warning(warnings: &mut Vec<String>, message: String) {
     }
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn is_stale(modified: SystemTime, now_epoch_ms: u64, required_age: Duration) -> bool {
     let Some(modified_epoch_ms) = epoch_ms(modified) else {
         return false;
@@ -416,6 +430,7 @@ fn is_stale(modified: SystemTime, now_epoch_ms: u64, required_age: Duration) -> 
         >= u64::try_from(required_age.as_millis()).unwrap_or(u64::MAX)
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn epoch_ms(time: SystemTime) -> Option<u64> {
     time.duration_since(UNIX_EPOCH)
         .ok()
@@ -432,7 +447,7 @@ fn should_skip_metadata(metadata: &fs::Metadata) -> bool {
         || (metadata.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT) != 0
 }
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(all(test, not(target_os = "windows")))]
 fn should_skip_metadata(metadata: &fs::Metadata) -> bool {
     metadata.file_type().is_symlink()
 }
