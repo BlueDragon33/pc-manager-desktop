@@ -9,20 +9,13 @@ pub enum CleanupCategory {
     RecycleBin,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CleanupScanOptions {
     #[serde(default)]
     pub include_recycle_bin: bool,
 }
 
-impl Default for CleanupScanOptions {
-    fn default() -> Self {
-        Self {
-            include_recycle_bin: false,
-        }
-    }
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
