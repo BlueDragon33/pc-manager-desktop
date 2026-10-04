@@ -4,9 +4,9 @@
 //! registry, starts uninstallers, changes startup state, or requests elevation.
 
 use pc_core::{
-    CpuSummary, DeviceIdentity, DiskVolume, InstalledApplication, InventoryError,
-    InventoryWarning, MemorySummary, NetworkAdapter, OperatingSystemSummary,
-    ProcessEntry, ProcessSummary, StartupItem, SystemInventory,
+    CpuSummary, DeviceIdentity, DiskVolume, InstalledApplication, InventoryError, InventoryWarning,
+    MemorySummary, NetworkAdapter, OperatingSystemSummary, ProcessEntry, ProcessSummary,
+    StartupItem, SystemInventory,
 };
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
@@ -402,8 +402,8 @@ fn map_inventory(raw: RawInventory) -> SystemInventory {
         .into_iter()
         .filter_map(|adapter| {
             let description = non_empty(adapter.name);
-            let name = non_empty(adapter.net_connection_id.clone())
-                .or_else(|| description.clone())?;
+            let name =
+                non_empty(adapter.net_connection_id.clone()).or_else(|| description.clone())?;
 
             Some(NetworkAdapter {
                 name,
@@ -489,9 +489,7 @@ fn now_epoch_ms() -> u64 {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        deduplicate_apps, derive_device_id, sum_optional, RawInstalledApplication,
-    };
+    use super::{deduplicate_apps, derive_device_id, sum_optional, RawInstalledApplication};
 
     #[test]
     fn device_id_is_stable_and_does_not_echo_machine_guid() {
