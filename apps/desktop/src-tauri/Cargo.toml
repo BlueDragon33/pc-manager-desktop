@@ -13,4 +13,5 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 pc-core = { path = "../../../crates/pc-core" }
+pc-windows = { path = "../../../crates/pc-windows" }
 tauri = { version = "2", features = [] }
