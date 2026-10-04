@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { type AppInfo, getAppInfo } from "./appInfo";
+import { HealthCheckPage } from "./HealthCheckPage";
 import { InventorySummary } from "./InventorySummary";
 import { NAV_ITEMS, getNavItem, type PageId } from "./navigation";
 import {
@@ -21,23 +22,23 @@ type BridgeState =
 const healthCategories = [
   {
     name: "Storage",
-    text: "Cleanup and capacity insights will appear after a real system scan.",
+    text: "Health Check now evaluates real free-capacity evidence.",
   },
   {
     name: "Performance",
-    text: "No performance score is shown until measured system data exists.",
+    text: "Health Check now evaluates real memory-pressure evidence.",
   },
   {
     name: "Security",
-    text: "Security checks are planned for a later phase and are not simulated here.",
+    text: "Unavailable in P3 until a supported security check is implemented.",
   },
   {
     name: "Updates",
-    text: "Software and driver update checks are not active in this build.",
+    text: "Unavailable in P3 until trusted update checks are implemented.",
   },
   {
     name: "Privacy",
-    text: "Privacy findings will only be shown when a supported check can provide evidence.",
+    text: "Unavailable in P3 until evidence-backed privacy checks are implemented.",
   },
 ];
 
@@ -73,11 +74,10 @@ function OverviewPage({
       <section className="hero-card" aria-labelledby="overview-heading">
         <div>
           <p className="eyebrow">PC health</p>
-          <h2 id="overview-heading">Awaiting first scan</h2>
+          <h2 id="overview-heading">Health Check V1 is ready</h2>
           <p className="muted">
-            PC Manager will show real findings here after the system inventory
-            and health engine are implemented. This phase does not invent device
-            data.
+            Run an explainable, read-only scan using the real Windows inventory.
+            Unsupported categories stay unavailable instead of being guessed.
           </p>
         </div>
         <button className="primary-action" onClick={() => onNavigate("health")}>
@@ -95,7 +95,7 @@ function OverviewPage({
               What PC Manager will evaluate
             </h3>
           </div>
-          <span className="status-badge neutral">No live scan yet</span>
+          <span className="status-badge neutral">2 of 5 supported in P3</span>
         </div>
 
         <div className="category-grid">
@@ -165,7 +165,7 @@ function OverviewPage({
           </div>
           <div>
             <dt>Product phase</dt>
-            <dd>{appInfo?.phase ?? "P2"}</dd>
+            <dd>{appInfo?.phase ?? "P3"}</dd>
           </div>
         </dl>
       </section>
@@ -176,7 +176,7 @@ function OverviewPage({
 function PlaceholderPage({
   page,
 }: {
-  page: Exclude<PageId, "overview" | "settings">;
+  page: Exclude<PageId, "overview" | "health" | "settings">;
 }) {
   const item = getNavItem(page);
 
@@ -192,8 +192,8 @@ function PlaceholderPage({
         <div className="info-callout">
           <strong>No system data is being simulated.</strong>
           <span>
-            This screen is part of the P2 read-only inventory foundation. Real
-            actions arrive only in later, separately gated phases.
+            This module is not implemented in P3. Real actions arrive only in
+            later, separately gated phases.
           </span>
         </div>
       </section>
@@ -383,7 +383,7 @@ export default function App() {
             <h1>{activeItem.label}</h1>
           </div>
           <div className="topbar-actions">
-            <span className="phase-chip">P2</span>
+            <span className="phase-chip">P3</span>
             <button
               className="icon-button"
               onClick={() =>
@@ -402,6 +402,8 @@ export default function App() {
         <div className="content-area">
           {page === "overview" ? (
             <OverviewPage onNavigate={setPage} bridgeState={bridgeState} />
+          ) : page === "health" ? (
+            <HealthCheckPage />
           ) : page === "settings" ? (
             <SettingsPage
               onSidebarChange={updateSidebar}

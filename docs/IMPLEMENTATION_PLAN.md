@@ -116,11 +116,11 @@ Goal: produce an explainable health report.
 
 Categories:
 
-- [ ] Storage
-- [ ] Performance
-- [ ] Security
-- [ ] Updates
-- [ ] Privacy
+- [x] Storage
+- [x] Performance
+- [x] Security — explicit unavailable state in V1 until an evidence-backed check is implemented
+- [x] Updates — explicit unavailable state in V1 until trusted update checks are implemented
+- [x] Privacy — explicit unavailable state in V1 until an evidence-backed check is implemented
 
 V1 may have limited Security/Updates/Privacy coverage, but unsupported checks must be shown as unavailable rather than guessed.
 
@@ -141,11 +141,13 @@ reversible
 
 Acceptance:
 
-- Scan Now performs real checks;
-- progress can be cancelled safely;
-- results are persisted locally;
-- score derives from findings;
-- no destructive action occurs during scan.
+- Scan Now performs real checks from a fresh P2 Windows inventory;
+- progress can be cancelled safely by invalidating the UI request and discarding any late native result;
+- the latest completed result is persisted locally; cancelled and failed scans are not persisted;
+- score derives only from supported, evidence-backed findings and reports partial coverage honestly;
+- unsupported categories remain explicit `unavailable` states and do not reduce the score;
+- no destructive action or Administrator privilege is used during scan;
+- frontend, Rust, Windows inventory smoke test, and native Windows build are green in CI.
 
 ---
 
