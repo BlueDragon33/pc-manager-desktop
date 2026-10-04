@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "appId": "pc-manager",
+  "platform": "windows",
+  "deviceType": "desktop-native",
+  "releaseChannel": "dev"
+}

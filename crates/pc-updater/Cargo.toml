@@ -1,0 +1,8 @@
+[package]
+name = "pc-updater"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Update policy and verification layer for PC Manager Desktop."
+
+[dependencies]
