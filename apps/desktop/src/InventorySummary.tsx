@@ -27,7 +27,8 @@ function describeError(error: unknown): {
   }
 
   return {
-    message: error instanceof Error ? error.message : "Inventory is unavailable.",
+    message:
+      error instanceof Error ? error.message : "Inventory is unavailable.",
     recoverable: true,
   };
 }
@@ -114,7 +115,10 @@ export function InventorySummary() {
   );
 
   return (
-    <section className="inventory-card" aria-labelledby="device-snapshot-heading">
+    <section
+      className="inventory-card"
+      aria-labelledby="device-snapshot-heading"
+    >
       <div className="inventory-header">
         <div>
           <p className="eyebrow">Device snapshot</p>
@@ -148,7 +152,9 @@ export function InventorySummary() {
         <article>
           <span>Memory</span>
           <strong>{formatBytes(inventory.memory.totalBytes)}</strong>
-          <small>{formatBytes(inventory.memory.availableBytes)} available</small>
+          <small>
+            {formatBytes(inventory.memory.availableBytes)} available
+          </small>
         </article>
         <article>
           <span>Local storage</span>
