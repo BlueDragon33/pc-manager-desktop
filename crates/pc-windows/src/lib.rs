@@ -222,6 +222,7 @@ struct RawOperatingSystem {
     caption: Option<String>,
     version: Option<String>,
     build_number: Option<String>,
+    #[serde(rename = "OSArchitecture")]
     os_architecture: Option<String>,
     total_visible_memory_size: Option<u64>,
     free_physical_memory: Option<u64>,
@@ -240,6 +241,7 @@ struct RawCpu {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 struct RawVolume {
+    #[serde(rename = "DeviceID")]
     device_id: Option<String>,
     volume_name: Option<String>,
     file_system: Option<String>,
@@ -280,6 +282,7 @@ struct RawStartupItem {
 #[serde(rename_all = "PascalCase")]
 struct RawNetworkAdapter {
     name: Option<String>,
+    #[serde(rename = "NetConnectionID")]
     net_connection_id: Option<String>,
     net_enabled: Option<bool>,
     speed: Option<u64>,
