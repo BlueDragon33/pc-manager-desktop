@@ -42,7 +42,7 @@ const healthCategories = [
 
 function BridgeBadge({ state }: { state: BridgeState }) {
   if (state.status === "loading") {
-    return <span className="status-badge neutral">Checking native bridge…</span>;
+    return (\n      <span className="status-badge neutral">Checking native bridge…</span>\n    );
   }
 
   if (state.status === "error") {
@@ -86,7 +86,7 @@ function OverviewPage({
         <div className="section-heading">
           <div>
             <p className="eyebrow">Health categories</p>
-            <h3 id="health-categories-heading">What PC Manager will evaluate</h3>
+            <h3 id="health-categories-heading">\n              What PC Manager will evaluate\n            </h3>
           </div>
           <span className="status-badge neutral">No live scan yet</span>
         </div>
@@ -114,12 +114,14 @@ function OverviewPage({
         </div>
 
         <div className="quick-actions">
-          {([
-            ["health", "Health Check", "Review explainable system findings."],
-            ["clean", "Smart Clean", "Preview safe cleanup candidates."],
-            ["startup", "Startup", "Inspect Windows startup sources."],
-            ["storage", "Storage", "Understand disk usage."],
-          ] as const).map(([page, title, description]) => (
+          {(
+            [
+              ["health", "Health Check", "Review explainable system findings."],
+              ["clean", "Smart Clean", "Preview safe cleanup candidates."],
+              ["startup", "Startup", "Inspect Windows startup sources."],
+              ["storage", "Storage", "Understand disk usage."],
+            ] as const
+          ).map(([page, title, description]) => (
             <button
               className="quick-action"
               key={page}
@@ -260,8 +262,8 @@ export default function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
     readSidebarCollapsed(),
   );
-  const [prefersDark, setPrefersDark] = useState(() =>
-    window.matchMedia("(prefers-color-scheme: dark)").matches,
+  const [prefersDark, setPrefersDark] = useState(
+    () => window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
 
   const resolvedTheme = useMemo(
@@ -321,9 +323,7 @@ export default function App() {
   const activeItem = getNavItem(page);
 
   return (
-    <div
-      className={`app-shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}
-    >
+    <div className={`app-shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
       <aside className="sidebar" aria-label="Primary navigation">
         <div className="brand-row">
           <div className="brand-mark" aria-hidden="true">
@@ -334,7 +334,9 @@ export default function App() {
             <span>Desktop</span>
           </div>
           <button
-            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={
+              sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+            }
             className="icon-button sidebar-toggle"
             onClick={() => updateSidebar(!sidebarCollapsed)}
             title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
