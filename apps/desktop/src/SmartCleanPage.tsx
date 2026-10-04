@@ -80,8 +80,9 @@ export function SmartCleanPage() {
           <p className="eyebrow">Smart Clean — P4A</p>
           <h2>Real cleanup preview, deletion still disabled</h2>
           <p className="muted">
-            PC Manager scans only built-in temp and cache locations. The frontend
-            cannot submit arbitrary folders, and P4A contains no delete command.
+            PC Manager scans only built-in temp and cache locations. The
+            frontend cannot submit arbitrary folders, and P4A contains no delete
+            command.
           </p>
         </div>
         <div className="cleaner-actions">
@@ -103,7 +104,8 @@ export function SmartCleanPage() {
           <strong>No files can be deleted in this phase.</strong>
           <p>
             The native engine creates a cleanup plan and stores it inside the
-            desktop process. The UI receives only aggregate totals and a plan ID.
+            desktop process. The UI receives only aggregate totals and a plan
+            ID.
           </p>
         </div>
         <label className="cleaner-option">
@@ -141,7 +143,8 @@ export function SmartCleanPage() {
         <section className="info-callout" aria-live="polite">
           <strong>Preview scan cancelled</strong>
           <span>
-            Any late native result is discarded. Nothing was modified or deleted.
+            Any late native result is discarded. Nothing was modified or
+            deleted.
           </span>
         </section>
       )}
@@ -173,9 +176,7 @@ export function SmartCleanPage() {
               </div>
               <div>
                 <dt>Collected</dt>
-                <dd>
-                  {new Date(summary.collectedAtEpochMs).toLocaleString()}
-                </dd>
+                <dd>{new Date(summary.collectedAtEpochMs).toLocaleString()}</dd>
               </div>
               <div>
                 <dt>Execution</dt>
@@ -256,8 +257,8 @@ export function SmartCleanPage() {
               <strong>Clean action intentionally locked</strong>
               <span>
                 First verify these preview totals on a real Windows machine. P4B
-                will then add plan revalidation, explicit confirmation, execution
-                results, and operation history.
+                will then add plan revalidation, explicit confirmation,
+                execution results, and operation history.
               </span>
             </div>
             <button disabled type="button">
