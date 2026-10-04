@@ -43,12 +43,6 @@ jobs:
       - name: Build frontend
         run: npm run build:frontend
 
-      - name: Show P3 formatting diff
-        run: |
-          npx prettier --write apps/desktop/src/healthCheck.test.ts apps/desktop/src/healthCheck.ts apps/desktop/src/HealthCheckPage.tsx apps/desktop/src/styles.css
-          git diff -- apps/desktop/src/healthCheck.test.ts apps/desktop/src/healthCheck.ts apps/desktop/src/HealthCheckPage.tsx apps/desktop/src/styles.css
-          git checkout -- apps/desktop/src/healthCheck.test.ts apps/desktop/src/healthCheck.ts apps/desktop/src/HealthCheckPage.tsx apps/desktop/src/styles.css
-
       - name: Check formatting
         run: npm run format:check
 
