@@ -14,35 +14,6 @@ permissions:
   contents: read
 
 jobs:
-  lockfiles:
-    name: Dependency lockfiles
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Setup Rust stable
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Generate lockfiles
-        shell: bash
-        run: |
-          npm install --package-lock-only
-          cargo generate-lockfile
-          echo "PACKAGE_LOCK_BEGIN"
-          base64 -w 0 package-lock.json
-          echo
-          echo "PACKAGE_LOCK_END"
-          echo "CARGO_LOCK_BEGIN"
-          base64 -w 0 Cargo.lock
-          echo
-          echo "CARGO_LOCK_END"
-
   frontend:
     name: Frontend checks
     runs-on: ubuntu-latest
@@ -54,9 +25,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Lint
         run: npm run lint
@@ -71,10 +44,7 @@ jobs:
         run: npm run build:frontend
 
       - name: Check formatting
-        shell: bash
-        run: |
-          npm run format
-          git diff --exit-code
+        run: npm run format:check
 
   rust:
     name: Rust checks
@@ -97,13 +67,13 @@ jobs:
         run: cargo fmt --check
 
       - name: Check
-        run: cargo check --workspace
+        run: cargo check --workspace --locked
 
       - name: Test
-        run: cargo test --workspace
+        run: cargo test --workspace --locked
 
       - name: Clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
 
   windows-native-build:
     name: Windows native build
@@ -116,12 +86,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Setup Rust stable
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build native application
         run: npm run build

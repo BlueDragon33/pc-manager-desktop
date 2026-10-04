@@ -23,7 +23,9 @@ export default function App() {
       .catch((error: unknown) => {
         if (active) {
           const message =
-            error instanceof Error ? error.message : "Native bridge unavailable.";
+            error instanceof Error
+              ? error.message
+              : "Native bridge unavailable.";
           setState({ status: "error", message });
         }
       });
