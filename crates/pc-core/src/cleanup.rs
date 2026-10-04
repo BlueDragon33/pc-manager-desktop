@@ -16,7 +16,6 @@ pub struct CleanupScanOptions {
     pub include_recycle_bin: bool,
 }
 
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CleanupWarning {
