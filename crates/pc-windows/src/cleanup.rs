@@ -5,9 +5,13 @@ use pc_core::{
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
+#[cfg(target_os = "windows")]
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const STALE_TEMP_AGE: Duration = Duration::from_secs(24 * 60 * 60);
+#[cfg(target_os = "windows")]
+static PLAN_SEQUENCE: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Debug, Clone)]
 struct ProviderSpec {
@@ -45,7 +49,13 @@ fn scan_windows(
     options: CleanupScanOptions,
 ) -> Result<(CleanupPlan, CleanupScanSummary), CleanupError> {
     let collected_at_epoch_ms = now_epoch_ms();
-    let plan_id = format!("cleanup-{}-{}", collected_at_epoch_ms, std::process::id());
+    let sequence = PLAN_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+    let plan_id = format!(
+        "cleanup-{}-{}-{}",
+        collected_at_epoch_ms,
+        std::process::id(),
+        sequence
+    );
 
     let providers = provider_specs();
     let mut all_items = Vec::new();
@@ -473,5 +483,27 @@ mod tests {
         assert!(warnings.is_empty());
 
         fs::remove_dir_all(root).expect("remove test root");
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn windows_cleanup_preview_returns_a_read_only_native_plan() {
+        let (plan, summary) =
+            super::scan_cleanup_candidates(Default::default()).expect("cleanup preview should run");
+
+        assert_eq!(plan.plan_id, summary.plan_id);
+        assert!(!summary.execution_available);
+        assert_eq!(
+            u64::try_from(plan.items.len()).expect("candidate count fits in u64"),
+            summary.total_files
+        );
+        assert_eq!(
+            plan.items.iter().map(|item| item.bytes).sum::<u64>(),
+            summary.total_bytes
+        );
+        assert!(plan
+            .items
+            .iter()
+            .all(|item| !item.provider_root.trim().is_empty()));
     }
 }
