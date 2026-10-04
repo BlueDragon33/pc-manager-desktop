@@ -2155,6 +2155,7 @@ name = "pc-manager-desktop"
 version = "0.1.0"
 dependencies = [
  "pc-core",
+ "pc-windows",
  "tauri",
  "tauri-build",
 ]
@@ -2174,6 +2175,12 @@ version = "0.1.0"
 [[package]]
 name = "pc-windows"
 version = "0.1.0"
+dependencies = [
+ "pc-core",
+ "serde",
+ "serde_json",
+ "sha2",
+]
 
 [[package]]
 name = "percent-encoding"
