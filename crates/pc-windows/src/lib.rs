@@ -3,14 +3,14 @@
 //! P2 contains read-only inventory collection only. It never modifies the
 //! registry, starts uninstallers, changes startup state, or requests elevation.
 
-use pc_core::{InventoryError, SystemInventory};
+#[cfg(any(target_os = "windows", test))]
+use pc_core::InstalledApplication;
 #[cfg(target_os = "windows")]
 use pc_core::{
     CpuSummary, DeviceIdentity, DiskVolume, InventoryWarning, MemorySummary, NetworkAdapter,
     OperatingSystemSummary, ProcessEntry, ProcessSummary, StartupItem,
 };
-#[cfg(any(target_os = "windows", test))]
-use pc_core::InstalledApplication;
+use pc_core::{InventoryError, SystemInventory};
 #[cfg(target_os = "windows")]
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
