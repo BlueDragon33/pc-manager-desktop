@@ -1,0 +1,18 @@
+# Execution Prompts
+
+These prompts are phase-specific execution instructions for coding agents.
+
+Rules:
+
+1. Always read `/AGENTS.md` first.
+2. Then read `/docs/MASTER_BUILD_PROMPT.md`.
+3. Then read `/docs/IMPLEMENTATION_PLAN.md`.
+4. Execute only the requested phase unless the prompt explicitly says otherwise.
+5. Do not mark a checklist item complete unless there is evidence.
+6. Do not skip failing checks to create the appearance of progress.
+
+Current prompt:
+
+- `P0_REPOSITORY_FOUNDATION.md` — bootstrap the monorepo, Tauri app shell, Rust workspace, and CI.
+
+Future prompts should be added only when the preceding phase is stable enough that its interfaces are worth building on.
