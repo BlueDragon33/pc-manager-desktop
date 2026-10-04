@@ -10,6 +10,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const STALE_TEMP_AGE: Duration = Duration::from_secs(24 * 60 * 60);
+const MAX_PROVIDER_WARNINGS: usize = 20;
 #[cfg(target_os = "windows")]
 static PLAN_SEQUENCE: AtomicU64 = AtomicU64::new(1);
 
@@ -333,7 +334,10 @@ fn scan_root(
         let metadata = match fs::symlink_metadata(&path) {
             Ok(metadata) => metadata,
             Err(error) => {
-                warnings.push(format!("Unable to inspect {}: {error}", path.display()));
+                record_warning(
+                    warnings,
+                    format!("Unable to inspect {}: {error}", path.display()),
+                );
                 continue;
             }
         };
@@ -346,7 +350,10 @@ fn scan_root(
             let entries = match fs::read_dir(&path) {
                 Ok(entries) => entries,
                 Err(error) => {
-                    warnings.push(format!("Unable to read {}: {error}", path.display()));
+                    record_warning(
+                        warnings,
+                        format!("Unable to read {}: {error}", path.display()),
+                    );
                     continue;
                 }
             };
@@ -354,10 +361,13 @@ fn scan_root(
             for entry in entries {
                 match entry {
                     Ok(entry) => stack.push(entry.path()),
-                    Err(error) => warnings.push(format!(
-                        "Unable to enumerate an item under {}: {error}",
-                        path.display()
-                    )),
+                    Err(error) => record_warning(
+                        warnings,
+                        format!(
+                            "Unable to enumerate an item under {}: {error}",
+                            path.display()
+                        ),
+                    ),
                 }
             }
             continue;
@@ -386,6 +396,14 @@ fn scan_root(
             modified_at_epoch_ms,
             reversible: provider.reversible,
         });
+    }
+}
+
+fn record_warning(warnings: &mut Vec<String>, message: String) {
+    if warnings.len() < MAX_PROVIDER_WARNINGS {
+        warnings.push(message);
+    } else if warnings.len() == MAX_PROVIDER_WARNINGS {
+        warnings.push("Additional inaccessible items were omitted from this preview.".to_string());
     }
 }
 
