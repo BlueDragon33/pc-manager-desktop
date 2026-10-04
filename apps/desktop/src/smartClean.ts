@@ -1,10 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 
 export type CleanupCategory =
-  | "windowsTemp"
-  | "browserCache"
-  | "applicationCache"
-  | "recycleBin";
+  "windowsTemp" | "browserCache" | "applicationCache" | "recycleBin";
 
 export interface CleanupWarning {
   providerId: string;
