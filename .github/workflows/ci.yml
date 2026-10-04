@@ -43,12 +43,6 @@ jobs:
       - name: Build frontend
         run: npm run build:frontend
 
-      - name: Show P2 formatting diff
-        run: |
-          npx prettier --write apps/desktop/src/InventorySummary.tsx apps/desktop/src/styles.css
-          git diff -- apps/desktop/src/InventorySummary.tsx apps/desktop/src/styles.css
-          git checkout -- apps/desktop/src/InventorySummary.tsx apps/desktop/src/styles.css
-
       - name: Check formatting
         run: npm run format:check
 
