@@ -160,8 +160,8 @@ export function InventorySummary() {
           <span>Local storage</span>
           <strong>{formatBytes(volumeTotal)}</strong>
           <small>
-            {formatBytes(volumeAvailable)} available · {inventory.volumes.length}{" "}
-            volume(s)
+            {formatBytes(volumeAvailable)} available ·{" "}
+            {inventory.volumes.length} volume(s)
           </small>
         </article>
         <article>
