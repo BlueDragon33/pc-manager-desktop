@@ -95,7 +95,7 @@ export function getNavItem(id: PageId): NavItem {
   const item = NAV_ITEMS.find((entry) => entry.id === id);
 
   if (!item) {
-    throw new Error(`Unknown page: ${id satisfies never}`);
+    throw new Error(`Unknown page: ${id}`);
   }
 
   return item;
