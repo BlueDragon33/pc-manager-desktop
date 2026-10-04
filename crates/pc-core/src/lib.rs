@@ -3,9 +3,9 @@
 mod inventory;
 
 pub use inventory::{
-    CpuSummary, DeviceIdentity, DiskVolume, InstalledApplication, InventoryError,
-    InventoryWarning, MemorySummary, NetworkAdapter, OperatingSystemSummary,
-    ProcessEntry, ProcessSummary, StartupItem, SystemInventory,
+    CpuSummary, DeviceIdentity, DiskVolume, InstalledApplication, InventoryError, InventoryWarning,
+    MemorySummary, NetworkAdapter, OperatingSystemSummary, ProcessEntry, ProcessSummary,
+    StartupItem, SystemInventory,
 };
 
 use serde::Serialize;
