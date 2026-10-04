@@ -1,0 +1,19 @@
+[workspace]
+resolver = "2"
+members = [
+  "apps/desktop/src-tauri",
+  "crates/pc-core",
+  "crates/pc-windows",
+  "crates/pc-monitor",
+  "crates/pc-updater",
+  "crates/app-manager-client",
+  "services/windows-service",
+]
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+version = "0.1.0"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
