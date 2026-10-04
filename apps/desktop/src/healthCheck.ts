@@ -53,7 +53,7 @@ export async function runHealthCheck(): Promise<HealthReport> {
 }
 
 export function loadLatestHealthReport(): HealthReport | null {
-  const raw = window.localStorage.getItem(LATEST_REPORT_KEY);
+  const raw = globalThis.localStorage.getItem(LATEST_REPORT_KEY);
   if (!raw) {
     return null;
   }
@@ -67,7 +67,7 @@ export function loadLatestHealthReport(): HealthReport | null {
 }
 
 export function saveLatestHealthReport(report: HealthReport): void {
-  window.localStorage.setItem(LATEST_REPORT_KEY, JSON.stringify(report));
+  globalThis.localStorage.setItem(LATEST_REPORT_KEY, JSON.stringify(report));
 }
 
 export function formatHealthCategory(category: HealthCategory): string {
