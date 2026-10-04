@@ -191,13 +191,6 @@ $machineGuid = Try-Read 'deviceIdentity' {
 }
 
 #[cfg(target_os = "windows")]
-#[cfg(target_os = "windows")]
-#[cfg(target_os = "windows")]
-#[cfg(target_os = "windows")]
-#[cfg(target_os = "windows")]
-#[cfg(target_os = "windows")]
-#[cfg(target_os = "windows")]
-#[cfg(target_os = "windows")]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RawInventory {
@@ -263,8 +256,10 @@ struct RawProcess {
     working_set64: Option<u64>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "PascalCase")]
+#[cfg(any(target_os = "windows", test))]
+#[derive(Debug, Clone)]
+#[cfg_attr(target_os = "windows", derive(Deserialize))]
+#[cfg_attr(target_os = "windows", serde(rename_all = "PascalCase"))]
 struct RawInstalledApplication {
     display_name: Option<String>,
     display_version: Option<String>,
