@@ -329,9 +329,7 @@ fn scan_id(inventory: &SystemInventory) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        evaluate_health, HealthCategory, HealthSeverity, HealthStatus, TOTAL_CATEGORIES,
-    };
+    use super::{evaluate_health, HealthCategory, HealthSeverity, HealthStatus, TOTAL_CATEGORIES};
     use crate::{
         CpuSummary, DeviceIdentity, DiskVolume, MemorySummary, OperatingSystemSummary,
         ProcessSummary, SystemInventory,
