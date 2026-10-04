@@ -76,16 +76,16 @@ Goal: establish trustworthy read-only Windows data.
 
 Implement typed models for:
 
-- [ ] OS/version
-- [ ] hostname/device ID abstraction
-- [ ] CPU summary
-- [ ] RAM summary
-- [ ] disk volumes
-- [ ] free/used storage
-- [ ] processes summary
-- [ ] installed applications
-- [ ] startup sources
-- [ ] basic network adapters
+- [x] OS/version
+- [x] hostname/device ID abstraction
+- [x] CPU summary
+- [x] RAM summary
+- [x] disk volumes
+- [x] free/used storage
+- [x] processes summary
+- [x] installed applications
+- [x] startup sources
+- [x] basic network adapters
 
 Architecture:
 
@@ -104,7 +104,9 @@ Acceptance:
 - read-only;
 - handles permission/access failures;
 - unit tests for parsing/mapping logic;
-- no Administrator requirement for normal inventory.
+- no Administrator requirement for normal inventory;
+- Windows CI executes the real inventory provider and verifies hostname, OS, memory, CPU, and local-volume data;
+- frontend, Rust, and Windows native build gates are green.
 
 ---
 
