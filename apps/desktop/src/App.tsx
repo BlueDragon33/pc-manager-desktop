@@ -42,7 +42,9 @@ const healthCategories = [
 
 function BridgeBadge({ state }: { state: BridgeState }) {
   if (state.status === "loading") {
-    return (\n      <span className="status-badge neutral">Checking native bridge…</span>\n    );
+    return (
+      <span className="status-badge neutral">Checking native bridge…</span>
+    );
   }
 
   if (state.status === "error") {
@@ -86,7 +88,9 @@ function OverviewPage({
         <div className="section-heading">
           <div>
             <p className="eyebrow">Health categories</p>
-            <h3 id="health-categories-heading">\n              What PC Manager will evaluate\n            </h3>
+            <h3 id="health-categories-heading">
+              What PC Manager will evaluate
+            </h3>
           </div>
           <span className="status-badge neutral">No live scan yet</span>
         </div>
