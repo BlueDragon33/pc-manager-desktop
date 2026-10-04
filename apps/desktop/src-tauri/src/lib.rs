@@ -1,6 +1,6 @@
 use pc_core::{
-    evaluate_health, AppInfo, CleanupError, CleanupPlan, CleanupScanOptions, CleanupScanSummary,
-    HealthReport, InventoryError, SystemInventory,
+    evaluate_health, AppInfo, CleanupError, CleanupPlanStore, CleanupScanOptions,
+    CleanupScanSummary, HealthReport, InventoryError, SystemInventory,
 };
 use std::sync::Mutex;
 use tauri::State;
@@ -24,10 +24,10 @@ fn run_health_check() -> Result<HealthReport, InventoryError> {
 #[tauri::command]
 fn scan_cleanup_candidates(
     options: CleanupScanOptions,
-    cleanup_plan: State<'_, Mutex<Option<CleanupPlan>>>,
+    cleanup_plans: State<'_, Mutex<CleanupPlanStore>>,
 ) -> Result<CleanupScanSummary, CleanupError> {
     let (plan, summary) = pc_windows::scan_cleanup_candidates(options)?;
-    let mut stored_plan = cleanup_plan.lock().map_err(|_| {
+    let mut stored_plans = cleanup_plans.lock().map_err(|_| {
         CleanupError::new(
             "cleanup_plan_store_unavailable",
             "The native cleanup-plan store is unavailable.",
@@ -35,14 +35,14 @@ fn scan_cleanup_candidates(
         )
     })?;
 
-    *stored_plan = Some(plan);
+    stored_plans.replace(plan);
     Ok(summary)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .manage(Mutex::new(None::<CleanupPlan>))
+        .manage(Mutex::new(CleanupPlanStore::default()))
         .invoke_handler(tauri::generate_handler![
             get_app_info,
             get_system_inventory,
