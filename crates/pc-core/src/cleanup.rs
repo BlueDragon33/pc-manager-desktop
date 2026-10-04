@@ -87,9 +87,7 @@ impl CleanupPlanStore {
 
     #[must_use]
     pub fn get_by_id(&self, plan_id: &str) -> Option<&CleanupPlan> {
-        self.latest
-            .as_ref()
-            .filter(|plan| plan.plan_id == plan_id)
+        self.latest.as_ref().filter(|plan| plan.plan_id == plan_id)
     }
 
     #[must_use]
