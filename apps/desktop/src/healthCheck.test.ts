@@ -34,7 +34,7 @@ describe("health report persistence", () => {
   });
 
   it("rejects malformed persisted data", () => {
-    window.localStorage.setItem("pc-manager.health.latest.v1", "{\"bad\":true}");
+    globalThis.localStorage.setItem("pc-manager.health.latest.v1", "{\"bad\":true}");
     expect(loadLatestHealthReport()).toBeNull();
   });
 
