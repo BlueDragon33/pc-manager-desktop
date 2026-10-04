@@ -1138,3 +1138,248 @@ h4 {
     grid-template-columns: 1fr;
   }
 }
+
+
+.cleaner-page {
+  padding-bottom: 24px;
+}
+
+.cleaner-hero,
+.cleaner-safety-card,
+.cleaner-total-card,
+.cleaner-locked-action {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+}
+
+.cleaner-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 30px;
+  box-shadow: var(--shadow);
+}
+
+.cleaner-hero > div:first-child {
+  max-width: 780px;
+}
+
+.cleaner-actions {
+  flex: 0 0 auto;
+}
+
+.cleaner-safety-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.8fr);
+  gap: 24px;
+  padding: 20px 22px;
+}
+
+.cleaner-safety-card > div {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.cleaner-safety-card p,
+.cleaner-option small {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.cleaner-option {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-muted);
+}
+
+.cleaner-option input {
+  margin-top: 3px;
+}
+
+.cleaner-option > span {
+  display: grid;
+  gap: 4px;
+}
+
+.cleaner-total-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.7fr) minmax(0, 1.3fr);
+  gap: 22px;
+  align-items: center;
+  padding: 22px 24px;
+}
+
+.cleaner-total-card > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.cleaner-total-bytes {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  letter-spacing: -0.05em;
+}
+
+.cleaner-total-card > div:first-child > span {
+  color: var(--text-muted);
+  font-size: 0.86rem;
+}
+
+.cleaner-total-card dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.cleaner-total-card dl div {
+  min-width: 0;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--surface-muted);
+}
+
+.cleaner-total-card dt {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.cleaner-total-card dd {
+  overflow: hidden;
+  margin: 5px 0 0;
+  font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+}
+
+.cleaner-provider-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cleaner-provider-card {
+  min-height: 230px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.cleaner-provider-card.provider-unavailable {
+  background: var(--surface-muted);
+  opacity: 0.88;
+}
+
+.cleaner-provider-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cleaner-provider-heading > div > span {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.cleaner-provider-heading h4 {
+  margin-top: 5px;
+}
+
+.cleaner-provider-metrics {
+  display: grid;
+  gap: 4px;
+  margin-top: 24px;
+}
+
+.cleaner-provider-metrics strong {
+  font-size: 1.45rem;
+}
+
+.cleaner-provider-metrics span,
+.cleaner-provider-card > small {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.cleaner-provider-card > p {
+  margin: 16px 0 12px;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.cleaner-provider-card ul {
+  margin: 14px 0 0;
+  padding-left: 18px;
+  color: var(--warning);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.cleaner-locked-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 22px;
+}
+
+.cleaner-locked-action > div {
+  display: grid;
+  gap: 5px;
+}
+
+.cleaner-locked-action span {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.cleaner-locked-action button {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-strong);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+@media (max-width: 1100px) {
+  .cleaner-provider-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cleaner-safety-card {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .cleaner-hero,
+  .cleaner-locked-action {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cleaner-total-card,
+  .cleaner-total-card dl,
+  .cleaner-provider-grid {
+    grid-template-columns: 1fr;
+  }
+}
