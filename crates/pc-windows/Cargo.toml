@@ -1,0 +1,8 @@
+[package]
+name = "pc-windows"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Windows-specific system integration for PC Manager Desktop."
+
+[dependencies]
