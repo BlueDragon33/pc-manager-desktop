@@ -6,7 +6,8 @@ mod inventory;
 
 pub use cleanup::{
     summarize_cleanup_plan, CleanupCategory, CleanupError, CleanupPlan, CleanupPlanItem,
-    CleanupProviderSummary, CleanupScanOptions, CleanupScanSummary, CleanupWarning,
+    CleanupPlanStore, CleanupProviderSummary, CleanupScanOptions, CleanupScanSummary,
+    CleanupWarning,
 };
 pub use health::{
     evaluate_health, HealthCategory, HealthCategoryResult, HealthFinding, HealthReport,
