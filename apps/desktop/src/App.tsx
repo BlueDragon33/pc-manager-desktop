@@ -72,8 +72,9 @@ function OverviewPage({
           <p className="eyebrow">PC health</p>
           <h2 id="overview-heading">Awaiting first scan</h2>
           <p className="muted">
-            PC Manager will show real findings here after the system inventory and
-            health engine are implemented. This phase does not invent device data.
+            PC Manager will show real findings here after the system inventory
+            and health engine are implemented. This phase does not invent device
+            data.
           </p>
         </div>
         <button className="primary-action" onClick={() => onNavigate("health")}>
@@ -131,7 +132,10 @@ function OverviewPage({
         </div>
       </section>
 
-      <section className="native-status-card" aria-labelledby="native-status-heading">
+      <section
+        className="native-status-card"
+        aria-labelledby="native-status-heading"
+      >
         <div>
           <p className="eyebrow">Application foundation</p>
           <h3 id="native-status-heading">Native shell status</h3>
@@ -160,7 +164,11 @@ function OverviewPage({
   );
 }
 
-function PlaceholderPage({ page }: { page: Exclude<PageId, "overview" | "settings"> }) {
+function PlaceholderPage({
+  page,
+}: {
+  page: Exclude<PageId, "overview" | "settings">;
+}) {
   const item = getNavItem(page);
 
   return (
@@ -201,8 +209,8 @@ function SettingsPage({
         <p className="eyebrow">Appearance</p>
         <h2>Settings</h2>
         <p className="muted">
-          P1 stores only harmless local interface preferences. No system settings
-          are changed from this screen.
+          P1 stores only harmless local interface preferences. No system
+          settings are changed from this screen.
         </p>
 
         <fieldset className="setting-group">
@@ -275,7 +283,9 @@ export default function App() {
           setBridgeState({
             status: "error",
             message:
-              error instanceof Error ? error.message : "Native bridge unavailable.",
+              error instanceof Error
+                ? error.message
+                : "Native bridge unavailable.",
           });
         }
       });
@@ -291,7 +301,8 @@ export default function App() {
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = (event: MediaQueryListEvent) => setPrefersDark(event.matches);
+    const onChange = (event: MediaQueryListEvent) =>
+      setPrefersDark(event.matches);
 
     mediaQuery.addEventListener("change", onChange);
     return () => mediaQuery.removeEventListener("change", onChange);
@@ -369,7 +380,9 @@ export default function App() {
               onClick={() =>
                 updateTheme(resolvedTheme === "dark" ? "light" : "dark")
               }
-              title={resolvedTheme === "dark" ? "Use light theme" : "Use dark theme"}
+              title={
+                resolvedTheme === "dark" ? "Use light theme" : "Use dark theme"
+              }
               type="button"
             >
               {resolvedTheme === "dark" ? "☀" : "☾"}
