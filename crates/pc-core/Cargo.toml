@@ -1,0 +1,9 @@
+[package]
+name = "pc-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Platform-neutral domain models for PC Manager Desktop."
+
+[dependencies]
+serde.workspace = true

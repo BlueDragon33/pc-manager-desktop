@@ -1,0 +1,24 @@
+{
+  "name": "pc-manager-desktop-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm --workspace @pc-manager/desktop run tauri:dev",
+    "build": "npm --workspace @pc-manager/desktop run tauri:build",
+    "build:frontend": "npm --workspace @pc-manager/desktop run build",
+    "lint": "npm --workspace @pc-manager/desktop run lint",
+    "typecheck": "npm --workspace @pc-manager/desktop run typecheck",
+    "test": "npm --workspace @pc-manager/desktop run test",
+    "format": "prettier --write \"apps/desktop/**/*.{js,json,ts,tsx,css,html}\" package.json",
+    "format:check": "prettier --check \"apps/desktop/**/*.{js,json,ts,tsx,css,html}\" package.json"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

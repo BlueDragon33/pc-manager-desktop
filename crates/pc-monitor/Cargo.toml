@@ -1,0 +1,8 @@
+[package]
+name = "pc-monitor"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Low-overhead resource monitoring abstractions for PC Manager Desktop."
+
+[dependencies]

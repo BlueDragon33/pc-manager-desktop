@@ -16,16 +16,16 @@ Goal: create a reproducible monorepo before feature development.
 
 Tasks:
 
-- [ ] Rust workspace
-- [ ] React + TypeScript + Vite desktop UI
-- [ ] Tauri desktop shell
-- [ ] workspace-level formatting/lint commands
-- [ ] basic unit-test commands
-- [ ] `.editorconfig`
-- [ ] sensible `.gitignore`
-- [ ] GitHub Actions CI for Rust + TypeScript
-- [ ] architecture docs wired into README
-- [ ] initial app metadata: `appId=pc-manager`
+- [x] Rust workspace
+- [x] React + TypeScript + Vite desktop UI
+- [x] Tauri desktop shell
+- [x] workspace-level formatting/lint commands
+- [x] basic unit-test commands
+- [x] `.editorconfig`
+- [x] sensible `.gitignore`
+- [x] GitHub Actions CI for Rust + TypeScript
+- [x] architecture docs wired into README
+- [x] initial app metadata: `appId=pc-manager`
 
 Acceptance:
 

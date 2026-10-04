@@ -1,0 +1,8 @@
+[package]
+name = "pc-manager-windows-service"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Privileged Windows Service boundary for PC Manager Desktop."
+
+[dependencies]

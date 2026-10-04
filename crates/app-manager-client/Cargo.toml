@@ -1,0 +1,8 @@
+[package]
+name = "app-manager-client"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Typed App Manager protocol client for PC Manager Desktop."
+
+[dependencies]
