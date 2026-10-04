@@ -75,6 +75,29 @@ pub struct CleanupPlan {
     pub items: Vec<CleanupPlanItem>,
 }
 
+#[derive(Debug, Default)]
+pub struct CleanupPlanStore {
+    latest: Option<CleanupPlan>,
+}
+
+impl CleanupPlanStore {
+    pub fn replace(&mut self, plan: CleanupPlan) {
+        self.latest = Some(plan);
+    }
+
+    #[must_use]
+    pub fn get_by_id(&self, plan_id: &str) -> Option<&CleanupPlan> {
+        self.latest
+            .as_ref()
+            .filter(|plan| plan.plan_id == plan_id)
+    }
+
+    #[must_use]
+    pub fn latest_id(&self) -> Option<&str> {
+        self.latest.as_ref().map(|plan| plan.plan_id.as_str())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CleanupError {
@@ -117,7 +140,10 @@ pub fn summarize_cleanup_plan(
 
 #[cfg(test)]
 mod tests {
-    use super::{summarize_cleanup_plan, CleanupCategory, CleanupProviderSummary, CleanupWarning};
+    use super::{
+        summarize_cleanup_plan, CleanupCategory, CleanupPlan, CleanupPlanStore,
+        CleanupProviderSummary, CleanupWarning,
+    };
 
     #[test]
     fn scan_summary_aggregates_exact_provider_totals() {
@@ -160,5 +186,19 @@ mod tests {
         assert_eq!(summary.total_bytes, 200);
         assert!(!summary.execution_available);
         assert_eq!(summary.warnings.len(), 1);
+    }
+
+    #[test]
+    fn cleanup_plan_store_only_returns_the_matching_native_plan_id() {
+        let mut store = CleanupPlanStore::default();
+        store.replace(CleanupPlan {
+            plan_id: "cleanup-plan-a".to_string(),
+            collected_at_epoch_ms: 42,
+            items: vec![],
+        });
+
+        assert_eq!(store.latest_id(), Some("cleanup-plan-a"));
+        assert!(store.get_by_id("cleanup-plan-a").is_some());
+        assert!(store.get_by_id("cleanup-plan-b").is_none());
     }
 }
