@@ -3,14 +3,20 @@
 //! P2 contains read-only inventory collection only. It never modifies the
 //! registry, starts uninstallers, changes startup state, or requests elevation.
 
+use pc_core::{InventoryError, SystemInventory};
+#[cfg(target_os = "windows")]
 use pc_core::{
-    CpuSummary, DeviceIdentity, DiskVolume, InstalledApplication, InventoryError, InventoryWarning,
-    MemorySummary, NetworkAdapter, OperatingSystemSummary, ProcessEntry, ProcessSummary,
-    StartupItem, SystemInventory,
+    CpuSummary, DeviceIdentity, DiskVolume, InventoryWarning, MemorySummary, NetworkAdapter,
+    OperatingSystemSummary, ProcessEntry, ProcessSummary, StartupItem,
 };
+#[cfg(any(target_os = "windows", test))]
+use pc_core::InstalledApplication;
+#[cfg(target_os = "windows")]
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
+#[cfg(any(target_os = "windows", test))]
 use std::collections::BTreeMap;
+#[cfg(target_os = "windows")]
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Returns this crate's stable component name.
@@ -184,6 +190,14 @@ $machineGuid = Try-Read 'deviceIdentity' {
     }
 }
 
+#[cfg(target_os = "windows")]
+#[cfg(target_os = "windows")]
+#[cfg(target_os = "windows")]
+#[cfg(target_os = "windows")]
+#[cfg(target_os = "windows")]
+#[cfg(target_os = "windows")]
+#[cfg(target_os = "windows")]
+#[cfg(target_os = "windows")]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RawInventory {
@@ -208,6 +222,7 @@ struct RawInventory {
     warnings: Vec<RawWarning>,
 }
 
+#[cfg(target_os = "windows")]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 struct RawOperatingSystem {
@@ -219,6 +234,7 @@ struct RawOperatingSystem {
     free_physical_memory: Option<u64>,
 }
 
+#[cfg(target_os = "windows")]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 struct RawCpu {
@@ -227,6 +243,7 @@ struct RawCpu {
     number_of_logical_processors: Option<u32>,
 }
 
+#[cfg(target_os = "windows")]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 struct RawVolume {
@@ -237,6 +254,7 @@ struct RawVolume {
     free_space: Option<u64>,
 }
 
+#[cfg(target_os = "windows")]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 struct RawProcess {
@@ -253,6 +271,7 @@ struct RawInstalledApplication {
     publisher: Option<String>,
 }
 
+#[cfg(target_os = "windows")]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 struct RawStartupItem {
@@ -261,6 +280,7 @@ struct RawStartupItem {
     location: Option<String>,
 }
 
+#[cfg(target_os = "windows")]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 struct RawNetworkAdapter {
@@ -270,6 +290,7 @@ struct RawNetworkAdapter {
     speed: Option<u64>,
 }
 
+#[cfg(target_os = "windows")]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RawWarning {
@@ -277,6 +298,7 @@ struct RawWarning {
     message: String,
 }
 
+#[cfg(target_os = "windows")]
 fn map_inventory(raw: RawInventory) -> SystemInventory {
     let mut warnings = raw
         .warnings
@@ -435,6 +457,7 @@ fn map_inventory(raw: RawInventory) -> SystemInventory {
     }
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn deduplicate_apps(apps: Vec<RawInstalledApplication>) -> Vec<InstalledApplication> {
     let mut deduplicated = BTreeMap::new();
 
@@ -461,6 +484,7 @@ fn deduplicate_apps(apps: Vec<RawInstalledApplication>) -> Vec<InstalledApplicat
     deduplicated.into_values().collect()
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn non_empty(value: Option<String>) -> Option<String> {
     value.and_then(|value| {
         let trimmed = value.trim();
@@ -468,6 +492,7 @@ fn non_empty(value: Option<String>) -> Option<String> {
     })
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn sum_optional(values: impl Iterator<Item = Option<u32>>) -> Option<u32> {
     let mut found = false;
     let mut total = 0_u32;
@@ -480,6 +505,7 @@ fn sum_optional(values: impl Iterator<Item = Option<u32>>) -> Option<u32> {
     found.then_some(total)
 }
 
+#[cfg(target_os = "windows")]
 fn now_epoch_ms() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
