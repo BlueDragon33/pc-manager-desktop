@@ -1,11 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 
 export type HealthCategory =
-  | "storage"
-  | "performance"
-  | "security"
-  | "updates"
-  | "privacy";
+  "storage" | "performance" | "security" | "updates" | "privacy";
 
 export type HealthStatus = "good" | "attention" | "critical" | "unavailable";
 export type HealthSeverity = "info" | "warning" | "critical";
