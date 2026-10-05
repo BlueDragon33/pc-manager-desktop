@@ -486,6 +486,27 @@ mod tests {
         assert!(!is_stale(recent, now_ms, STALE_TEMP_AGE));
     }
 
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn windows_cleanup_preview_scans_real_builtin_roots_without_execution() {
+        let (plan, summary) =
+            super::scan_cleanup_candidates(pc_core::CleanupScanOptions::default())
+                .expect("Windows cleanup preview should run");
+
+        assert!(!summary.plan_id.is_empty());
+        assert_eq!(summary.plan_id, plan.plan_id);
+        assert!(!summary.execution_available);
+        assert!(summary
+            .providers
+            .iter()
+            .any(|provider| provider.provider_id == "windows-user-temp"));
+
+        let planned_bytes: u64 = plan.items.iter().map(|item| item.bytes).sum();
+        let planned_files = u64::try_from(plan.items.len()).expect("plan item count fits u64");
+        assert_eq!(summary.total_bytes, planned_bytes);
+        assert_eq!(summary.total_files, planned_files);
+    }
+
     #[test]
     fn provider_scan_aggregates_file_bytes_exactly() {
         let unique = SystemTime::now()
