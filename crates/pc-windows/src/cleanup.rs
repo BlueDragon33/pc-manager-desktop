@@ -15,7 +15,7 @@ use std::fs::{self, OpenOptions};
 use std::io::Write;
 #[cfg(any(target_os = "windows", test))]
 use std::path::{Path, PathBuf};
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", test))]
 use std::sync::atomic::{AtomicU64, Ordering};
 #[cfg(any(target_os = "windows", test))]
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -459,7 +459,7 @@ fn should_skip_metadata(metadata: &fs::Metadata) -> bool {
     metadata.file_type().is_symlink()
 }
 
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", test))]
 fn now_epoch_ms() -> u64 {
     epoch_ms(SystemTime::now()).unwrap_or_default()
 }
@@ -957,7 +957,7 @@ mod tests {
 
         assert!(!summary.plan_id.is_empty());
         assert_eq!(summary.plan_id, plan.plan_id);
-        assert!(!summary.execution_available);
+        assert_eq!(summary.execution_available, summary.total_files > 0);
         assert!(summary
             .providers
             .iter()
@@ -967,6 +967,113 @@ mod tests {
         let planned_files = u64::try_from(plan.items.len()).expect("plan item count fits u64");
         assert_eq!(summary.total_bytes, planned_bytes);
         assert_eq!(summary.total_files, planned_files);
+    }
+
+    #[test]
+    fn cleanup_execution_deletes_only_unchanged_files_inside_allowed_root() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock after epoch")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("pc-manager-execute-test-{unique}"));
+        let audit = root.join("audit");
+        let provider_root = root.join("cache");
+        fs::create_dir_all(&provider_root).expect("create provider root");
+        let candidate = provider_root.join("candidate.tmp");
+        fs::write(&candidate, b"disposable-cache").expect("write disposable candidate");
+        let metadata = fs::metadata(&candidate).expect("candidate metadata");
+        let modified_at_epoch_ms = metadata.modified().ok().and_then(super::epoch_ms);
+
+        let provider = ProviderSpec {
+            id: "test-provider",
+            display_name: "Test provider",
+            category: CleanupCategory::ApplicationCache,
+            roots: vec![provider_root.clone()],
+            enabled_by_default: true,
+            reversible: false,
+            description: "test",
+            stale_age: None,
+        };
+        let plan = pc_core::CleanupPlan {
+            plan_id: "test-execute-plan".to_string(),
+            collected_at_epoch_ms: super::now_epoch_ms(),
+            items: vec![pc_core::CleanupPlanItem {
+                provider_id: "test-provider".to_string(),
+                provider_root: provider_root.to_string_lossy().to_string(),
+                path: candidate.to_string_lossy().to_string(),
+                bytes: metadata.len(),
+                modified_at_epoch_ms,
+                reversible: false,
+            }],
+        };
+
+        let operation =
+            super::execute_plan_with_specs(&plan, &[provider], &audit).expect("execute test plan");
+
+        assert!(!candidate.exists());
+        assert_eq!(operation.requested_files, 1);
+        assert_eq!(operation.deleted_files, 1);
+        assert_eq!(operation.failed_files, 0);
+        assert_eq!(operation.rollback_capability, pc_core::CleanupRollbackCapability::NotRestorable);
+
+        let history = super::load_operations_from_dir(&audit, 20).expect("load audit history");
+        assert_eq!(history.len(), 1);
+        assert_eq!(history[0].operation_id, operation.operation_id);
+
+        fs::remove_dir_all(root).expect("remove execution test root");
+    }
+
+    #[test]
+    fn cleanup_execution_refuses_candidate_outside_provider_root() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock after epoch")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("pc-manager-boundary-test-{unique}"));
+        let audit = root.join("audit");
+        let provider_root = root.join("cache");
+        let outside_root = root.join("documents");
+        fs::create_dir_all(&provider_root).expect("create provider root");
+        fs::create_dir_all(&outside_root).expect("create outside root");
+        let outside_file = outside_root.join("keep.txt");
+        fs::write(&outside_file, b"must-remain").expect("write outside file");
+        let metadata = fs::metadata(&outside_file).expect("outside metadata");
+
+        let provider = ProviderSpec {
+            id: "test-provider",
+            display_name: "Test provider",
+            category: CleanupCategory::ApplicationCache,
+            roots: vec![provider_root.clone()],
+            enabled_by_default: true,
+            reversible: false,
+            description: "test",
+            stale_age: None,
+        };
+        let plan = pc_core::CleanupPlan {
+            plan_id: "test-boundary-plan".to_string(),
+            collected_at_epoch_ms: super::now_epoch_ms(),
+            items: vec![pc_core::CleanupPlanItem {
+                provider_id: "test-provider".to_string(),
+                provider_root: provider_root.to_string_lossy().to_string(),
+                path: outside_file.to_string_lossy().to_string(),
+                bytes: metadata.len(),
+                modified_at_epoch_ms: metadata.modified().ok().and_then(super::epoch_ms),
+                reversible: false,
+            }],
+        };
+
+        let operation =
+            super::execute_plan_with_specs(&plan, &[provider], &audit).expect("execute boundary plan");
+
+        assert!(outside_file.exists());
+        assert_eq!(operation.deleted_files, 0);
+        assert_eq!(operation.failed_files, 1);
+        assert!(operation
+            .issues
+            .iter()
+            .any(|issue| issue.code == "candidate_outside_root"));
+
+        fs::remove_dir_all(root).expect("remove boundary test root");
     }
 
     #[test]
@@ -1008,7 +1115,7 @@ mod tests {
             super::scan_cleanup_candidates(Default::default()).expect("cleanup preview should run");
 
         assert_eq!(plan.plan_id, summary.plan_id);
-        assert!(!summary.execution_available);
+        assert_eq!(summary.execution_available, summary.total_files > 0);
         assert_eq!(
             u64::try_from(plan.items.len()).expect("candidate count fits in u64"),
             summary.total_files
