@@ -29,7 +29,8 @@ export function RestoreCenterPage() {
         <section className="empty-health-state">
           <strong>No cleanup operations recorded yet.</strong>
           <span>
-            Completed Smart Clean executions will appear here with exact results.
+            Completed Smart Clean executions will appear here with exact
+            results.
           </span>
         </section>
       ) : (
@@ -39,7 +40,9 @@ export function RestoreCenterPage() {
               <div className="operation-heading">
                 <div>
                   <span className="finding-category">Smart Clean</span>
-                  <h3>{new Date(operation.completedAtEpochMs).toLocaleString()}</h3>
+                  <h3>
+                    {new Date(operation.completedAtEpochMs).toLocaleString()}
+                  </h3>
                 </div>
                 <span className="status-badge warning">Not restorable</span>
               </div>
