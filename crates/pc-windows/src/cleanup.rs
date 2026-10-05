@@ -2,11 +2,12 @@
 use pc_core::summarize_cleanup_plan;
 #[cfg(any(target_os = "windows", test))]
 use pc_core::{
-    CleanupCategory, CleanupOperationIssue, CleanupOperationRecord, CleanupPlanItem,
-    CleanupProviderExecutionResult, CleanupProviderSummary, CleanupRollbackCapability,
-    CleanupWarning,
+    CleanupCategory, CleanupOperationIssue, CleanupPlanItem, CleanupProviderExecutionResult,
+    CleanupProviderSummary, CleanupRollbackCapability, CleanupWarning,
 };
-use pc_core::{CleanupError, CleanupPlan, CleanupScanOptions, CleanupScanSummary};
+use pc_core::{
+    CleanupError, CleanupOperationRecord, CleanupPlan, CleanupScanOptions, CleanupScanSummary,
+};
 #[cfg(any(target_os = "windows", test))]
 use std::collections::{BTreeMap, BTreeSet};
 #[cfg(any(target_os = "windows", test))]
