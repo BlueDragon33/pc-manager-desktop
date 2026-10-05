@@ -1,9 +1,12 @@
 import { useRef, useState } from "react";
 
+import { saveCleanupOperation } from "./operationHistory";
 import {
+  executeCleanupPlan,
   formatCleanupCategory,
   isCurrentScan,
   scanCleanupCandidates,
+  type CleanupExecutionResult,
   type CleanupProviderSummary,
   type CleanupScanSummary,
 } from "./smartClean";
@@ -14,75 +17,116 @@ type ScanState =
   | { status: "scanning" }
   | { status: "cancelled" }
   | { status: "error"; message: string }
-  | { status: "complete"; summary: CleanupScanSummary };
+  | { status: "complete"; summary: CleanupScanSummary }
+  | { status: "executing"; summary: CleanupScanSummary }
+  | {
+      status: "executed";
+      summary: CleanupScanSummary;
+      result: CleanupExecutionResult;
+    };
 
 function providerStatus(provider: CleanupProviderSummary): string {
-  if (!provider.available) {
-    return "Unavailable";
-  }
-  if (provider.fileCount === 0) {
-    return "Nothing found";
-  }
+  if (!provider.available) return "Unavailable";
+  if (provider.fileCount === 0) return "Nothing found";
   return "Candidates found";
+}
+
+function messageFromError(error: unknown, fallback: string): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
+  }
+  return error instanceof Error ? error.message : fallback;
 }
 
 export function SmartCleanPage() {
   const [state, setState] = useState<ScanState>({ status: "idle" });
   const [includeRecycleBin, setIncludeRecycleBin] = useState(false);
+  const [executionError, setExecutionError] = useState<string | null>(null);
   const generationRef = useRef(0);
 
   const startScan = () => {
     const generation = generationRef.current + 1;
     generationRef.current = generation;
+    setExecutionError(null);
     setState({ status: "scanning" });
 
     scanCleanupCandidates({ includeRecycleBin })
       .then((summary) => {
-        if (!isCurrentScan(generation, generationRef.current)) {
-          return;
-        }
+        if (!isCurrentScan(generation, generationRef.current)) return;
         setState({ status: "complete", summary });
       })
       .catch((error: unknown) => {
-        if (!isCurrentScan(generation, generationRef.current)) {
-          return;
-        }
-
-        const message =
-          typeof error === "object" &&
-          error !== null &&
-          "message" in error &&
-          typeof (error as { message?: unknown }).message === "string"
-            ? (error as { message: string }).message
-            : error instanceof Error
-              ? error.message
-              : "Smart Clean preview could not complete.";
-
-        setState({ status: "error", message });
+        if (!isCurrentScan(generation, generationRef.current)) return;
+        setState({
+          status: "error",
+          message: messageFromError(
+            error,
+            "Smart Clean preview could not complete.",
+          ),
+        });
       });
   };
 
   const cancelScan = () => {
-    if (state.status !== "scanning") {
-      return;
-    }
-
+    if (state.status !== "scanning") return;
     generationRef.current += 1;
     setState({ status: "cancelled" });
   };
 
-  const summary = state.status === "complete" ? state.summary : null;
+  const summary =
+    state.status === "complete" ||
+    state.status === "executing" ||
+    state.status === "executed"
+      ? state.summary
+      : null;
+
+  const executePlan = async () => {
+    if (
+      !summary ||
+      !summary.executionAvailable ||
+      state.status === "executing"
+    ) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Delete the files in this verified cleanup plan?\n\n" +
+        "This action deletes temporary/cache files only, but it is not automatically restorable. " +
+        "Files that changed since the preview will be skipped.",
+    );
+    if (!confirmed) return;
+
+    setExecutionError(null);
+    setState({ status: "executing", summary });
+
+    try {
+      const result = await executeCleanupPlan(summary.planId);
+      saveCleanupOperation(result);
+      setState({ status: "executed", summary, result });
+    } catch (error: unknown) {
+      setExecutionError(
+        messageFromError(error, "The cleanup plan could not be executed."),
+      );
+      setState({ status: "complete", summary });
+    }
+  };
+
+  const result = state.status === "executed" ? state.result : null;
 
   return (
     <div className="page-stack cleaner-page">
       <section className="cleaner-hero">
         <div>
-          <p className="eyebrow">Smart Clean — P4A</p>
-          <h2>Real cleanup preview, deletion still disabled</h2>
+          <p className="eyebrow">Smart Clean — P4B</p>
+          <h2>Preview first, then execute the verified native plan</h2>
           <p className="muted">
-            PC Manager scans only built-in temp and cache locations. The
-            frontend cannot submit arbitrary folders, and P4A contains no delete
-            command.
+            Only candidates created by the native allow-listed scanner can be
+            deleted. Every file is revalidated immediately before removal.
           </p>
         </div>
         <div className="cleaner-actions">
@@ -91,7 +135,11 @@ export function SmartCleanPage() {
               Cancel scan
             </button>
           ) : (
-            <button className="primary-action" onClick={startScan}>
+            <button
+              className="primary-action"
+              disabled={state.status === "executing"}
+              onClick={startScan}
+            >
               {summary ? "Scan again" : "Scan cleanup candidates"}
             </button>
           )}
@@ -100,26 +148,27 @@ export function SmartCleanPage() {
 
       <section className="cleaner-safety-card">
         <div>
-          <span className="status-badge good">Preview only</span>
-          <strong>No files can be deleted in this phase.</strong>
+          <span className="status-badge good">Plan-gated execution</span>
+          <strong>The UI cannot submit arbitrary paths for deletion.</strong>
           <p>
-            The native engine creates a cleanup plan and stores it inside the
-            desktop process. The UI receives only aggregate totals and a plan
-            ID.
+            P4B executes only the native plan ID produced by the latest scan.
+            Changed, missing, reparse, or escaped files are skipped and recorded
+            as failures instead of being forced.
           </p>
         </div>
         <label className="cleaner-option">
           <input
             checked={includeRecycleBin}
-            disabled={state.status === "scanning"}
+            disabled={
+              state.status === "scanning" || state.status === "executing"
+            }
             onChange={(event) => setIncludeRecycleBin(event.target.checked)}
             type="checkbox"
           />
           <span>
             <strong>Include Recycle Bin check</strong>
             <small>
-              Opt-in only. P4A currently reports this provider as unavailable
-              until its native size/count implementation is verified.
+              Still unavailable until a verified native provider is implemented.
             </small>
           </span>
         </label>
@@ -130,10 +179,19 @@ export function SmartCleanPage() {
           <span className="scan-spinner" aria-hidden="true" />
           <div>
             <strong>Scanning explicit temp and cache roots…</strong>
+            <span>No files are changed during the preview scan.</span>
+          </div>
+        </section>
+      )}
+
+      {state.status === "executing" && (
+        <section className="scan-progress" aria-live="polite">
+          <span className="scan-spinner" aria-hidden="true" />
+          <div>
+            <strong>Revalidating and cleaning the native plan…</strong>
             <span>
-              Junctions, symlinks, and Windows reparse points are skipped. The
-              scanner never enters Documents, Desktop, Downloads, or arbitrary
-              user-selected folders.
+              Each candidate must still match its original provider root, type,
+              size, and modification state before deletion.
             </span>
           </div>
         </section>
@@ -142,10 +200,7 @@ export function SmartCleanPage() {
       {state.status === "cancelled" && (
         <section className="info-callout" aria-live="polite">
           <strong>Preview scan cancelled</strong>
-          <span>
-            Any late native result is discarded. Nothing was modified or
-            deleted.
-          </span>
+          <span>Nothing was modified or deleted.</span>
         </section>
       )}
 
@@ -159,11 +214,36 @@ export function SmartCleanPage() {
         </section>
       )}
 
+      {executionError && (
+        <section className="info-callout health-error" aria-live="polite">
+          <strong>Cleanup execution failed</strong>
+          <span>{executionError}</span>
+        </section>
+      )}
+
+      {result && (
+        <section className="cleanup-result-card">
+          <div>
+            <p className="eyebrow">Execution result</p>
+            <h3>{formatBytes(result.deletedBytes)} removed</h3>
+            <p className="muted">
+              {result.deletedFiles.toLocaleString()} of{" "}
+              {result.requestedFiles.toLocaleString()} planned files were
+              deleted.
+              {result.failedItems > 0
+                ? ` ${result.failedItems.toLocaleString()} item(s) were safely skipped or failed.`
+                : " All planned candidates passed revalidation."}
+            </p>
+          </div>
+          <span className="status-badge warning">Not restorable</span>
+        </section>
+      )}
+
       {summary ? (
         <>
           <section className="cleaner-total-card">
             <div>
-              <p className="eyebrow">Preview total</p>
+              <p className="eyebrow">Plan total</p>
               <strong className="cleaner-total-bytes">
                 {formatBytes(summary.totalBytes)}
               </strong>
@@ -181,7 +261,7 @@ export function SmartCleanPage() {
               <div>
                 <dt>Execution</dt>
                 <dd>
-                  {summary.executionAvailable ? "Available" : "Disabled in P4A"}
+                  {summary.executionAvailable ? "Available" : "Unavailable"}
                 </dd>
               </div>
             </dl>
@@ -192,7 +272,7 @@ export function SmartCleanPage() {
               <div>
                 <p className="eyebrow">Providers</p>
                 <h3 id="cleaner-provider-heading">
-                  Exactly where the preview came from
+                  Exactly where the plan came from
                 </h3>
               </div>
             </div>
@@ -223,46 +303,39 @@ export function SmartCleanPage() {
                   <small>
                     {provider.reversible
                       ? "Rollback supported"
-                      : "Deletion would not be automatically restorable"}
+                      : "Deletion is not automatically restorable"}
                   </small>
-                  {provider.warnings.length > 0 && (
-                    <ul>
-                      {provider.warnings.map((warning) => (
-                        <li key={warning}>{warning}</li>
-                      ))}
-                    </ul>
-                  )}
                 </article>
               ))}
             </div>
           </section>
 
-          {summary.warnings.length > 0 && (
-            <section className="inventory-warning-list">
-              <p className="eyebrow">Scan warnings</p>
-              <h3>Some provider items could not be inspected</h3>
-              <ul>
-                {summary.warnings.map((warning, index) => (
-                  <li key={`${warning.providerId}-${index}`}>
-                    <strong>{warning.providerId}</strong>
-                    <span>{warning.message}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
           <section className="cleaner-locked-action">
             <div>
-              <strong>Clean action intentionally locked</strong>
+              <strong>
+                {result ? "Cleanup completed" : "Ready for verified execution"}
+              </strong>
               <span>
-                First verify these preview totals on a real Windows machine. P4B
-                will then add plan revalidation, explicit confirmation,
-                execution results, and operation history.
+                {result
+                  ? result.rollbackSummary
+                  : "A confirmation dialog is required. Files that no longer match the preview are skipped."}
               </span>
             </div>
-            <button disabled type="button">
-              Clean selected items
+            <button
+              className="danger-action"
+              disabled={
+                !summary.executionAvailable ||
+                state.status === "executing" ||
+                Boolean(result)
+              }
+              onClick={executePlan}
+              type="button"
+            >
+              {state.status === "executing"
+                ? "Cleaning…"
+                : result
+                  ? "Plan executed"
+                  : "Clean planned items"}
             </button>
           </section>
         </>
@@ -270,10 +343,7 @@ export function SmartCleanPage() {
         state.status !== "scanning" && (
           <section className="empty-health-state">
             <strong>No Smart Clean preview yet.</strong>
-            <span>
-              Start a scan to measure real stale temp files and explicit browser
-              or application caches. This phase cannot delete anything.
-            </span>
+            <span>Run a scan before any cleanup can be executed.</span>
           </section>
         )
       )}

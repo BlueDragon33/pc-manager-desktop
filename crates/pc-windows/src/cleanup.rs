@@ -1,8 +1,12 @@
 #[cfg(target_os = "windows")]
 use pc_core::summarize_cleanup_plan;
+#[cfg(target_os = "windows")]
+use pc_core::CleanupProviderExecution;
 #[cfg(any(target_os = "windows", test))]
 use pc_core::{CleanupCategory, CleanupPlanItem, CleanupProviderSummary, CleanupWarning};
-use pc_core::{CleanupError, CleanupPlan, CleanupScanOptions, CleanupScanSummary};
+use pc_core::{
+    CleanupError, CleanupExecutionResult, CleanupPlan, CleanupScanOptions, CleanupScanSummary,
+};
 #[cfg(any(target_os = "windows", test))]
 use std::collections::BTreeSet;
 #[cfg(any(target_os = "windows", test))]
@@ -456,6 +460,124 @@ fn now_epoch_ms() -> u64 {
     epoch_ms(SystemTime::now()).unwrap_or_default()
 }
 
+#[cfg(target_os = "windows")]
+pub fn execute_cleanup_plan(plan: &CleanupPlan) -> Result<CleanupExecutionResult, CleanupError> {
+    use std::collections::BTreeMap;
+
+    let started_at_epoch_ms = now_epoch_ms();
+    let requested_files = u64::try_from(plan.items.len()).unwrap_or(u64::MAX);
+    let requested_bytes = plan.items.iter().map(|item| item.bytes).sum();
+
+    let mut deleted_files = 0_u64;
+    let mut deleted_bytes = 0_u64;
+    let mut failed_items = 0_u64;
+    let mut errors = Vec::new();
+    let mut provider_totals: BTreeMap<String, CleanupProviderExecution> = BTreeMap::new();
+
+    for item in &plan.items {
+        let provider = provider_totals
+            .entry(item.provider_id.clone())
+            .or_insert_with(|| CleanupProviderExecution {
+                provider_id: item.provider_id.clone(),
+                requested_files: 0,
+                requested_bytes: 0,
+                deleted_files: 0,
+                deleted_bytes: 0,
+                failed_items: 0,
+            });
+
+        provider.requested_files = provider.requested_files.saturating_add(1);
+        provider.requested_bytes = provider.requested_bytes.saturating_add(item.bytes);
+
+        match revalidate_and_delete(item, started_at_epoch_ms) {
+            Ok(bytes) => {
+                deleted_files = deleted_files.saturating_add(1);
+                deleted_bytes = deleted_bytes.saturating_add(bytes);
+                provider.deleted_files = provider.deleted_files.saturating_add(1);
+                provider.deleted_bytes = provider.deleted_bytes.saturating_add(bytes);
+            }
+            Err(message) => {
+                failed_items = failed_items.saturating_add(1);
+                provider.failed_items = provider.failed_items.saturating_add(1);
+                if errors.len() < 50 {
+                    errors.push(format!("{}: {}", item.provider_id, message));
+                }
+            }
+        }
+    }
+
+    let completed_at_epoch_ms = now_epoch_ms();
+    Ok(CleanupExecutionResult {
+        operation_id: format!("cleanup-op-{}-{}", started_at_epoch_ms, std::process::id()),
+        plan_id: plan.plan_id.clone(),
+        started_at_epoch_ms,
+        completed_at_epoch_ms,
+        requested_files,
+        requested_bytes,
+        deleted_files,
+        deleted_bytes,
+        failed_items,
+        providers: provider_totals.into_values().collect(),
+        rollback_available: false,
+        rollback_summary:
+            "Cache and temporary-file deletion is not automatically restorable in P4B.".to_string(),
+        errors,
+    })
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn execute_cleanup_plan(_plan: &CleanupPlan) -> Result<CleanupExecutionResult, CleanupError> {
+    Err(CleanupError::new(
+        "unsupported_platform",
+        "Smart Clean execution is currently implemented for Windows only.",
+        false,
+    ))
+}
+
+#[cfg(target_os = "windows")]
+fn revalidate_and_delete(item: &CleanupPlanItem, now_epoch_ms: u64) -> Result<u64, String> {
+    let path = PathBuf::from(&item.path);
+    let root = PathBuf::from(&item.provider_root);
+
+    let metadata = fs::symlink_metadata(&path)
+        .map_err(|error| format!("candidate no longer exists or is unreadable: {error}"))?;
+
+    if should_skip_metadata(&metadata) || !metadata.is_file() {
+        return Err("candidate is no longer a regular non-reparse file".to_string());
+    }
+
+    let canonical_root = fs::canonicalize(&root)
+        .map_err(|error| format!("provider root is unavailable: {error}"))?;
+    let canonical_path = fs::canonicalize(&path)
+        .map_err(|error| format!("candidate could not be canonicalized: {error}"))?;
+
+    if !canonical_path.starts_with(&canonical_root) {
+        return Err("candidate escaped its original provider root".to_string());
+    }
+
+    if metadata.len() != item.bytes {
+        return Err("candidate changed size after the preview scan".to_string());
+    }
+
+    let modified_at_epoch_ms = metadata.modified().ok().and_then(epoch_ms);
+    if modified_at_epoch_ms != item.modified_at_epoch_ms {
+        return Err("candidate changed after the preview scan".to_string());
+    }
+
+    if item.provider_id == "windows-user-temp" {
+        let modified = metadata
+            .modified()
+            .map_err(|error| format!("candidate modified time is unavailable: {error}"))?;
+        if !is_stale(modified, now_epoch_ms, STALE_TEMP_AGE) {
+            return Err("temporary file is no longer old enough for cleanup".to_string());
+        }
+    }
+
+    fs::remove_file(&canonical_path).map_err(|error| format!("delete failed: {error}"))?;
+
+    Ok(metadata.len())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -494,7 +616,7 @@ mod tests {
 
         assert!(!summary.plan_id.is_empty());
         assert_eq!(summary.plan_id, plan.plan_id);
-        assert!(!summary.execution_available);
+        assert!(summary.execution_available);
         assert!(summary
             .providers
             .iter()
@@ -540,12 +662,47 @@ mod tests {
 
     #[cfg(target_os = "windows")]
     #[test]
-    fn windows_cleanup_preview_returns_a_read_only_native_plan() {
+    fn windows_cleanup_execution_removes_only_disposable_planned_file() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock after epoch")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("pc-manager-exec-test-{unique}"));
+        fs::create_dir_all(&root).expect("create execution test root");
+        let path = root.join("disposable.cache");
+        fs::write(&path, b"safe-test-data").expect("write disposable file");
+
+        let metadata = fs::metadata(&path).expect("read disposable metadata");
+        let modified_at_epoch_ms = metadata.modified().ok().and_then(super::epoch_ms);
+        let plan = pc_core::CleanupPlan {
+            plan_id: "test-execution-plan".to_string(),
+            collected_at_epoch_ms: u64::MAX,
+            items: vec![pc_core::CleanupPlanItem {
+                provider_id: "test-provider".to_string(),
+                provider_root: root.to_string_lossy().to_string(),
+                path: path.to_string_lossy().to_string(),
+                bytes: metadata.len(),
+                modified_at_epoch_ms,
+                reversible: false,
+            }],
+        };
+
+        let result = super::execute_cleanup_plan(&plan).expect("execute disposable cleanup plan");
+
+        assert_eq!(result.deleted_files, 1);
+        assert_eq!(result.failed_items, 0);
+        assert!(!path.exists());
+        fs::remove_dir_all(root).expect("remove execution test root");
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn windows_cleanup_preview_returns_an_executable_native_plan() {
         let (plan, summary) =
             super::scan_cleanup_candidates(Default::default()).expect("cleanup preview should run");
 
         assert_eq!(plan.plan_id, summary.plan_id);
-        assert!(!summary.execution_available);
+        assert!(summary.execution_available);
         assert_eq!(
             u64::try_from(plan.items.len()).expect("candidate count fits in u64"),
             summary.total_files

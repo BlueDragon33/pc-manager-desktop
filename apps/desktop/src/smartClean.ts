@@ -35,10 +35,41 @@ export interface CleanupScanOptions {
   includeRecycleBin: boolean;
 }
 
+export interface CleanupProviderExecution {
+  providerId: string;
+  requestedFiles: number;
+  requestedBytes: number;
+  deletedFiles: number;
+  deletedBytes: number;
+  failedItems: number;
+}
+
+export interface CleanupExecutionResult {
+  operationId: string;
+  planId: string;
+  startedAtEpochMs: number;
+  completedAtEpochMs: number;
+  requestedFiles: number;
+  requestedBytes: number;
+  deletedFiles: number;
+  deletedBytes: number;
+  failedItems: number;
+  providers: CleanupProviderExecution[];
+  rollbackAvailable: boolean;
+  rollbackSummary: string;
+  errors: string[];
+}
+
 export async function scanCleanupCandidates(
   options: CleanupScanOptions,
 ): Promise<CleanupScanSummary> {
   return invoke<CleanupScanSummary>("scan_cleanup_candidates", { options });
+}
+
+export async function executeCleanupPlan(
+  planId: string,
+): Promise<CleanupExecutionResult> {
+  return invoke<CleanupExecutionResult>("execute_cleanup_plan", { planId });
 }
 
 export function formatCleanupCategory(category: CleanupCategory): string {
