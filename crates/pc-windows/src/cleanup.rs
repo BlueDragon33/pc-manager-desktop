@@ -661,6 +661,41 @@ mod tests {
 
     #[cfg(target_os = "windows")]
     #[test]
+    fn windows_cleanup_execution_removes_only_disposable_planned_file() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock after epoch")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("pc-manager-exec-test-{unique}"));
+        fs::create_dir_all(&root).expect("create execution test root");
+        let path = root.join("disposable.cache");
+        fs::write(&path, b"safe-test-data").expect("write disposable file");
+
+        let metadata = fs::metadata(&path).expect("read disposable metadata");
+        let modified_at_epoch_ms = metadata.modified().ok().and_then(super::epoch_ms);
+        let plan = pc_core::CleanupPlan {
+            plan_id: "test-execution-plan".to_string(),
+            collected_at_epoch_ms: u64::MAX,
+            items: vec![pc_core::CleanupPlanItem {
+                provider_id: "test-provider".to_string(),
+                provider_root: root.to_string_lossy().to_string(),
+                path: path.to_string_lossy().to_string(),
+                bytes: metadata.len(),
+                modified_at_epoch_ms,
+                reversible: false,
+            }],
+        };
+
+        let result = super::execute_cleanup_plan(&plan).expect("execute disposable cleanup plan");
+
+        assert_eq!(result.deleted_files, 1);
+        assert_eq!(result.failed_items, 0);
+        assert!(!path.exists());
+        fs::remove_dir_all(root).expect("remove execution test root");
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
     fn windows_cleanup_preview_returns_a_read_only_native_plan() {
         let (plan, summary) =
             super::scan_cleanup_candidates(Default::default()).expect("cleanup preview should run");
