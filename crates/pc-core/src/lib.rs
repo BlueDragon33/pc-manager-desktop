@@ -5,9 +5,9 @@ mod health;
 mod inventory;
 
 pub use cleanup::{
-    summarize_cleanup_plan, CleanupCategory, CleanupError, CleanupPlan, CleanupPlanItem,
-    CleanupPlanStore, CleanupProviderSummary, CleanupScanOptions, CleanupScanSummary,
-    CleanupWarning,
+    summarize_cleanup_plan, CleanupCategory, CleanupError, CleanupExecutionResult, CleanupPlan,
+    CleanupPlanItem, CleanupPlanStore, CleanupProviderExecution, CleanupProviderSummary,
+    CleanupScanOptions, CleanupScanSummary, CleanupWarning,
 };
 pub use health::{
     evaluate_health, HealthCategory, HealthCategoryResult, HealthFinding, HealthReport,
@@ -39,7 +39,7 @@ impl AppInfo {
             app_id: "pc-manager",
             platform: "windows",
             device_type: "desktop-native",
-            phase: "P4A",
+            phase: "P4B",
         }
     }
 }
@@ -55,6 +55,6 @@ mod tests {
         assert_eq!(info.app_id, "pc-manager");
         assert_eq!(info.platform, "windows");
         assert_eq!(info.device_type, "desktop-native");
-        assert_eq!(info.phase, "P4A");
+        assert_eq!(info.phase, "P4B");
     }
 }
