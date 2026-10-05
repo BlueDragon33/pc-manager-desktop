@@ -82,10 +82,64 @@ impl CleanupPlanStore {
         self.latest.as_ref().filter(|plan| plan.plan_id == plan_id)
     }
 
+    pub fn take_by_id(&mut self, plan_id: &str) -> Option<CleanupPlan> {
+        if self
+            .latest
+            .as_ref()
+            .is_some_and(|plan| plan.plan_id == plan_id)
+        {
+            self.latest.take()
+        } else {
+            None
+        }
+    }
+
     #[must_use]
     pub fn latest_id(&self) -> Option<&str> {
         self.latest.as_ref().map(|plan| plan.plan_id.as_str())
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum CleanupRollbackCapability {
+    NotRestorable,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CleanupProviderExecutionResult {
+    pub provider_id: String,
+    pub requested_files: u64,
+    pub requested_bytes: u64,
+    pub deleted_files: u64,
+    pub deleted_bytes: u64,
+    pub failed_files: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CleanupOperationIssue {
+    pub code: String,
+    pub message: String,
+    pub count: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CleanupOperationRecord {
+    pub operation_id: String,
+    pub plan_id: String,
+    pub started_at_epoch_ms: u64,
+    pub completed_at_epoch_ms: u64,
+    pub requested_files: u64,
+    pub requested_bytes: u64,
+    pub deleted_files: u64,
+    pub deleted_bytes: u64,
+    pub failed_files: u64,
+    pub provider_results: Vec<CleanupProviderExecutionResult>,
+    pub rollback_capability: CleanupRollbackCapability,
+    pub issues: Vec<CleanupOperationIssue>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -124,7 +178,7 @@ pub fn summarize_cleanup_plan(
         total_files,
         providers,
         warnings,
-        execution_available: false,
+        execution_available: total_files > 0,
     }
 }
 
@@ -136,7 +190,7 @@ mod tests {
     };
 
     #[test]
-    fn scan_summary_aggregates_exact_provider_totals() {
+    fn scan_summary_aggregates_exact_provider_totals_and_enables_execution() {
         let summary = summarize_cleanup_plan(
             "cleanup-1".to_string(),
             100,
@@ -174,12 +228,20 @@ mod tests {
 
         assert_eq!(summary.total_files, 5);
         assert_eq!(summary.total_bytes, 200);
-        assert!(!summary.execution_available);
+        assert!(summary.execution_available);
         assert_eq!(summary.warnings.len(), 1);
     }
 
     #[test]
-    fn cleanup_plan_store_only_returns_the_matching_native_plan_id() {
+    fn empty_plan_keeps_execution_disabled() {
+        let summary = summarize_cleanup_plan("cleanup-empty".to_string(), 100, vec![], vec![]);
+
+        assert_eq!(summary.total_files, 0);
+        assert!(!summary.execution_available);
+    }
+
+    #[test]
+    fn cleanup_plan_store_only_returns_and_consumes_the_matching_native_plan_id() {
         let mut store = CleanupPlanStore::default();
         store.replace(CleanupPlan {
             plan_id: "cleanup-plan-a".to_string(),
@@ -189,6 +251,11 @@ mod tests {
 
         assert_eq!(store.latest_id(), Some("cleanup-plan-a"));
         assert!(store.get_by_id("cleanup-plan-a").is_some());
-        assert!(store.get_by_id("cleanup-plan-b").is_none());
+        assert!(store.take_by_id("cleanup-plan-b").is_none());
+        assert!(store.get_by_id("cleanup-plan-a").is_some());
+
+        let taken = store.take_by_id("cleanup-plan-a").expect("matching plan");
+        assert_eq!(taken.plan_id, "cleanup-plan-a");
+        assert!(store.latest_id().is_none());
     }
 }

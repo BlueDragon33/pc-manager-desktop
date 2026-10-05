@@ -1,9 +1,12 @@
 import { useRef, useState } from "react";
 
 import {
+  cleanupResultSummary,
+  executeCleanupPlan,
   formatCleanupCategory,
   isCurrentScan,
   scanCleanupCandidates,
+  type CleanupOperationRecord,
   type CleanupProviderSummary,
   type CleanupScanSummary,
 } from "./smartClean";
@@ -16,6 +19,13 @@ type ScanState =
   | { status: "error"; message: string }
   | { status: "complete"; summary: CleanupScanSummary };
 
+type ExecutionState =
+  | { status: "idle" }
+  | { status: "confirming" }
+  | { status: "executing" }
+  | { status: "error"; message: string }
+  | { status: "complete"; operation: CleanupOperationRecord };
+
 function providerStatus(provider: CleanupProviderSummary): string {
   if (!provider.available) {
     return "Unavailable";
@@ -26,14 +36,35 @@ function providerStatus(provider: CleanupProviderSummary): string {
   return "Candidates found";
 }
 
-export function SmartCleanPage() {
+function errorMessage(error: unknown, fallback: string): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
+  }
+
+  return error instanceof Error ? error.message : fallback;
+}
+
+export function SmartCleanPage({
+  onOpenRestore,
+}: {
+  onOpenRestore?: () => void;
+}) {
   const [state, setState] = useState<ScanState>({ status: "idle" });
+  const [execution, setExecution] = useState<ExecutionState>({
+    status: "idle",
+  });
   const [includeRecycleBin, setIncludeRecycleBin] = useState(false);
   const generationRef = useRef(0);
 
   const startScan = () => {
     const generation = generationRef.current + 1;
     generationRef.current = generation;
+    setExecution({ status: "idle" });
     setState({ status: "scanning" });
 
     scanCleanupCandidates({ includeRecycleBin })
@@ -48,17 +79,13 @@ export function SmartCleanPage() {
           return;
         }
 
-        const message =
-          typeof error === "object" &&
-          error !== null &&
-          "message" in error &&
-          typeof (error as { message?: unknown }).message === "string"
-            ? (error as { message: string }).message
-            : error instanceof Error
-              ? error.message
-              : "Smart Clean preview could not complete.";
-
-        setState({ status: "error", message });
+        setState({
+          status: "error",
+          message: errorMessage(
+            error,
+            "Smart Clean preview could not complete.",
+          ),
+        });
       });
   };
 
@@ -73,16 +100,44 @@ export function SmartCleanPage() {
 
   const summary = state.status === "complete" ? state.summary : null;
 
+  const confirmExecution = () => {
+    if (!summary || !summary.executionAvailable || summary.totalFiles === 0) {
+      return;
+    }
+    setExecution({ status: "confirming" });
+  };
+
+  const executePlan = () => {
+    if (!summary || execution.status !== "confirming") {
+      return;
+    }
+
+    setExecution({ status: "executing" });
+    executeCleanupPlan(summary.planId)
+      .then((operation) => {
+        setExecution({ status: "complete", operation });
+      })
+      .catch((error: unknown) => {
+        setExecution({
+          status: "error",
+          message: errorMessage(
+            error,
+            "The cleanup plan could not be executed safely.",
+          ),
+        });
+      });
+  };
+
   return (
     <div className="page-stack cleaner-page">
       <section className="cleaner-hero">
         <div>
-          <p className="eyebrow">Smart Clean — P4A</p>
-          <h2>Real cleanup preview, deletion still disabled</h2>
+          <p className="eyebrow">Smart Clean — P4B</p>
+          <h2>Preview first, then execute the exact native plan</h2>
           <p className="muted">
-            PC Manager scans only built-in temp and cache locations. The
-            frontend cannot submit arbitrary folders, and P4A contains no delete
-            command.
+            PC Manager scans only built-in temp and cache locations. Before
+            deletion, every planned file is re-resolved and checked again
+            against its original allow-listed provider root.
           </p>
         </div>
         <div className="cleaner-actions">
@@ -91,7 +146,11 @@ export function SmartCleanPage() {
               Cancel scan
             </button>
           ) : (
-            <button className="primary-action" onClick={startScan}>
+            <button
+              className="primary-action"
+              disabled={execution.status === "executing"}
+              onClick={startScan}
+            >
               {summary ? "Scan again" : "Scan cleanup candidates"}
             </button>
           )}
@@ -100,12 +159,12 @@ export function SmartCleanPage() {
 
       <section className="cleaner-safety-card">
         <div>
-          <span className="status-badge good">Preview only</span>
-          <strong>No files can be deleted in this phase.</strong>
+          <span className="status-badge good">Plan-only execution</span>
+          <strong>The UI cannot submit arbitrary paths for deletion.</strong>
           <p>
-            The native engine creates a cleanup plan and stores it inside the
-            desktop process. The UI receives only aggregate totals and a plan
-            ID.
+            Execution accepts only the native plan ID. Changed files, paths
+            outside their provider root, reparse points, and stale plans are
+            rejected item by item and recorded in the operation audit.
           </p>
         </div>
         <label className="cleaner-option">
@@ -118,8 +177,8 @@ export function SmartCleanPage() {
           <span>
             <strong>Include Recycle Bin check</strong>
             <small>
-              Opt-in only. P4A currently reports this provider as unavailable
-              until its native size/count implementation is verified.
+              Still opt-in and unavailable in P4B until its native provider has
+              been separately verified. Smart Clean will not empty it.
             </small>
           </span>
         </label>
@@ -181,7 +240,9 @@ export function SmartCleanPage() {
               <div>
                 <dt>Execution</dt>
                 <dd>
-                  {summary.executionAvailable ? "Available" : "Disabled in P4A"}
+                  {summary.executionAvailable
+                    ? "Available after confirmation"
+                    : "Nothing to clean"}
                 </dd>
               </div>
             </dl>
@@ -223,7 +284,7 @@ export function SmartCleanPage() {
                   <small>
                     {provider.reversible
                       ? "Rollback supported"
-                      : "Deletion would not be automatically restorable"}
+                      : "Deletion is not automatically restorable"}
                   </small>
                   {provider.warnings.length > 0 && (
                     <ul>
@@ -252,19 +313,77 @@ export function SmartCleanPage() {
             </section>
           )}
 
-          <section className="cleaner-locked-action">
-            <div>
-              <strong>Clean action intentionally locked</strong>
+          {execution.status === "complete" ? (
+            <section className="cleanup-result-card" aria-live="polite">
+              <div>
+                <p className="eyebrow">Cleanup completed</p>
+                <h3>{cleanupResultSummary(execution.operation)}</h3>
+                <p className="muted">
+                  {formatBytes(execution.operation.deletedBytes)} was removed.
+                  This cache/temp cleanup is marked Not restorable in Restore
+                  Center.
+                </p>
+              </div>
+              <dl>
+                <div>
+                  <dt>Deleted</dt>
+                  <dd>
+                    {execution.operation.deletedFiles.toLocaleString()} files
+                  </dd>
+                </div>
+                <div>
+                  <dt>Failed / skipped</dt>
+                  <dd>
+                    {execution.operation.failedFiles.toLocaleString()} files
+                  </dd>
+                </div>
+                <div>
+                  <dt>Operation ID</dt>
+                  <dd>{execution.operation.operationId}</dd>
+                </div>
+              </dl>
+              {onOpenRestore && (
+                <button className="secondary-action" onClick={onOpenRestore}>
+                  Open Restore Center
+                </button>
+              )}
+            </section>
+          ) : (
+            <section className="cleaner-locked-action cleaner-execution-action">
+              <div>
+                <strong>Ready to execute this exact preview plan</strong>
+                <span>
+                  Cache and temporary-file deletion is usually not reversible.
+                  Files changed since the scan will be skipped rather than
+                  deleted.
+                </span>
+              </div>
+              <button
+                className="danger-action"
+                disabled={
+                  !summary.executionAvailable ||
+                  execution.status === "executing"
+                }
+                onClick={confirmExecution}
+                type="button"
+              >
+                {execution.status === "executing"
+                  ? "Cleaning…"
+                  : "Clean previewed files"}
+              </button>
+            </section>
+          )}
+
+          {execution.status === "error" && (
+            <section className="info-callout health-error" aria-live="polite">
+              <strong>Cleanup did not complete normally</strong>
+              <span>{execution.message}</span>
               <span>
-                First verify these preview totals on a real Windows machine. P4B
-                will then add plan revalidation, explicit confirmation,
-                execution results, and operation history.
+                The native plan is single-use. Run a fresh preview before trying
+                again so no stale paths can be replayed.
               </span>
-            </div>
-            <button disabled type="button">
-              Clean selected items
-            </button>
-          </section>
+            </section>
+          )}
         </>
       ) : (
         state.status !== "scanning" && (
@@ -272,10 +391,48 @@ export function SmartCleanPage() {
             <strong>No Smart Clean preview yet.</strong>
             <span>
               Start a scan to measure real stale temp files and explicit browser
-              or application caches. This phase cannot delete anything.
+              or application caches before deciding whether to delete anything.
             </span>
           </section>
         )
+      )}
+
+      {execution.status === "confirming" && summary && (
+        <div className="confirmation-backdrop" role="presentation">
+          <section
+            aria-labelledby="cleanup-confirm-title"
+            aria-modal="true"
+            className="confirmation-dialog"
+            role="dialog"
+          >
+            <p className="eyebrow">Irreversible cleanup</p>
+            <h3 id="cleanup-confirm-title">
+              Delete the previewed temp/cache files?
+            </h3>
+            <p>
+              PC Manager will revalidate all{" "}
+              {summary.totalFiles.toLocaleString()} planned files immediately
+              before deletion. Up to {formatBytes(summary.totalBytes)} may be
+              removed. Ordinary cache deletion cannot be restored by PC Manager.
+            </p>
+            <div className="confirmation-actions">
+              <button
+                className="secondary-action"
+                onClick={() => setExecution({ status: "idle" })}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                className="danger-action"
+                onClick={executePlan}
+                type="button"
+              >
+                Delete previewed temp/cache files
+              </button>
+            </div>
+          </section>
+        </div>
       )}
     </div>
   );
