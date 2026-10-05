@@ -86,7 +86,11 @@ export function SmartCleanPage() {
       : null;
 
   const executePlan = async () => {
-    if (!summary || !summary.executionAvailable || state.status === "executing") {
+    if (
+      !summary ||
+      !summary.executionAvailable ||
+      state.status === "executing"
+    ) {
       return;
     }
 
@@ -155,7 +159,9 @@ export function SmartCleanPage() {
         <label className="cleaner-option">
           <input
             checked={includeRecycleBin}
-            disabled={state.status === "scanning" || state.status === "executing"}
+            disabled={
+              state.status === "scanning" || state.status === "executing"
+            }
             onChange={(event) => setIncludeRecycleBin(event.target.checked)}
             type="checkbox"
           />
@@ -222,7 +228,8 @@ export function SmartCleanPage() {
             <h3>{formatBytes(result.deletedBytes)} removed</h3>
             <p className="muted">
               {result.deletedFiles.toLocaleString()} of{" "}
-              {result.requestedFiles.toLocaleString()} planned files were deleted.
+              {result.requestedFiles.toLocaleString()} planned files were
+              deleted.
               {result.failedItems > 0
                 ? ` ${result.failedItems.toLocaleString()} item(s) were safely skipped or failed.`
                 : " All planned candidates passed revalidation."}
@@ -253,7 +260,9 @@ export function SmartCleanPage() {
               </div>
               <div>
                 <dt>Execution</dt>
-                <dd>{summary.executionAvailable ? "Available" : "Unavailable"}</dd>
+                <dd>
+                  {summary.executionAvailable ? "Available" : "Unavailable"}
+                </dd>
               </div>
             </dl>
           </section>
