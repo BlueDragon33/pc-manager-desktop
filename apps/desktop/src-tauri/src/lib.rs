@@ -39,7 +39,6 @@ fn scan_cleanup_candidates(
     Ok(summary)
 }
 
-
 #[tauri::command]
 fn execute_cleanup_plan(
     plan_id: String,
