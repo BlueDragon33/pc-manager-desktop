@@ -90,6 +90,35 @@ impl CleanupPlanStore {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct CleanupProviderExecution {
+    pub provider_id: String,
+    pub requested_files: u64,
+    pub requested_bytes: u64,
+    pub deleted_files: u64,
+    pub deleted_bytes: u64,
+    pub failed_items: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CleanupExecutionResult {
+    pub operation_id: String,
+    pub plan_id: String,
+    pub started_at_epoch_ms: u64,
+    pub completed_at_epoch_ms: u64,
+    pub requested_files: u64,
+    pub requested_bytes: u64,
+    pub deleted_files: u64,
+    pub deleted_bytes: u64,
+    pub failed_items: u64,
+    pub providers: Vec<CleanupProviderExecution>,
+    pub rollback_available: bool,
+    pub rollback_summary: String,
+    pub errors: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CleanupError {
     pub code: String,
     pub message: String,
@@ -124,7 +153,7 @@ pub fn summarize_cleanup_plan(
         total_files,
         providers,
         warnings,
-        execution_available: false,
+        execution_available: true,
     }
 }
 
@@ -174,7 +203,7 @@ mod tests {
 
         assert_eq!(summary.total_files, 5);
         assert_eq!(summary.total_bytes, 200);
-        assert!(!summary.execution_available);
+        assert!(summary.execution_available);
         assert_eq!(summary.warnings.len(), 1);
     }
 
