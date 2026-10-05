@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { type AppInfo, getAppInfo } from "./appInfo";
 import { HealthCheckPage } from "./HealthCheckPage";
 import { InventorySummary } from "./InventorySummary";
+import { RestoreCenterPage } from "./RestoreCenterPage";
 import { SmartCleanPage } from "./SmartCleanPage";
 import { NAV_ITEMS, getNavItem, type PageId } from "./navigation";
 import {
@@ -166,7 +167,7 @@ function OverviewPage({
           </div>
           <div>
             <dt>Product phase</dt>
-            <dd>{appInfo?.phase ?? "P4A"}</dd>
+            <dd>{appInfo?.phase ?? "P4B"}</dd>
           </div>
         </dl>
       </section>
@@ -177,7 +178,10 @@ function OverviewPage({
 function PlaceholderPage({
   page,
 }: {
-  page: Exclude<PageId, "overview" | "health" | "clean" | "settings">;
+  page: Exclude<
+    PageId,
+    "overview" | "health" | "clean" | "restore" | "settings"
+  >;
 }) {
   const item = getNavItem(page);
 
@@ -193,7 +197,7 @@ function PlaceholderPage({
         <div className="info-callout">
           <strong>No system data is being simulated.</strong>
           <span>
-            This module is not implemented in P4A. Real actions arrive only in
+            This module is not implemented in P4B. Real actions arrive only in
             later, separately gated phases.
           </span>
         </div>
@@ -384,7 +388,7 @@ export default function App() {
             <h1>{activeItem.label}</h1>
           </div>
           <div className="topbar-actions">
-            <span className="phase-chip">P4A</span>
+            <span className="phase-chip">P4B</span>
             <button
               className="icon-button"
               onClick={() =>
@@ -406,7 +410,9 @@ export default function App() {
           ) : page === "health" ? (
             <HealthCheckPage />
           ) : page === "clean" ? (
-            <SmartCleanPage />
+            <SmartCleanPage onOpenRestore={() => setPage("restore")} />
+          ) : page === "restore" ? (
+            <RestoreCenterPage />
           ) : page === "settings" ? (
             <SettingsPage
               onSidebarChange={updateSidebar}
