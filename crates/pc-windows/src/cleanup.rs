@@ -1,9 +1,9 @@
 #[cfg(target_os = "windows")]
 use pc_core::summarize_cleanup_plan;
-#[cfg(any(target_os = "windows", test))]
-use pc_core::{CleanupCategory, CleanupPlanItem, CleanupProviderSummary, CleanupWarning};
 #[cfg(target_os = "windows")]
 use pc_core::CleanupProviderExecution;
+#[cfg(any(target_os = "windows", test))]
+use pc_core::{CleanupCategory, CleanupPlanItem, CleanupProviderSummary, CleanupWarning};
 use pc_core::{
     CleanupError, CleanupExecutionResult, CleanupPlan, CleanupScanOptions, CleanupScanSummary,
 };
