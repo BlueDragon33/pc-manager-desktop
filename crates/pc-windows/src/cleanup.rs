@@ -906,7 +906,7 @@ fn load_operations_from_dir(
         }
     }
 
-    operations.sort_by(|a, b| b.completed_at_epoch_ms.cmp(&a.completed_at_epoch_ms));
+    operations.sort_by_key(|operation| std::cmp::Reverse(operation.completed_at_epoch_ms));
     operations.truncate(limit.min(100));
     Ok(operations)
 }
