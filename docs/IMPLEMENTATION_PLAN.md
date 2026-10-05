@@ -157,12 +157,12 @@ Goal: first write/destructive subsystem, built safely.
 
 Smart Cleaner V1:
 
-- [ ] Windows temp candidates
-- [ ] application temp providers with explicit rules
-- [ ] browser cache providers with explicit rules
-- [ ] recycle bin as a separate opt-in item
-- [ ] scan-only preview
-- [ ] cleanup plan
+- [x] Windows temp candidates
+- [x] application temp providers with explicit rules
+- [x] browser cache providers with explicit rules
+- [~] recycle bin as a separate opt-in item — modeled and opt-in, native size/count provider still gated
+- [x] scan-only preview
+- [x] cleanup plan
 - [ ] execution result
 
 Restore foundation:
@@ -178,11 +178,23 @@ Not every deleted cache file is restorable. The app must be honest about that. "
 
 Acceptance:
 
-- exact byte estimate before cleanup;
-- user can inspect categories;
-- no arbitrary filesystem wildcard deletion;
-- errors do not abort unrelated cleanup items;
-- audit record is stored.
+P4A preview gate:
+- [x] exact byte estimate before cleanup;
+- [x] user can inspect categories/providers;
+- [x] no arbitrary filesystem root can be supplied by the frontend;
+- [x] reparse points/symlinks are skipped;
+- [x] provider errors are isolated into warnings;
+- [x] native cleanup plan is retained by plan ID;
+- [x] no delete command exists in P4A;
+- [x] Windows CI executes the real built-in scanner and native build successfully;
+- [ ] user verifies preview totals on a real Windows machine before P4B.
+
+P4B execution gate:
+- [ ] every planned path is revalidated immediately before deletion;
+- [ ] errors do not abort unrelated cleanup items;
+- [ ] audit record is stored;
+- [ ] execution result is shown accurately;
+- [ ] restore capability is labeled honestly.
 
 ---
 
