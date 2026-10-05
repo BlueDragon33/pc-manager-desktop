@@ -163,14 +163,14 @@ Smart Cleaner V1:
 - [~] recycle bin as a separate opt-in item — modeled and opt-in, native size/count provider still gated
 - [x] scan-only preview
 - [x] cleanup plan
-- [ ] execution result
+- [x] execution result
 
 Restore foundation:
 
-- [ ] operation log
-- [ ] before-state metadata
-- [ ] rollback capability flags
-- [ ] rollback UI
+- [x] operation log — local immutable aggregate audit records are committed after execution
+- [x] before-state metadata — the native plan retains provider root, size, and modification time for pre-delete revalidation; raw paths are intentionally not persisted in completed audit records
+- [x] rollback capability flags — P4B cleanup is explicitly marked Not restorable
+- [x] rollback UI — Restore Center shows operation history and honest rollback capability without a fake undo action
 
 Important:
 
@@ -187,14 +187,15 @@ P4A preview gate:
 - [x] native cleanup plan is retained by plan ID;
 - [x] no delete command exists in P4A;
 - [x] Windows CI executes the real built-in scanner and native build successfully;
-- [ ] user verifies preview totals on a real Windows machine before P4B.
+- [x] user verified preview totals and full-page scrolling on a real Windows machine before P4B.
 
 P4B execution gate:
-- [ ] every planned path is revalidated immediately before deletion;
-- [ ] errors do not abort unrelated cleanup items;
-- [ ] audit record is stored;
-- [ ] execution result is shown accurately;
-- [ ] restore capability is labeled honestly.
+- [x] every planned path is revalidated immediately before deletion;
+- [x] errors do not abort unrelated cleanup items;
+- [x] audit preflight and completed operation record are stored locally;
+- [x] execution result is shown accurately with deleted and failed/skipped counts;
+- [x] restore capability is labeled honestly as Not restorable for cache/temp deletion;
+- [x] Windows CI executes disposable cleanup and outside-root refusal tests before the native build.
 
 ---
 
