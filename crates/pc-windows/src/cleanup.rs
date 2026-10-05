@@ -615,7 +615,7 @@ mod tests {
 
         assert!(!summary.plan_id.is_empty());
         assert_eq!(summary.plan_id, plan.plan_id);
-        assert!(!summary.execution_available);
+        assert!(summary.execution_available);
         assert!(summary
             .providers
             .iter()
@@ -696,12 +696,12 @@ mod tests {
 
     #[cfg(target_os = "windows")]
     #[test]
-    fn windows_cleanup_preview_returns_a_read_only_native_plan() {
+    fn windows_cleanup_preview_returns_an_executable_native_plan() {
         let (plan, summary) =
             super::scan_cleanup_candidates(Default::default()).expect("cleanup preview should run");
 
         assert_eq!(plan.plan_id, summary.plan_id);
-        assert!(!summary.execution_available);
+        assert!(summary.execution_available);
         assert_eq!(
             u64::try_from(plan.items.len()).expect("candidate count fits in u64"),
             summary.total_files
