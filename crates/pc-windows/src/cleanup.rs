@@ -464,7 +464,6 @@ fn now_epoch_ms() -> u64 {
     epoch_ms(SystemTime::now()).unwrap_or_default()
 }
 
-
 pub fn execute_cleanup_plan(plan: &CleanupPlan) -> Result<CleanupOperationRecord, CleanupError> {
     #[cfg(target_os = "windows")]
     {
@@ -483,9 +482,7 @@ pub fn execute_cleanup_plan(plan: &CleanupPlan) -> Result<CleanupOperationRecord
     }
 }
 
-pub fn load_cleanup_operations(
-    limit: usize,
-) -> Result<Vec<CleanupOperationRecord>, CleanupError> {
+pub fn load_cleanup_operations(limit: usize) -> Result<Vec<CleanupOperationRecord>, CleanupError> {
     #[cfg(target_os = "windows")]
     {
         let audit_dir = operation_log_dir()?;
@@ -583,14 +580,12 @@ fn execute_plan_with_specs(
         match revalidate_plan_item(item, providers, now_ms) {
             Ok((canonical_path, current_bytes)) => match fs::remove_file(&canonical_path) {
                 Ok(()) => {
-                    provider_result.deleted_files =
-                        provider_result.deleted_files.saturating_add(1);
+                    provider_result.deleted_files = provider_result.deleted_files.saturating_add(1);
                     provider_result.deleted_bytes =
                         provider_result.deleted_bytes.saturating_add(current_bytes);
                 }
                 Err(_) => {
-                    provider_result.failed_files =
-                        provider_result.failed_files.saturating_add(1);
+                    provider_result.failed_files = provider_result.failed_files.saturating_add(1);
                     record_issue(
                         &mut issues,
                         "delete_failed",
@@ -770,11 +765,7 @@ fn revalidate_plan_item(
 }
 
 #[cfg(any(target_os = "windows", test))]
-fn record_issue(
-    issues: &mut BTreeMap<(String, String), u64>,
-    code: &str,
-    message: &str,
-) {
+fn record_issue(issues: &mut BTreeMap<(String, String), u64>, code: &str, message: &str) {
     let count = issues
         .entry((code.to_string(), message.to_string()))
         .or_insert(0);
@@ -1014,7 +1005,10 @@ mod tests {
         assert_eq!(operation.requested_files, 1);
         assert_eq!(operation.deleted_files, 1);
         assert_eq!(operation.failed_files, 0);
-        assert_eq!(operation.rollback_capability, pc_core::CleanupRollbackCapability::NotRestorable);
+        assert_eq!(
+            operation.rollback_capability,
+            pc_core::CleanupRollbackCapability::NotRestorable
+        );
 
         let history = super::load_operations_from_dir(&audit, 20).expect("load audit history");
         assert_eq!(history.len(), 1);
@@ -1062,8 +1056,8 @@ mod tests {
             }],
         };
 
-        let operation =
-            super::execute_plan_with_specs(&plan, &[provider], &audit).expect("execute boundary plan");
+        let operation = super::execute_plan_with_specs(&plan, &[provider], &audit)
+            .expect("execute boundary plan");
 
         assert!(outside_file.exists());
         assert_eq!(operation.deleted_files, 0);
