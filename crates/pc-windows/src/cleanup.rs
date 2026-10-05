@@ -1,12 +1,18 @@
 #[cfg(target_os = "windows")]
 use pc_core::summarize_cleanup_plan;
 #[cfg(any(target_os = "windows", test))]
-use pc_core::{CleanupCategory, CleanupPlanItem, CleanupProviderSummary, CleanupWarning};
+use pc_core::{
+    CleanupCategory, CleanupOperationIssue, CleanupOperationRecord, CleanupPlanItem,
+    CleanupProviderExecutionResult, CleanupProviderSummary, CleanupRollbackCapability,
+    CleanupWarning,
+};
 use pc_core::{CleanupError, CleanupPlan, CleanupScanOptions, CleanupScanSummary};
 #[cfg(any(target_os = "windows", test))]
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 #[cfg(any(target_os = "windows", test))]
-use std::fs;
+use std::fs::{self, OpenOptions};
+#[cfg(any(target_os = "windows", test))]
+use std::io::Write;
 #[cfg(any(target_os = "windows", test))]
 use std::path::{Path, PathBuf};
 #[cfg(target_os = "windows")]
@@ -20,6 +26,8 @@ const STALE_TEMP_AGE: Duration = Duration::from_secs(24 * 60 * 60);
 const MAX_PROVIDER_WARNINGS: usize = 20;
 #[cfg(target_os = "windows")]
 static PLAN_SEQUENCE: AtomicU64 = AtomicU64::new(1);
+#[cfg(any(target_os = "windows", test))]
+static OPERATION_SEQUENCE: AtomicU64 = AtomicU64::new(1);
 
 #[cfg(any(target_os = "windows", test))]
 #[derive(Debug, Clone)]
@@ -80,7 +88,7 @@ fn scan_windows(
 
     let recycle_summary = if options.include_recycle_bin {
         let warning =
-            "Recycle Bin scanning is not enabled in P4A because a reliable native size/count provider has not been verified yet.";
+            "Recycle Bin scanning is not enabled in P4B because a reliable native size/count provider has not been verified yet.";
         all_warnings.push(CleanupWarning {
             provider_id: "recycle-bin".to_string(),
             message: warning.to_string(),
@@ -95,7 +103,7 @@ fn scan_windows(
             bytes: 0,
             reversible: false,
             description:
-                "Opt-in only. P4A does not scan or empty the Recycle Bin until its native provider is verified."
+                "Opt-in only. P4B does not scan or empty the Recycle Bin until its native provider is verified."
                     .to_string(),
             warnings: vec![warning.to_string()],
         }
@@ -454,6 +462,461 @@ fn should_skip_metadata(metadata: &fs::Metadata) -> bool {
 #[cfg(target_os = "windows")]
 fn now_epoch_ms() -> u64 {
     epoch_ms(SystemTime::now()).unwrap_or_default()
+}
+
+
+pub fn execute_cleanup_plan(plan: &CleanupPlan) -> Result<CleanupOperationRecord, CleanupError> {
+    #[cfg(target_os = "windows")]
+    {
+        let audit_dir = operation_log_dir()?;
+        execute_plan_with_specs(plan, &provider_specs(), &audit_dir)
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = plan;
+        Err(CleanupError::new(
+            "unsupported_platform",
+            "Cleanup execution is currently implemented for Windows only.",
+            false,
+        ))
+    }
+}
+
+pub fn load_cleanup_operations(
+    limit: usize,
+) -> Result<Vec<CleanupOperationRecord>, CleanupError> {
+    #[cfg(target_os = "windows")]
+    {
+        let audit_dir = operation_log_dir()?;
+        load_operations_from_dir(&audit_dir, limit)
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = limit;
+        Err(CleanupError::new(
+            "unsupported_platform",
+            "Cleanup operation history is currently implemented for Windows only.",
+            false,
+        ))
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn operation_log_dir() -> Result<PathBuf, CleanupError> {
+    let local_app_data = std::env::var_os("LOCALAPPDATA").ok_or_else(|| {
+        CleanupError::new(
+            "audit_location_unavailable",
+            "Windows LOCALAPPDATA is unavailable, so cleanup execution is blocked.",
+            false,
+        )
+    })?;
+    let path = PathBuf::from(local_app_data)
+        .join("PCManagerDesktop")
+        .join("operations");
+    fs::create_dir_all(&path).map_err(|error| {
+        CleanupError::new(
+            "audit_directory_unavailable",
+            format!("Unable to prepare the local cleanup audit directory: {error}"),
+            false,
+        )
+    })?;
+    Ok(path)
+}
+
+#[cfg(any(target_os = "windows", test))]
+fn execute_plan_with_specs(
+    plan: &CleanupPlan,
+    providers: &[ProviderSpec],
+    audit_dir: &Path,
+) -> Result<CleanupOperationRecord, CleanupError> {
+    fs::create_dir_all(audit_dir).map_err(|error| {
+        CleanupError::new(
+            "audit_directory_unavailable",
+            format!("Unable to prepare the cleanup audit directory: {error}"),
+            false,
+        )
+    })?;
+
+    let started_at_epoch_ms = now_epoch_ms();
+    let sequence = OPERATION_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+    let operation_id = format!(
+        "cleanup-operation-{}-{}-{}",
+        started_at_epoch_ms,
+        std::process::id(),
+        sequence
+    );
+
+    let pending_path = audit_dir.join(format!("{operation_id}.pending"));
+    write_pending_record(
+        &pending_path,
+        &operation_id,
+        &plan.plan_id,
+        started_at_epoch_ms,
+    )?;
+
+    let mut provider_results = BTreeMap::<String, CleanupProviderExecutionResult>::new();
+    for item in &plan.items {
+        let result = provider_results
+            .entry(item.provider_id.clone())
+            .or_insert_with(|| CleanupProviderExecutionResult {
+                provider_id: item.provider_id.clone(),
+                requested_files: 0,
+                requested_bytes: 0,
+                deleted_files: 0,
+                deleted_bytes: 0,
+                failed_files: 0,
+            });
+        result.requested_files = result.requested_files.saturating_add(1);
+        result.requested_bytes = result.requested_bytes.saturating_add(item.bytes);
+    }
+
+    let mut issues = BTreeMap::<(String, String), u64>::new();
+    let now_ms = now_epoch_ms();
+
+    for item in &plan.items {
+        let provider_result = provider_results
+            .get_mut(&item.provider_id)
+            .expect("provider aggregate exists for each planned item");
+
+        match revalidate_plan_item(item, providers, now_ms) {
+            Ok((canonical_path, current_bytes)) => match fs::remove_file(&canonical_path) {
+                Ok(()) => {
+                    provider_result.deleted_files =
+                        provider_result.deleted_files.saturating_add(1);
+                    provider_result.deleted_bytes =
+                        provider_result.deleted_bytes.saturating_add(current_bytes);
+                }
+                Err(_) => {
+                    provider_result.failed_files =
+                        provider_result.failed_files.saturating_add(1);
+                    record_issue(
+                        &mut issues,
+                        "delete_failed",
+                        "A verified cleanup candidate could not be deleted.",
+                    );
+                }
+            },
+            Err((code, message)) => {
+                provider_result.failed_files = provider_result.failed_files.saturating_add(1);
+                record_issue(&mut issues, code, message);
+            }
+        }
+    }
+
+    let provider_results = provider_results.into_values().collect::<Vec<_>>();
+    let requested_files = provider_results
+        .iter()
+        .map(|result| result.requested_files)
+        .sum();
+    let requested_bytes = provider_results
+        .iter()
+        .map(|result| result.requested_bytes)
+        .sum();
+    let deleted_files = provider_results
+        .iter()
+        .map(|result| result.deleted_files)
+        .sum();
+    let deleted_bytes = provider_results
+        .iter()
+        .map(|result| result.deleted_bytes)
+        .sum();
+    let failed_files = provider_results
+        .iter()
+        .map(|result| result.failed_files)
+        .sum();
+
+    let operation = CleanupOperationRecord {
+        operation_id: operation_id.clone(),
+        plan_id: plan.plan_id.clone(),
+        started_at_epoch_ms,
+        completed_at_epoch_ms: now_epoch_ms(),
+        requested_files,
+        requested_bytes,
+        deleted_files,
+        deleted_bytes,
+        failed_files,
+        provider_results,
+        rollback_capability: CleanupRollbackCapability::NotRestorable,
+        issues: issues
+            .into_iter()
+            .map(|((code, message), count)| CleanupOperationIssue {
+                code,
+                message,
+                count,
+            })
+            .collect(),
+    };
+
+    persist_completed_operation(audit_dir, &pending_path, &operation)?;
+    Ok(operation)
+}
+
+#[cfg(any(target_os = "windows", test))]
+fn revalidate_plan_item(
+    item: &CleanupPlanItem,
+    providers: &[ProviderSpec],
+    now_epoch_ms: u64,
+) -> Result<(PathBuf, u64), (&'static str, &'static str)> {
+    let provider = providers
+        .iter()
+        .find(|provider| provider.id == item.provider_id)
+        .ok_or((
+            "provider_not_allowed",
+            "The cleanup provider is no longer on the built-in allow-list.",
+        ))?;
+
+    let planned_root = PathBuf::from(&item.provider_root);
+    let planned_path = PathBuf::from(&item.path);
+
+    let root_metadata = fs::symlink_metadata(&planned_root).map_err(|_| {
+        (
+            "provider_root_unavailable",
+            "The original cleanup provider root is no longer available.",
+        )
+    })?;
+    if should_skip_metadata(&root_metadata) || !root_metadata.is_dir() {
+        return Err((
+            "provider_root_not_safe",
+            "The cleanup provider root is no longer a safe directory.",
+        ));
+    }
+
+    let canonical_root = fs::canonicalize(&planned_root).map_err(|_| {
+        (
+            "provider_root_unavailable",
+            "The cleanup provider root could not be resolved safely.",
+        )
+    })?;
+
+    let root_still_allowed = provider.roots.iter().any(|current_root| {
+        fs::canonicalize(current_root)
+            .map(|current| current == canonical_root)
+            .unwrap_or(false)
+    });
+    if !root_still_allowed {
+        return Err((
+            "provider_root_changed",
+            "The cleanup provider root no longer matches the built-in allow-list.",
+        ));
+    }
+
+    let metadata = fs::symlink_metadata(&planned_path).map_err(|_| {
+        (
+            "candidate_missing",
+            "A cleanup candidate no longer exists or is inaccessible.",
+        )
+    })?;
+    if should_skip_metadata(&metadata) {
+        return Err((
+            "candidate_reparse_point",
+            "A cleanup candidate became a symlink or reparse point after scanning.",
+        ));
+    }
+    if !metadata.is_file() {
+        return Err((
+            "candidate_not_file",
+            "A cleanup candidate is no longer a regular file.",
+        ));
+    }
+
+    let canonical_path = fs::canonicalize(&planned_path).map_err(|_| {
+        (
+            "candidate_unresolvable",
+            "A cleanup candidate could not be resolved safely.",
+        )
+    })?;
+    if !canonical_path.starts_with(&canonical_root) {
+        return Err((
+            "candidate_outside_root",
+            "A cleanup candidate resolved outside its original provider root.",
+        ));
+    }
+
+    if metadata.len() != item.bytes {
+        return Err((
+            "candidate_changed",
+            "A cleanup candidate changed size after the preview scan.",
+        ));
+    }
+
+    if let Some(planned_modified) = item.modified_at_epoch_ms {
+        let current_modified = metadata.modified().ok().and_then(epoch_ms);
+        if current_modified != Some(planned_modified) {
+            return Err((
+                "candidate_changed",
+                "A cleanup candidate changed after the preview scan.",
+            ));
+        }
+    }
+
+    if let Some(required_age) = provider.stale_age {
+        let modified = metadata.modified().map_err(|_| {
+            (
+                "candidate_age_unavailable",
+                "The temporary file age could not be revalidated.",
+            )
+        })?;
+        if !is_stale(modified, now_epoch_ms, required_age) {
+            return Err((
+                "candidate_no_longer_stale",
+                "A temporary file no longer meets the stale-file policy.",
+            ));
+        }
+    }
+
+    Ok((canonical_path, metadata.len()))
+}
+
+#[cfg(any(target_os = "windows", test))]
+fn record_issue(
+    issues: &mut BTreeMap<(String, String), u64>,
+    code: &str,
+    message: &str,
+) {
+    let count = issues
+        .entry((code.to_string(), message.to_string()))
+        .or_insert(0);
+    *count = count.saturating_add(1);
+}
+
+#[cfg(any(target_os = "windows", test))]
+fn write_pending_record(
+    path: &Path,
+    operation_id: &str,
+    plan_id: &str,
+    started_at_epoch_ms: u64,
+) -> Result<(), CleanupError> {
+    let payload = serde_json::json!({
+        "operationId": operation_id,
+        "planId": plan_id,
+        "startedAtEpochMs": started_at_epoch_ms,
+        "state": "inProgress"
+    });
+    let bytes = serde_json::to_vec(&payload).map_err(|error| {
+        CleanupError::new(
+            "audit_serialize_failed",
+            format!("Unable to serialize the cleanup audit preflight: {error}"),
+            false,
+        )
+    })?;
+
+    let mut file = OpenOptions::new()
+        .create_new(true)
+        .write(true)
+        .open(path)
+        .map_err(|error| {
+            CleanupError::new(
+                "audit_preflight_failed",
+                format!("Unable to create the cleanup audit preflight: {error}"),
+                false,
+            )
+        })?;
+    file.write_all(&bytes).map_err(|error| {
+        CleanupError::new(
+            "audit_preflight_failed",
+            format!("Unable to write the cleanup audit preflight: {error}"),
+            false,
+        )
+    })?;
+    file.sync_all().map_err(|error| {
+        CleanupError::new(
+            "audit_preflight_failed",
+            format!("Unable to flush the cleanup audit preflight: {error}"),
+            false,
+        )
+    })
+}
+
+#[cfg(any(target_os = "windows", test))]
+fn persist_completed_operation(
+    audit_dir: &Path,
+    pending_path: &Path,
+    operation: &CleanupOperationRecord,
+) -> Result<(), CleanupError> {
+    let temp_path = audit_dir.join(format!("{}.complete.tmp", operation.operation_id));
+    let final_path = audit_dir.join(format!("{}.json", operation.operation_id));
+    let bytes = serde_json::to_vec(operation).map_err(|error| {
+        CleanupError::new(
+            "audit_serialize_failed",
+            format!("Unable to serialize the cleanup operation record: {error}"),
+            false,
+        )
+    })?;
+
+    let mut file = OpenOptions::new()
+        .create_new(true)
+        .write(true)
+        .open(&temp_path)
+        .map_err(|error| {
+            CleanupError::new(
+                "audit_write_failed",
+                format!("Unable to prepare the completed cleanup record: {error}"),
+                false,
+            )
+        })?;
+    file.write_all(&bytes).map_err(|error| {
+        CleanupError::new(
+            "audit_write_failed",
+            format!("Unable to write the completed cleanup record: {error}"),
+            false,
+        )
+    })?;
+    file.sync_all().map_err(|error| {
+        CleanupError::new(
+            "audit_write_failed",
+            format!("Unable to flush the completed cleanup record: {error}"),
+            false,
+        )
+    })?;
+    fs::rename(&temp_path, &final_path).map_err(|error| {
+        CleanupError::new(
+            "audit_commit_failed",
+            format!("Unable to commit the completed cleanup record: {error}"),
+            false,
+        )
+    })?;
+
+    let _ = fs::remove_file(pending_path);
+    Ok(())
+}
+
+#[cfg(any(target_os = "windows", test))]
+fn load_operations_from_dir(
+    audit_dir: &Path,
+    limit: usize,
+) -> Result<Vec<CleanupOperationRecord>, CleanupError> {
+    if !audit_dir.exists() {
+        return Ok(Vec::new());
+    }
+
+    let entries = fs::read_dir(audit_dir).map_err(|error| {
+        CleanupError::new(
+            "audit_read_failed",
+            format!("Unable to read cleanup operation history: {error}"),
+            true,
+        )
+    })?;
+    let mut operations = Vec::new();
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|value| value.to_str()) != Some("json") {
+            continue;
+        }
+
+        let Ok(bytes) = fs::read(&path) else {
+            continue;
+        };
+        if let Ok(operation) = serde_json::from_slice::<CleanupOperationRecord>(&bytes) {
+            operations.push(operation);
+        }
+    }
+
+    operations.sort_by(|a, b| b.completed_at_epoch_ms.cmp(&a.completed_at_epoch_ms));
+    operations.truncate(limit.min(100));
+    Ok(operations)
 }
 
 #[cfg(test)]
