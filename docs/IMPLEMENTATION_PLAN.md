@@ -187,7 +187,7 @@ P4A preview gate:
 - [x] native cleanup plan is retained by plan ID;
 - [x] no delete command exists in P4A;
 - [x] Windows CI executes the real built-in scanner and native build successfully;
-- [ ] user verifies preview totals on a real Windows machine before P4B.
+- [x] user verified plausible real-machine preview totals and full-page scrolling before P4B.
 
 P4B execution gate:
 - [ ] every planned path is revalidated immediately before deletion;
