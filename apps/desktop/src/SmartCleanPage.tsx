@@ -55,7 +55,9 @@ export function SmartCleanPage({
   onOpenRestore?: () => void;
 }) {
   const [state, setState] = useState<ScanState>({ status: "idle" });
-  const [execution, setExecution] = useState<ExecutionState>({ status: "idle" });
+  const [execution, setExecution] = useState<ExecutionState>({
+    status: "idle",
+  });
   const [includeRecycleBin, setIncludeRecycleBin] = useState(false);
   const generationRef = useRef(0);
 
@@ -325,11 +327,15 @@ export function SmartCleanPage({
               <dl>
                 <div>
                   <dt>Deleted</dt>
-                  <dd>{execution.operation.deletedFiles.toLocaleString()} files</dd>
+                  <dd>
+                    {execution.operation.deletedFiles.toLocaleString()} files
+                  </dd>
                 </div>
                 <div>
                   <dt>Failed / skipped</dt>
-                  <dd>{execution.operation.failedFiles.toLocaleString()} files</dd>
+                  <dd>
+                    {execution.operation.failedFiles.toLocaleString()} files
+                  </dd>
                 </div>
                 <div>
                   <dt>Operation ID</dt>
@@ -400,12 +406,14 @@ export function SmartCleanPage({
             role="dialog"
           >
             <p className="eyebrow">Irreversible cleanup</p>
-            <h3 id="cleanup-confirm-title">Delete the previewed temp/cache files?</h3>
+            <h3 id="cleanup-confirm-title">
+              Delete the previewed temp/cache files?
+            </h3>
             <p>
-              PC Manager will revalidate all {summary.totalFiles.toLocaleString()}{" "}
-              planned files immediately before deletion. Up to{" "}
-              {formatBytes(summary.totalBytes)} may be removed. Ordinary cache
-              deletion cannot be restored by PC Manager.
+              PC Manager will revalidate all{" "}
+              {summary.totalFiles.toLocaleString()} planned files immediately
+              before deletion. Up to {formatBytes(summary.totalBytes)} may be
+              removed. Ordinary cache deletion cannot be restored by PC Manager.
             </p>
             <div className="confirmation-actions">
               <button
@@ -415,7 +423,11 @@ export function SmartCleanPage({
               >
                 Cancel
               </button>
-              <button className="danger-action" onClick={executePlan} type="button">
+              <button
+                className="danger-action"
+                onClick={executePlan}
+                type="button"
+              >
                 Delete previewed temp/cache files
               </button>
             </div>
