@@ -163,14 +163,14 @@ Smart Cleaner V1:
 - [~] recycle bin as a separate opt-in item — modeled and opt-in, native size/count provider still gated
 - [x] scan-only preview
 - [x] cleanup plan
-- [ ] execution result
+- [x] execution result
 
 Restore foundation:
 
-- [ ] operation log
-- [ ] before-state metadata
-- [ ] rollback capability flags
-- [ ] rollback UI
+- [x] operation log
+- [x] before-state summary metadata via immutable plan ID, requested file count, and requested bytes
+- [x] rollback capability flags
+- [x] rollback UI / operation-history UI with explicit "Not restorable" state
 
 Important:
 
@@ -190,11 +190,13 @@ P4A preview gate:
 - [x] user verified plausible real-machine preview totals and full-page scrolling before P4B.
 
 P4B execution gate:
-- [ ] every planned path is revalidated immediately before deletion;
-- [ ] errors do not abort unrelated cleanup items;
-- [ ] audit record is stored;
-- [ ] execution result is shown accurately;
-- [ ] restore capability is labeled honestly.
+- [x] every planned path is revalidated immediately before deletion;
+- [x] errors do not abort unrelated cleanup items;
+- [x] audit record is stored locally after completed execution;
+- [x] execution result is shown accurately;
+- [x] restore capability is labeled honestly;
+- [x] Windows CI executes cleanup against intentionally disposable test data only;
+- [x] frontend, Rust, Clippy, disposable Windows execution test, and native Windows build are green.
 
 ---
 
