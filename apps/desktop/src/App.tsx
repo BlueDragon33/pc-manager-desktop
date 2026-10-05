@@ -178,7 +178,10 @@ function OverviewPage({
 function PlaceholderPage({
   page,
 }: {
-  page: Exclude<PageId, "overview" | "health" | "clean" | "restore" | "settings">;
+  page: Exclude<
+    PageId,
+    "overview" | "health" | "clean" | "restore" | "settings"
+  >;
 }) {
   const item = getNavItem(page);
 
