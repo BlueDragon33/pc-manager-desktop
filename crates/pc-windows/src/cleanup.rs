@@ -459,7 +459,6 @@ fn now_epoch_ms() -> u64 {
     epoch_ms(SystemTime::now()).unwrap_or_default()
 }
 
-
 #[cfg(target_os = "windows")]
 pub fn execute_cleanup_plan(plan: &CleanupPlan) -> Result<CleanupExecutionResult, CleanupError> {
     use std::collections::BTreeMap;
@@ -508,11 +507,7 @@ pub fn execute_cleanup_plan(plan: &CleanupPlan) -> Result<CleanupExecutionResult
 
     let completed_at_epoch_ms = now_epoch_ms();
     Ok(CleanupExecutionResult {
-        operation_id: format!(
-            "cleanup-op-{}-{}",
-            started_at_epoch_ms,
-            std::process::id()
-        ),
+        operation_id: format!("cleanup-op-{}-{}", started_at_epoch_ms, std::process::id()),
         plan_id: plan.plan_id.clone(),
         started_at_epoch_ms,
         completed_at_epoch_ms,
@@ -524,8 +519,7 @@ pub fn execute_cleanup_plan(plan: &CleanupPlan) -> Result<CleanupExecutionResult
         providers: provider_totals.into_values().collect(),
         rollback_available: false,
         rollback_summary:
-            "Cache and temporary-file deletion is not automatically restorable in P4B."
-                .to_string(),
+            "Cache and temporary-file deletion is not automatically restorable in P4B.".to_string(),
         errors,
     })
 }
@@ -540,10 +534,7 @@ pub fn execute_cleanup_plan(_plan: &CleanupPlan) -> Result<CleanupExecutionResul
 }
 
 #[cfg(target_os = "windows")]
-fn revalidate_and_delete(
-    item: &CleanupPlanItem,
-    now_epoch_ms: u64,
-) -> Result<u64, String> {
+fn revalidate_and_delete(item: &CleanupPlanItem, now_epoch_ms: u64) -> Result<u64, String> {
     let path = PathBuf::from(&item.path);
     let root = PathBuf::from(&item.provider_root);
 
@@ -581,8 +572,7 @@ fn revalidate_and_delete(
         }
     }
 
-    fs::remove_file(&canonical_path)
-        .map_err(|error| format!("delete failed: {error}"))?;
+    fs::remove_file(&canonical_path).map_err(|error| format!("delete failed: {error}"))?;
 
     Ok(metadata.len())
 }
