@@ -83,7 +83,11 @@ impl CleanupPlanStore {
     }
 
     pub fn take_by_id(&mut self, plan_id: &str) -> Option<CleanupPlan> {
-        if self.latest.as_ref().is_some_and(|plan| plan.plan_id == plan_id) {
+        if self
+            .latest
+            .as_ref()
+            .is_some_and(|plan| plan.plan_id == plan_id)
+        {
             self.latest.take()
         } else {
             None
