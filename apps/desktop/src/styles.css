@@ -1362,7 +1362,7 @@ h4 {
   line-height: 1.5;
 }
 
-.cleaner-locked-action button {
+.cleaner-locked-action button:disabled {
   flex: 0 0 auto;
   min-height: 40px;
   padding: 0 16px;
@@ -1371,6 +1371,7 @@ h4 {
   background: var(--surface-strong);
   color: var(--text-muted);
   cursor: not-allowed;
+  opacity: 0.7;
 }
 
 @media (max-width: 1100px) {
@@ -1393,6 +1394,243 @@ h4 {
   .cleaner-total-card,
   .cleaner-total-card dl,
   .cleaner-provider-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.danger-action {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid rgba(217, 76, 76, 0.35);
+  border-radius: 11px;
+  background: #c73f3f;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.danger-action:hover:not(:disabled) {
+  background: #ad3434;
+}
+
+.danger-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.confirmation-backdrop {
+  position: fixed;
+  z-index: 50;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(4, 9, 16, 0.7);
+  backdrop-filter: blur(6px);
+}
+
+.confirmation-dialog {
+  width: min(560px, 100%);
+  padding: 26px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
+}
+
+.confirmation-dialog > p:not(.eyebrow) {
+  margin: 14px 0 0;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.confirmation-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.cleanup-result-card,
+.restore-hero,
+.restore-operation-card {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+}
+
+.cleanup-result-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.85fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 22px;
+}
+
+.cleanup-result-card dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.cleanup-result-card dl div {
+  min-width: 0;
+  padding: 11px;
+  border-radius: 11px;
+  background: var(--surface-muted);
+}
+
+.cleanup-result-card dt {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.cleanup-result-card dd {
+  overflow-wrap: anywhere;
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+}
+
+.restore-page {
+  padding-bottom: 24px;
+}
+
+.restore-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 30px;
+  box-shadow: var(--shadow);
+}
+
+.restore-hero > div {
+  max-width: 780px;
+}
+
+.restore-operation-list {
+  display: grid;
+  gap: 14px;
+}
+
+.restore-operation-card {
+  padding: 20px;
+}
+
+.restore-operation-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.restore-operation-heading h4 {
+  margin-top: 9px;
+}
+
+.restore-operation-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.restore-operation-metrics > div {
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+  border-radius: 13px;
+  background: var(--surface-muted);
+}
+
+.restore-operation-metrics span,
+.restore-operation-metrics small {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.restore-operation-metrics strong {
+  font-size: 1.05rem;
+}
+
+.restore-operation-ids {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0 0;
+}
+
+.restore-operation-ids > div {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.restore-operation-ids dt {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.restore-operation-ids dd {
+  overflow-wrap: anywhere;
+  margin: 5px 0 0;
+  font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  font-size: 0.75rem;
+}
+
+.restore-issues {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--surface-muted);
+}
+
+.restore-issues ul {
+  display: grid;
+  gap: 7px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.restore-issues li {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.restore-issues li strong {
+  flex: 0 0 auto;
+  color: var(--text);
+}
+
+@media (max-width: 1100px) {
+  .cleanup-result-card {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+}
+
+@media (max-width: 760px) {
+  .confirmation-actions,
+  .restore-hero,
+  .restore-operation-heading {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cleanup-result-card dl,
+  .restore-operation-metrics,
+  .restore-operation-ids {
     grid-template-columns: 1fr;
   }
 }
