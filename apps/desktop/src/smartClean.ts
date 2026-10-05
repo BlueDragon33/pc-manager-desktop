@@ -79,7 +79,9 @@ export async function executeCleanupPlan(
   return invoke<CleanupOperationRecord>("execute_cleanup_plan", { planId });
 }
 
-export async function listCleanupOperations(): Promise<CleanupOperationRecord[]> {
+export async function listCleanupOperations(): Promise<
+  CleanupOperationRecord[]
+> {
   return invoke<CleanupOperationRecord[]>("list_cleanup_operations");
 }
 
@@ -100,7 +102,9 @@ export function isCurrentScan(generation: number, current: number): boolean {
   return generation === current;
 }
 
-export function cleanupResultSummary(operation: CleanupOperationRecord): string {
+export function cleanupResultSummary(
+  operation: CleanupOperationRecord,
+): string {
   if (operation.failedFiles === 0) {
     return `Deleted ${operation.deletedFiles.toLocaleString()} previewed files.`;
   }
