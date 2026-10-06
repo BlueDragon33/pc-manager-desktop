@@ -204,7 +204,8 @@ fn map_raw_apps(apps: Vec<RawApp>) -> Vec<NativeInstalledApp> {
         };
 
         let windows_installer = raw.windows_installer.unwrap_or_default() != 0;
-        let product_code = non_empty(raw.product_code).filter(|value| looks_like_product_code(value));
+        let product_code =
+            non_empty(raw.product_code).filter(|value| looks_like_product_code(value));
         let uninstall_string = non_empty(raw.uninstall_string);
         let uninstall_kind = if windows_installer && product_code.is_some() {
             UninstallKind::Msi
@@ -234,7 +235,9 @@ fn map_raw_apps(apps: Vec<RawApp>) -> Vec<NativeInstalledApp> {
             requires_elevation,
             uninstall_kind,
             detail: match (can_uninstall, requires_elevation) {
-                (true, true) => "Standard uninstall available; Windows may request elevation.".to_string(),
+                (true, true) => {
+                    "Standard uninstall available; Windows may request elevation.".to_string()
+                }
                 (true, false) => "Standard uninstall available for the current user.".to_string(),
                 (false, _) => "No supported standard uninstall command is registered.".to_string(),
             },
@@ -287,14 +290,11 @@ fn looks_like_product_code(value: &str) -> bool {
     value.len() == 38
         && value.starts_with('{')
         && value.ends_with('}')
-        && value
-            .chars()
-            .enumerate()
-            .all(|(index, ch)| match index {
-                0 | 37 => matches!(ch, '{' | '}'),
-                9 | 14 | 19 | 24 => ch == '-',
-                _ => ch.is_ascii_hexdigit(),
-            })
+        && value.chars().enumerate().all(|(index, ch)| match index {
+            0 | 37 => matches!(ch, '{' | '}'),
+            9 | 14 | 19 | 24 => ch == '-',
+            _ => ch.is_ascii_hexdigit(),
+        })
 }
 
 #[cfg(target_os = "windows")]
@@ -350,7 +350,9 @@ fn launch_native_uninstaller(entry: &NativeInstalledApp) -> Result<(), AppsError
                 .map_err(|error| {
                     AppsError::new(
                         "uninstall_launch_failed",
-                        format!("Unable to open the application's standard uninstall flow: {error}"),
+                        format!(
+                            "Unable to open the application's standard uninstall flow: {error}"
+                        ),
                         true,
                     )
                 })
