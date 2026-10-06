@@ -13,6 +13,6 @@ Rules:
 
 Current prompt:
 
-- `P0_REPOSITORY_FOUNDATION.md` — bootstrap the monorepo, Tauri app shell, Rust workspace, and CI.
+- `P6_APPS_DUPLICATES_STORAGE.md` — implement Apps/Uninstaller, Duplicate Finder, and Storage Analyzer using safe typed Windows providers.
 
-Future prompts should be added only when the preceding phase is stable enough that its interfaces are worth building on.
+Previous phase prompts remain in this directory as implementation history.
