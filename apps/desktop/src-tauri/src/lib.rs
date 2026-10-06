@@ -160,14 +160,13 @@ async fn scan_duplicates(
     let joined = task.await;
 
     remove_scan(&request_id, &cancellations);
-    let (plan, summary) = joined
-        .map_err(|error| {
-            FilesystemError::new(
-                "duplicate_scan_task_failed",
-                format!("The duplicate scan task failed: {error}"),
-                true,
-            )
-        })??;
+    let (plan, summary) = joined.map_err(|error| {
+        FilesystemError::new(
+            "duplicate_scan_task_failed",
+            format!("The duplicate scan task failed: {error}"),
+            true,
+        )
+    })??;
 
     let mut stored_plans = duplicate_plans.lock().map_err(|_| {
         FilesystemError::new(
