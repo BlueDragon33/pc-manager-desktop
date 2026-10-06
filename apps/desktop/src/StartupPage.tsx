@@ -283,10 +283,7 @@ export function StartupPage() {
               <button
                 className="primary-action"
                 onClick={() =>
-                  void executeChange(
-                    changeState.entry,
-                    changeState.nextEnabled,
-                  )
+                  void executeChange(changeState.entry, changeState.nextEnabled)
                 }
                 type="button"
               >
