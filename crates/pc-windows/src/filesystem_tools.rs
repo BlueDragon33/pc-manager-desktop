@@ -6,8 +6,12 @@ use pc_core::{
 };
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
-use std::fs::{self, File, OpenOptions};
-use std::io::{Read, Seek, SeekFrom, Write};
+use std::fs::{self, File};
+use std::io::{Read, Seek, SeekFrom};
+#[cfg(target_os = "windows")]
+use std::fs::OpenOptions;
+#[cfg(target_os = "windows")]
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -18,6 +22,7 @@ use std::process::Command;
 const PARTIAL_HASH_BYTES: usize = 64 * 1024;
 const HASH_BUFFER_BYTES: usize = 128 * 1024;
 const MAX_WARNINGS: usize = 100;
+#[cfg(target_os = "windows")]
 const DUPLICATE_AUDIT_FILE: &str = "duplicates.jsonl";
 
 #[derive(Debug, Clone)]
