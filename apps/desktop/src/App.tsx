@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { type AppInfo, getAppInfo } from "./appInfo";
+import { AppsPage } from "./AppsPage";
+import { DuplicateFinderPage } from "./DuplicateFinderPage";
 import { HealthCheckPage } from "./HealthCheckPage";
 import { InventorySummary } from "./InventorySummary";
 import { SmartCleanPage } from "./SmartCleanPage";
 import { RestorePage } from "./RestorePage";
 import { StartupPage } from "./StartupPage";
+import { StoragePage } from "./StoragePage";
 import { NAV_ITEMS, getNavItem, type PageId } from "./navigation";
 import {
   readSidebarCollapsed,
@@ -168,7 +171,7 @@ function OverviewPage({
           </div>
           <div>
             <dt>Product phase</dt>
-            <dd>{appInfo?.phase ?? "P5"}</dd>
+            <dd>{appInfo?.phase ?? "P6"}</dd>
           </div>
         </dl>
       </section>
@@ -181,7 +184,7 @@ function PlaceholderPage({
 }: {
   page: Exclude<
     PageId,
-    "overview" | "health" | "clean" | "startup" | "restore" | "settings"
+    "overview" | "health" | "clean" | "startup" | "apps" | "storage" | "duplicates" | "restore" | "settings"
   >;
 }) {
   const item = getNavItem(page);
@@ -198,7 +201,7 @@ function PlaceholderPage({
         <div className="info-callout">
           <strong>No system data is being simulated.</strong>
           <span>
-            This module is not implemented in P5. Real actions arrive only in
+            This module is not implemented in P6. Real actions arrive only in
             later, separately gated phases.
           </span>
         </div>
@@ -389,7 +392,7 @@ export default function App() {
             <h1>{activeItem.label}</h1>
           </div>
           <div className="topbar-actions">
-            <span className="phase-chip">P5</span>
+            <span className="phase-chip">P6</span>
             <button
               className="icon-button"
               onClick={() =>
@@ -414,6 +417,12 @@ export default function App() {
             <SmartCleanPage />
           ) : page === "startup" ? (
             <StartupPage />
+          ) : page === "apps" ? (
+            <AppsPage />
+          ) : page === "storage" ? (
+            <StoragePage />
+          ) : page === "duplicates" ? (
+            <DuplicateFinderPage />
           ) : page === "restore" ? (
             <RestorePage />
           ) : page === "settings" ? (
