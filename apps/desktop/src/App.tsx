@@ -184,7 +184,15 @@ function PlaceholderPage({
 }: {
   page: Exclude<
     PageId,
-    "overview" | "health" | "clean" | "startup" | "apps" | "storage" | "duplicates" | "restore" | "settings"
+    | "overview"
+    | "health"
+    | "clean"
+    | "startup"
+    | "apps"
+    | "storage"
+    | "duplicates"
+    | "restore"
+    | "settings"
   >;
 }) {
   const item = getNavItem(page);
