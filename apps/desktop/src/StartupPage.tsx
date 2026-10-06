@@ -35,7 +35,9 @@ function errorMessage(error: unknown, fallback: string): string {
 
 export function StartupPage() {
   const [loadState, setLoadState] = useState<LoadState>({ status: "loading" });
-  const [changeState, setChangeState] = useState<ChangeState>({ status: "idle" });
+  const [changeState, setChangeState] = useState<ChangeState>({
+    status: "idle",
+  });
   const [query, setQuery] = useState("");
 
   const load = () => {
@@ -47,7 +49,10 @@ export function StartupPage() {
       .catch((error: unknown) => {
         setLoadState({
           status: "error",
-          message: errorMessage(error, "Startup inventory could not be loaded."),
+          message: errorMessage(
+            error,
+            "Startup inventory could not be loaded.",
+          ),
         });
       });
   };
@@ -82,7 +87,9 @@ export function StartupPage() {
       <section className="startup-hero">
         <div>
           <p className="eyebrow">Startup Manager — P5</p>
-          <h2>Control supported Windows startup entries without uninstalling apps</h2>
+          <h2>
+            Control supported Windows startup entries without uninstalling apps
+          </h2>
           <p className="muted">
             PC Manager rediscovers every entry before changing it. System-level
             entries that require unsupported elevation remain read-only.
@@ -114,7 +121,9 @@ export function StartupPage() {
           <span className="scan-spinner" aria-hidden="true" />
           <div>
             <strong>Reading supported Windows startup sources…</strong>
-            <span>Registry Run keys, Startup folders, and startup/logon tasks.</span>
+            <span>
+              Registry Run keys, Startup folders, and startup/logon tasks.
+            </span>
           </div>
         </section>
       )}
@@ -134,7 +143,10 @@ export function StartupPage() {
           <strong>Startup state changed</strong>
           <span>{changeState.record.message}</span>
           <span>
-            Rollback: {changeState.record.rollbackAvailable ? "available" : "not available"}
+            Rollback:{" "}
+            {changeState.record.rollbackAvailable
+              ? "available"
+              : "not available"}
           </span>
         </section>
       )}
@@ -152,7 +164,8 @@ export function StartupPage() {
             <div>
               <p className="eyebrow">Startup inventory</p>
               <h3 id="startup-list-heading">
-                {visibleEntries.length} visible entr{visibleEntries.length === 1 ? "y" : "ies"}
+                {visibleEntries.length} visible entr
+                {visibleEntries.length === 1 ? "y" : "ies"}
               </h3>
             </div>
             <span className="status-badge neutral">
@@ -179,13 +192,17 @@ export function StartupPage() {
                       </div>
                       <span
                         className={
-                          entry.enabled ? "status-badge good" : "status-badge neutral"
+                          entry.enabled
+                            ? "status-badge good"
+                            : "status-badge neutral"
                         }
                       >
                         {entry.enabled ? "Enabled" : "Disabled"}
                       </span>
                     </div>
-                    <p className="startup-command">{entry.command || "Command unavailable"}</p>
+                    <p className="startup-command">
+                      {entry.command || "Command unavailable"}
+                    </p>
                     <div className="startup-meta">
                       <span>Impact: {entry.impact}</span>
                       <span>{entry.detail}</span>
@@ -196,7 +213,9 @@ export function StartupPage() {
                   <div className="startup-card-action">
                     {entry.canChange ? (
                       <button
-                        className={entry.enabled ? "secondary-action" : "primary-action"}
+                        className={
+                          entry.enabled ? "secondary-action" : "primary-action"
+                        }
                         disabled={changeState.status === "running"}
                         onClick={() =>
                           setChangeState({
@@ -228,7 +247,11 @@ export function StartupPage() {
       )}
 
       {changeState.status === "confirming" && (
-        <section className="cleanup-confirmation" role="dialog" aria-modal="true">
+        <section
+          className="cleanup-confirmation"
+          role="dialog"
+          aria-modal="true"
+        >
           <p className="eyebrow">Confirmation required</p>
           <h3>
             {changeState.nextEnabled ? "Enable" : "Disable"}{" "}
@@ -249,10 +272,7 @@ export function StartupPage() {
             <button
               className="primary-action"
               onClick={() =>
-                void executeChange(
-                  changeState.entry,
-                  changeState.nextEnabled,
-                )
+                void executeChange(changeState.entry, changeState.nextEnabled)
               }
               type="button"
             >
@@ -267,7 +287,9 @@ export function StartupPage() {
           <span className="scan-spinner" aria-hidden="true" />
           <div>
             <strong>Revalidating startup entry…</strong>
-            <span>PC Manager changes only the native entry ID you confirmed.</span>
+            <span>
+              PC Manager changes only the native entry ID you confirmed.
+            </span>
           </div>
         </section>
       )}
