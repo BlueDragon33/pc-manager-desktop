@@ -169,7 +169,10 @@ export function DuplicateFinderPage() {
     } catch (error: unknown) {
       setDeleteState({
         status: "error",
-        message: errorMessage(error, "Selected duplicate files were not deleted."),
+        message: errorMessage(
+          error,
+          "Selected duplicate files were not deleted.",
+        ),
       });
     }
   };
@@ -235,7 +238,10 @@ export function DuplicateFinderPage() {
         </label>
         <div className="p6-scan-actions">
           {scanState.status === "scanning" ? (
-            <button className="secondary-action" onClick={() => void cancelScan()}>
+            <button
+              className="secondary-action"
+              onClick={() => void cancelScan()}
+            >
               Cancel scan
             </button>
           ) : (
