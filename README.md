@@ -35,9 +35,9 @@ Read these before feature work:
 
 ## Current phase
 
-**P7 — System Monitor**
+**P8 — App Manager integration**
 
-P0–P6 foundations are implemented. P7 adds live Windows CPU, memory, disk, network, process, and capability-aware GPU/sensor telemetry with configurable polling and pause/resume. Representative manual Windows verification and idle-overhead measurement remain deferred where explicitly noted in the implementation plan.
+P0–P7 foundations are implemented. P8 adds an outbound-only Desktop Agent Gateway connection to Application Management with P-256 device identity, approval state, heartbeat/backoff, release/license/update policy, and a closed typed remote-command allow-list. Production deployment and real Windows gateway verification remain separately gated.
 
 ## Prerequisites
 

@@ -302,27 +302,27 @@ Acceptance:
 
 ## P8 — App Manager integration
 
-Goal: connect PC Manager to the existing administration platform.
+Goal: connect PC Manager to the existing administration platform through the approved outbound-only Desktop Agent Gateway v1.
 
 Client capabilities:
 
-- [ ] device identity
-- [ ] registration
-- [ ] approval state
-- [ ] heartbeat
-- [ ] online/offline semantics
-- [ ] app version
-- [ ] release channel
-- [ ] entitlement/license state
-- [ ] update policy
-- [ ] typed remote command envelope
+- [x] device identity — persistent P-256 key in the Windows CNG user key store
+- [x] registration — idempotent public-key registration into an isolated PC- registry
+- [x] approval state — pending/approved/blocked is server-owned and surfaced locally
+- [x] heartbeat — signed one-time challenge proof over outbound HTTPS
+- [x] online/offline semantics — last successful contact is preserved and transport failure is explicit
+- [x] app version
+- [x] release channel
+- [x] entitlement/license state
+- [x] update policy
+- [x] typed remote command envelope
 
 Remote command allow-list initially:
 
-- [ ] CHECK_UPDATE
-- [ ] RUN_HEALTH_SCAN
-- [ ] REFRESH_DEVICE_STATUS
-- [ ] DISABLE_LICENSE
+- [x] CHECK_UPDATE — typed but intentionally returns unsupported until P10
+- [x] RUN_HEALTH_SCAN — invokes the existing evidence-backed local health path
+- [x] REFRESH_DEVICE_STATUS
+- [x] DISABLE_LICENSE
 
 Explicitly prohibited:
 
@@ -334,10 +334,13 @@ Explicitly prohibited:
 
 Acceptance:
 
-- offline mode works;
-- retries use backoff;
-- authentication is not stored as plaintext when avoidable;
-- server cannot turn a typed command into arbitrary OS execution.
+- [x] offline mode works without disabling local PC-management features;
+- [x] retries use bounded 30/60/120/240/300 second backoff;
+- [x] the private authentication key is stored by Windows CNG rather than plaintext application storage;
+- [x] unknown command types fail deserialization and the host dispatches only the four typed variants;
+- [x] Application Management owns a separate Desktop Agent Gateway with P-256 challenge verification, D1 command queue, audit, approval, entitlement and policy state;
+- [ ] Application Management Production migration/deployment is approved and applied;
+- [ ] a real Windows PC Manager instance completes register → approve → signed heartbeat → typed command acknowledgement against Production.
 
 ---
 

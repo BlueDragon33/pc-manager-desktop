@@ -6,3 +6,5 @@ license.workspace = true
 description = "Typed App Manager protocol client for PC Manager Desktop."
 
 [dependencies]
+serde.workspace = true
+serde_json = "1"
