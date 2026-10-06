@@ -1,8 +1,10 @@
 use pc_core::{
-    StartupChangeRequest, StartupEntry, StartupError, StartupImpact, StartupOperationRecord,
-    StartupSourceType,
+    StartupChangeRequest, StartupEntry, StartupError, StartupOperationRecord, StartupSourceType,
 };
+#[cfg(any(target_os = "windows", test))]
+use pc_core::StartupImpact;
 use serde::{Deserialize, Serialize};
+#[cfg(any(target_os = "windows", test))]
 use sha2::{Digest, Sha256};
 #[cfg(target_os = "windows")]
 use std::collections::BTreeMap;
