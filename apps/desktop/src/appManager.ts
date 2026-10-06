@@ -37,9 +37,7 @@ export interface AppManagerRuntimeStatus {
 }
 
 function isConnection(value: unknown): value is AppManagerConnection {
-  return (
-    value === "notConfigured" || value === "offline" || value === "online"
-  );
+  return value === "notConfigured" || value === "offline" || value === "online";
 }
 
 export function isAppManagerRuntimeStatus(
