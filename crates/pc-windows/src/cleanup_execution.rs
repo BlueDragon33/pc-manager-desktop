@@ -6,7 +6,7 @@ use serde_json::to_string;
 use std::collections::BTreeMap;
 use std::fs::{self, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const STALE_TEMP_AGE: Duration = Duration::from_secs(24 * 60 * 60);
@@ -369,7 +369,86 @@ mod tests {
     use super::list_cleanup_operations;
 
     #[test]
-    fn operation_history_reader_tolerates_missing_log() {
+    fn operation_history_reader_is_non_panicking() {
         let _ = list_cleanup_operations();
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn windows_execution_deletes_only_an_unchanged_planned_file() {
+        use pc_core::{CleanupPlan, CleanupPlanItem};
+        use std::fs;
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock after epoch")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("pc-manager-p4b-test-{unique}"));
+        fs::create_dir_all(&root).expect("create execution test root");
+        let file = root.join("cache.bin");
+        fs::write(&file, b"disposable-cache").expect("write execution test file");
+        let metadata = fs::metadata(&file).expect("read test metadata");
+        let modified_at_epoch_ms = metadata.modified().ok().and_then(super::epoch_ms);
+
+        let plan = CleanupPlan {
+            plan_id: format!("test-plan-{unique}"),
+            collected_at_epoch_ms: super::now_epoch_ms(),
+            items: vec![CleanupPlanItem {
+                provider_id: "vscode-cache".to_string(),
+                provider_root: root.to_string_lossy().to_string(),
+                path: file.to_string_lossy().to_string(),
+                bytes: metadata.len(),
+                modified_at_epoch_ms,
+                reversible: false,
+            }],
+        };
+
+        let record = super::execute_cleanup_plan(&plan).expect("execute disposable test plan");
+
+        assert_eq!(record.deleted_files, 1);
+        assert_eq!(record.failed_files, 0);
+        assert!(!file.exists());
+        assert!(!record.rollback_available);
+        fs::remove_dir_all(root).expect("remove execution test root");
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn windows_execution_skips_a_candidate_changed_after_scan() {
+        use pc_core::{CleanupPlan, CleanupPlanItem};
+        use std::fs;
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock after epoch")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("pc-manager-p4b-changed-{unique}"));
+        fs::create_dir_all(&root).expect("create changed test root");
+        let file = root.join("cache.bin");
+        fs::write(&file, b"first").expect("write initial file");
+        let metadata = fs::metadata(&file).expect("read initial metadata");
+
+        let plan = CleanupPlan {
+            plan_id: format!("changed-plan-{unique}"),
+            collected_at_epoch_ms: super::now_epoch_ms(),
+            items: vec![CleanupPlanItem {
+                provider_id: "vscode-cache".to_string(),
+                provider_root: root.to_string_lossy().to_string(),
+                path: file.to_string_lossy().to_string(),
+                bytes: metadata.len(),
+                modified_at_epoch_ms: metadata.modified().ok().and_then(super::epoch_ms),
+                reversible: false,
+            }],
+        };
+
+        fs::write(&file, b"changed-and-longer").expect("modify candidate after scan");
+        let record = super::execute_cleanup_plan(&plan).expect("execute changed test plan");
+
+        assert_eq!(record.deleted_files, 0);
+        assert_eq!(record.failed_files, 1);
+        assert!(file.exists());
+        fs::remove_dir_all(root).expect("remove changed test root");
     }
 }
