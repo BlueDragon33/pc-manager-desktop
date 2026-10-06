@@ -1,15 +1,28 @@
 //! Platform-neutral domain models for PC Manager Desktop.
 
+mod apps;
 mod cleanup;
+mod filesystem;
 mod health;
 mod inventory;
 mod operation;
 mod startup;
 
+pub use apps::{
+    AppsError, InstalledAppEntry, InstalledAppSource, UninstallKind, UninstallLaunchResult,
+    UninstallRequest,
+};
 pub use cleanup::{
     summarize_cleanup_plan, CleanupCategory, CleanupError, CleanupPlan, CleanupPlanItem,
     CleanupPlanStore, CleanupProviderSummary, CleanupScanOptions, CleanupScanSummary,
     CleanupWarning,
+};
+pub use filesystem::{
+    DuplicateDeleteError, DuplicateDeleteRequest, DuplicateDeleteResult, DuplicateFile,
+    DuplicateGroup, DuplicatePlanItem, DuplicateScanOptions, DuplicateScanPlan,
+    DuplicateScanPlanStore, DuplicateScanSummary, FilesystemError, FilesystemWarning,
+    ScanRootSelection, StorageFileEntry, StorageFolderAggregate, StorageScanOptions,
+    StorageScanSummary, StorageTypeAggregate,
 };
 pub use health::{
     evaluate_health, HealthCategory, HealthCategoryResult, HealthFinding, HealthReport,
@@ -48,7 +61,7 @@ impl AppInfo {
             app_id: "pc-manager",
             platform: "windows",
             device_type: "desktop-native",
-            phase: "P5",
+            phase: "P6",
         }
     }
 }
@@ -64,6 +77,6 @@ mod tests {
         assert_eq!(info.app_id, "pc-manager");
         assert_eq!(info.platform, "windows");
         assert_eq!(info.device_type, "desktop-native");
-        assert_eq!(info.phase, "P5");
+        assert_eq!(info.phase, "P6");
     }
 }
