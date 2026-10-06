@@ -891,6 +891,8 @@ fn now_epoch_ms() -> u64 {
 #[cfg(test)]
 mod tests {
     use super::{scan_duplicate_files, scan_storage};
+    #[cfg(target_os = "windows")]
+    use super::delete_duplicate_files;
     use pc_core::{DuplicateScanOptions, StorageScanOptions};
     use std::fs;
     use std::sync::atomic::AtomicBool;
@@ -957,6 +959,89 @@ mod tests {
 
         assert_eq!(result.duplicate_groups.len(), 1);
         assert_eq!(result.duplicate_groups[0].files.len(), 2);
+        fs::remove_dir_all(root).expect("remove root");
+    }
+
+    #[test]
+    fn pre_cancelled_storage_scan_stops_without_publishing_results() {
+        let root = temp_root("cancelled");
+        fs::create_dir_all(&root).expect("create root");
+        fs::write(root.join("file.bin"), vec![1_u8; 32]).expect("write file");
+
+        let cancel = AtomicBool::new(true);
+        let error = scan_storage(
+            std::slice::from_ref(&root),
+            StorageScanOptions::default(),
+            &cancel,
+        )
+        .expect_err("cancelled scan should fail closed");
+
+        assert_eq!(error.code, "scan_cancelled");
+        fs::remove_dir_all(root).expect("remove root");
+    }
+
+    #[test]
+    fn storage_scan_honors_directory_name_exclusions() {
+        let root = temp_root("exclusion");
+        let excluded = root.join("node_modules");
+        fs::create_dir_all(&excluded).expect("create excluded folder");
+        fs::write(root.join("keep.txt"), vec![1_u8; 10]).expect("write visible file");
+        fs::write(excluded.join("skip.bin"), vec![2_u8; 50]).expect("write excluded file");
+
+        let cancel = AtomicBool::new(false);
+        let result = scan_storage(
+            std::slice::from_ref(&root),
+            StorageScanOptions {
+                excluded_directory_names: vec!["node_modules".to_string()],
+                ..StorageScanOptions::default()
+            },
+            &cancel,
+        )
+        .expect("storage scan");
+
+        assert_eq!(result.total_files, 1);
+        assert_eq!(result.total_bytes, 10);
+        fs::remove_dir_all(root).expect("remove root");
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn duplicate_deletion_rejects_a_file_changed_after_scan() {
+        let root = temp_root("changed-delete");
+        fs::create_dir_all(&root).expect("create root");
+        let bytes = vec![7_u8; 8 * 1024];
+        let first = root.join("first.bin");
+        let second = root.join("second.bin");
+        fs::write(&first, &bytes).expect("write first");
+        fs::write(&second, &bytes).expect("write second");
+
+        let cancel = AtomicBool::new(false);
+        let (plan, summary) = scan_duplicate_files(
+            std::slice::from_ref(&root),
+            DuplicateScanOptions {
+                min_file_bytes: 1,
+                ..DuplicateScanOptions::default()
+            },
+            &cancel,
+        )
+        .expect("duplicate scan");
+        assert_eq!(summary.duplicate_groups.len(), 1);
+
+        let selected = summary.duplicate_groups[0].files[0].id.clone();
+        let selected_path = plan
+            .items
+            .iter()
+            .find(|item| item.id == selected)
+            .map(|item| item.path.clone())
+            .expect("selected plan item");
+        fs::write(&selected_path, vec![9_u8; 9 * 1024]).expect("change selected file");
+
+        let result = delete_duplicate_files(&plan, &[selected])
+            .expect("changed candidate should be reported, not crash");
+
+        assert_eq!(result.deleted_files, 0);
+        assert_eq!(result.failed_files, 1);
+        assert!(std::path::Path::new(&selected_path).exists());
         fs::remove_dir_all(root).expect("remove root");
     }
 
