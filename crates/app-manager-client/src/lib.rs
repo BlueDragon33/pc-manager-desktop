@@ -194,6 +194,7 @@ pub struct ClientConfig {
     pub configured: bool,
     pub origin: Option<String>,
     pub release_channel: ReleaseChannel,
+    pub app_version: String,
 }
 
 #[derive(Debug, Clone)]
@@ -228,6 +229,7 @@ impl AppManagerClient {
             configured: self.origin.is_some(),
             origin: self.origin.clone(),
             release_channel: self.release_channel,
+            app_version: self.app_version.clone(),
         }
     }
 
@@ -338,7 +340,7 @@ impl AppManagerClient {
 
         #[cfg(not(target_os = "windows"))]
         {
-            let _ = (origin, compact);
+            let _ = (origin, compact, succeeded);
             Err(ClientError::new(
                 "unsupported_platform",
                 "App Manager desktop-agent transport is available on Windows only.",
@@ -450,6 +452,7 @@ fn validate_command_id(value: &str) -> Result<(), ClientError> {
     }
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn validate_heartbeat(value: &HeartbeatResponse) -> Result<(), ClientError> {
     if value.protocol != PROTOCOL {
         return Err(ClientError::new(
