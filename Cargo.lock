@@ -2155,6 +2155,7 @@ name = "pc-manager-desktop"
 version = "0.1.0"
 dependencies = [
  "pc-core",
+ "pc-monitor",
  "pc-windows",
  "tauri",
  "tauri-build",
@@ -2167,6 +2168,10 @@ version = "0.1.0"
 [[package]]
 name = "pc-monitor"
 version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "pc-updater"
