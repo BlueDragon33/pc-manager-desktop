@@ -132,7 +132,7 @@ pub fn summarize_cleanup_plan(
         total_files,
         providers,
         warnings,
-        execution_available: false,
+        execution_available: true,
     }
 }
 
@@ -182,7 +182,7 @@ mod tests {
 
         assert_eq!(summary.total_files, 5);
         assert_eq!(summary.total_bytes, 200);
-        assert!(!summary.execution_available);
+        assert!(summary.execution_available);
         assert_eq!(summary.warnings.len(), 1);
     }
 
