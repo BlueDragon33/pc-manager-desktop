@@ -390,7 +390,11 @@ fn run_powershell(script: &str, message: Option<&str>) -> Result<String, AppMana
     if !output.status.success() {
         return Err(AppManagerError::new(
             "agent_identity_provider_failed",
-            String::from_utf8_lossy(&output.stderr).trim().chars().take(500).collect::<String>(),
+            String::from_utf8_lossy(&output.stderr)
+                .trim()
+                .chars()
+                .take(500)
+                .collect::<String>(),
             true,
         ));
     }
@@ -573,13 +577,14 @@ pub fn sync_once() -> Result<SyncBatch, AppManagerError> {
                 "publicKey": public_key,
             }),
         )?;
-        let register: RegisterResponse = serde_json::from_value(register_value).map_err(|error| {
-            AppManagerError::new(
-                "agent_register_response_invalid",
-                format!("Unable to parse App Manager registration: {error}"),
-                true,
-            )
-        })?;
+        let register: RegisterResponse =
+            serde_json::from_value(register_value).map_err(|error| {
+                AppManagerError::new(
+                    "agent_register_response_invalid",
+                    format!("Unable to parse App Manager registration: {error}"),
+                    true,
+                )
+            })?;
 
         let state = base_state(endpoint.clone(), &register.device, &register.policy);
         if register.device.status != "approved" {
@@ -690,8 +695,7 @@ pub fn acknowledge_command(
                     true,
                 )
             })?;
-        let signed_message =
-            format!("{AGENT_PROTOCOL}:ack:{device_id}:{}", challenge.challenge);
+        let signed_message = format!("{AGENT_PROTOCOL}:ack:{device_id}:{}", challenge.challenge);
         let signature = sign_message(&signed_message)?;
         post_json(
             &endpoint,
