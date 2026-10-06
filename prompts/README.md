@@ -13,6 +13,6 @@ Rules:
 
 Current prompt:
 
-- `P7_SYSTEM_MONITOR.md` — implement low-overhead Windows resource telemetry with honest capability detection, configurable sampling, and pause/resume.
+- `P8_APP_MANAGER_GATEWAY.md` — connect PC Manager to Application Management through the approved outbound-only P-256 Desktop Agent Gateway.
 
 Previous phase prompts remain in this directory as implementation history.
