@@ -1,8 +1,8 @@
+#[cfg(any(target_os = "windows", test))]
+use pc_core::StartupImpact;
 use pc_core::{
     StartupChangeRequest, StartupEntry, StartupError, StartupOperationRecord, StartupSourceType,
 };
-#[cfg(any(target_os = "windows", test))]
-use pc_core::StartupImpact;
 use serde::{Deserialize, Serialize};
 #[cfg(any(target_os = "windows", test))]
 use sha2::{Digest, Sha256};
