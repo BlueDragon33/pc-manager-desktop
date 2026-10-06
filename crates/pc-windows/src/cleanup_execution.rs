@@ -79,6 +79,7 @@ pub fn list_cleanup_operations() -> Result<Vec<CleanupOperationRecord>, CleanupE
 
 #[cfg(target_os = "windows")]
 fn execute_windows(plan: &CleanupPlan) -> Result<CleanupOperationRecord, CleanupError> {
+    ensure_operation_log_writable()?;
     let started_at_epoch_ms = now_epoch_ms();
     let operation_id = format!("cleanup-op-{}-{}", started_at_epoch_ms, std::process::id());
 
@@ -292,7 +293,7 @@ fn is_stale(modified: SystemTime, now_epoch_ms: u64, required_age: Duration) -> 
         >= u64::try_from(required_age.as_millis()).unwrap_or(u64::MAX)
 }
 
-fn append_operation_record(record: &CleanupOperationRecord) -> Result<(), CleanupError> {
+fn ensure_operation_log_writable() -> Result<(), CleanupError> {
     let path = operation_log_path()?;
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|error| {
@@ -303,6 +304,23 @@ fn append_operation_record(record: &CleanupOperationRecord) -> Result<(), Cleanu
             )
         })?;
     }
+
+    OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .map(|_| ())
+        .map_err(|error| {
+            CleanupError::new(
+                "operation_log_open_failed",
+                format!("Unable to prepare the cleanup operation log: {error}"),
+                true,
+            )
+        })
+}
+
+fn append_operation_record(record: &CleanupOperationRecord) -> Result<(), CleanupError> {
+    let path = operation_log_path()?;
 
     let json = to_string(record).map_err(|error| {
         CleanupError::new(
