@@ -1,4 +1,4 @@
-#[cfg(any(target_os = "windows", test))]
+#[cfg(test)]
 use pc_core::StartupImpact;
 use pc_core::{
     StartupChangeRequest, StartupEntry, StartupError, StartupOperationRecord, StartupSourceType,
@@ -310,7 +310,7 @@ pub fn list_startup_operations() -> Result<Vec<StartupOperationRecord>, StartupE
             records.push(record);
         }
     }
-    records.sort_by(|left, right| right.completed_at_epoch_ms.cmp(&left.completed_at_epoch_ms));
+    records.sort_by_key(|record| std::cmp::Reverse(record.completed_at_epoch_ms));
     Ok(records)
 }
 
