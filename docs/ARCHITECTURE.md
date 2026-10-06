@@ -118,14 +118,18 @@ Owns all App Manager protocol code.
 
 No other module should directly call App Manager endpoints.
 
+P8 transport is outbound-only: PC Manager initiates HTTPS requests to the Application Management Desktop Agent Gateway and never opens an inbound management port.
+
 Responsibilities:
 
-- registration;
-- authentication/session state;
-- heartbeat;
-- entitlement;
-- release policy;
-- typed remote commands.
+- persistent Windows CNG P-256 device identity;
+- registration and approval/block state;
+- one-time signed challenge authentication;
+- heartbeat and bounded retry/backoff;
+- entitlement and update policy;
+- typed remote command envelopes and result acknowledgement.
+
+The initial remote allow-list is limited to `CHECK_UPDATE`, `RUN_HEALTH_SCAN`, `REFRESH_DEVICE_STATUS`, and `DISABLE_LICENSE`. The gateway must never expose arbitrary shell, PowerShell, process, registry, file, or download-and-run primitives.
 
 ## Windows Service
 
