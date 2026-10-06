@@ -80,11 +80,7 @@ pub fn list_cleanup_operations() -> Result<Vec<CleanupOperationRecord>, CleanupE
 #[cfg(target_os = "windows")]
 fn execute_windows(plan: &CleanupPlan) -> Result<CleanupOperationRecord, CleanupError> {
     let started_at_epoch_ms = now_epoch_ms();
-    let operation_id = format!(
-        "cleanup-op-{}-{}",
-        started_at_epoch_ms,
-        std::process::id()
-    );
+    let operation_id = format!("cleanup-op-{}-{}", started_at_epoch_ms, std::process::id());
 
     let mut providers: BTreeMap<String, ProviderAccumulator> = BTreeMap::new();
     let mut errors = Vec::new();
@@ -166,9 +162,7 @@ fn execute_windows(plan: &CleanupPlan) -> Result<CleanupOperationRecord, Cleanup
 }
 
 #[cfg(target_os = "windows")]
-fn validate_and_delete(
-    item: &pc_core::CleanupPlanItem,
-) -> Result<(), (String, String)> {
+fn validate_and_delete(item: &pc_core::CleanupPlanItem) -> Result<(), (String, String)> {
     if !is_supported_provider(&item.provider_id) {
         return Err((
             "unsupported_provider".to_string(),
