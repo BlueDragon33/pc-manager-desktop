@@ -1,17 +1,26 @@
-use pc_core::{
-    CleanupError, CleanupExecutionError, CleanupOperationRecord, CleanupPlan,
-    CleanupProviderExecutionResult,
-};
+use pc_core::{CleanupError, CleanupOperationRecord, CleanupPlan};
+#[cfg(target_os = "windows")]
+use pc_core::{CleanupExecutionError, CleanupProviderExecutionResult};
+#[cfg(target_os = "windows")]
 use serde_json::to_string;
+#[cfg(target_os = "windows")]
 use std::collections::BTreeMap;
-use std::fs::{self, OpenOptions};
-use std::io::{BufRead, BufReader, Write};
+use std::fs;
+#[cfg(target_os = "windows")]
+use std::fs::OpenOptions;
+use std::io::{BufRead, BufReader};
+#[cfg(target_os = "windows")]
+use std::io::Write;
 use std::path::PathBuf;
+#[cfg(target_os = "windows")]
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+#[cfg(target_os = "windows")]
 const STALE_TEMP_AGE: Duration = Duration::from_secs(24 * 60 * 60);
+#[cfg(target_os = "windows")]
 const MAX_RECORDED_ERRORS: usize = 50;
 
+#[cfg(target_os = "windows")]
 #[derive(Debug, Default)]
 struct ProviderAccumulator {
     requested_files: u64,
@@ -293,6 +302,7 @@ fn is_stale(modified: SystemTime, now_epoch_ms: u64, required_age: Duration) -> 
         >= u64::try_from(required_age.as_millis()).unwrap_or(u64::MAX)
 }
 
+#[cfg(target_os = "windows")]
 fn ensure_operation_log_writable() -> Result<(), CleanupError> {
     let path = operation_log_path()?;
     if let Some(parent) = path.parent() {
@@ -319,6 +329,7 @@ fn ensure_operation_log_writable() -> Result<(), CleanupError> {
         })
 }
 
+#[cfg(target_os = "windows")]
 fn append_operation_record(record: &CleanupOperationRecord) -> Result<(), CleanupError> {
     let path = operation_log_path()?;
 
@@ -366,12 +377,14 @@ fn operation_log_path() -> Result<PathBuf, CleanupError> {
         .join("cleanup.jsonl"))
 }
 
+#[cfg(target_os = "windows")]
 fn epoch_ms(time: SystemTime) -> Option<u64> {
     time.duration_since(UNIX_EPOCH)
         .ok()
         .and_then(|duration| u64::try_from(duration.as_millis()).ok())
 }
 
+#[cfg(target_os = "windows")]
 fn now_epoch_ms() -> u64 {
     epoch_ms(SystemTime::now()).unwrap_or_default()
 }
