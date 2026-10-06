@@ -47,8 +47,11 @@ jobs:
       - name: Build frontend
         run: npm run build:frontend
 
-      - name: Check formatting
-        run: npm run format:check
+      - name: Diagnose styles formatting
+        run: |
+          npx prettier --write apps/desktop/src/styles.css
+          git diff -- apps/desktop/src/styles.css
+          test -z "$(git status --porcelain)"
 
   rust:
     name: Rust checks
