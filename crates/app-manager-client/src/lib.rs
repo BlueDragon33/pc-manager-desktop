@@ -452,7 +452,7 @@ fn validate_command_id(value: &str) -> Result<(), ClientError> {
     }
 }
 
-#[cfg(any(target_os = "windows", test))]
+#[cfg(target_os = "windows")]
 fn validate_heartbeat(value: &HeartbeatResponse) -> Result<(), ClientError> {
     if value.protocol != PROTOCOL {
         return Err(ClientError::new(
