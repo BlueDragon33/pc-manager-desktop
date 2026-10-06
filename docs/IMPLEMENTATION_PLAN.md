@@ -163,14 +163,14 @@ Smart Cleaner V1:
 - [~] recycle bin as a separate opt-in item — modeled and opt-in, native size/count provider still gated
 - [x] scan-only preview
 - [x] cleanup plan
-- [ ] execution result
+- [x] execution result
 
 Restore foundation:
 
-- [ ] operation log
-- [ ] before-state metadata
-- [ ] rollback capability flags
-- [ ] rollback UI
+- [x] operation log — append-only local JSONL audit under LOCALAPPDATA
+- [x] before-state metadata — native plan ID, requested bytes/files, provider totals, and per-item scan metadata used for execution revalidation; personal paths are not persisted in history
+- [x] rollback capability flags — cache/temp deletion is explicitly marked not restorable
+- [x] rollback UI — Restore Center shows operation history and honest rollback availability
 
 Important:
 
@@ -187,14 +187,17 @@ P4A preview gate:
 - [x] native cleanup plan is retained by plan ID;
 - [x] no delete command exists in P4A;
 - [x] Windows CI executes the real built-in scanner and native build successfully;
-- [ ] user verifies preview totals on a real Windows machine before P4B.
+- [x] user verified preview totals and provider breakdown on a real Windows machine before P4B.
 
 P4B execution gate:
-- [ ] every planned path is revalidated immediately before deletion;
-- [ ] errors do not abort unrelated cleanup items;
-- [ ] audit record is stored;
-- [ ] execution result is shown accurately;
-- [ ] restore capability is labeled honestly.
+- [x] every planned path is canonicalized and revalidated immediately before deletion;
+- [x] reparse points, changed files, out-of-root paths, unsupported providers, and stale-rule failures are skipped;
+- [x] errors do not abort unrelated cleanup items;
+- [x] audit storage is preflighted before deletion and the completed operation record is appended locally;
+- [x] execution result shows requested/deleted/failed files and bytes accurately;
+- [x] restore capability is labeled honestly as "Not restorable" for cache/temp deletion;
+- [x] disposable Windows CI tests prove deletion of an unchanged planned file and rejection of a candidate changed after scan;
+- [x] frontend, Rust, Clippy, Windows tests, and native Windows build are green.
 
 ---
 
