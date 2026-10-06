@@ -1,3 +1,6 @@
+use app_manager_client::{
+    bounded_heartbeat_seconds, retry_delay_seconds, AgentDeviceState, AppManagerClient, RemoteCommand,
+};
 use pc_core::{
     evaluate_health, AppInfo, AppsError, CleanupError, CleanupOperationRecord, CleanupPlanStore,
     CleanupScanOptions, CleanupScanSummary, DuplicateDeleteRequest, DuplicateDeleteResult,
@@ -7,6 +10,8 @@ use pc_core::{
     SystemInventory, UninstallLaunchResult, UninstallRequest,
 };
 use pc_monitor::{MonitorError, MonitorSnapshot};
+use serde::Serialize;
+use serde_json::json;
 use std::{
     collections::HashMap,
     path::PathBuf,
@@ -16,6 +21,214 @@ use std::{
     },
 };
 use tauri::State;
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AppManagerRuntimeStatus {
+    configured: bool,
+    connection: String,
+    device: Option<AgentDeviceState>,
+    last_error: Option<String>,
+    retry_after_seconds: u64,
+    last_sync_epoch_ms: Option<u64>,
+}
+
+struct AppManagerRuntimeState {
+    status: AppManagerRuntimeStatus,
+    failure_count: u32,
+}
+
+struct AppManagerRuntime {
+    client: AppManagerClient,
+    state: Mutex<AppManagerRuntimeState>,
+    syncing: AtomicBool,
+}
+
+impl AppManagerRuntime {
+    fn new() -> Self {
+        let client = AppManagerClient::from_environment(env!("CARGO_PKG_VERSION"));
+        let config = client.config();
+        Self {
+            client,
+            state: Mutex::new(AppManagerRuntimeState {
+                status: AppManagerRuntimeStatus {
+                    configured: config.configured,
+                    connection: if config.configured {
+                        "offline".to_string()
+                    } else {
+                        "notConfigured".to_string()
+                    },
+                    device: None,
+                    last_error: None,
+                    retry_after_seconds: if config.configured { 5 } else { 300 },
+                    last_sync_epoch_ms: None,
+                },
+                failure_count: 0,
+            }),
+            syncing: AtomicBool::new(false),
+        }
+    }
+
+    fn snapshot(&self) -> AppManagerRuntimeStatus {
+        self.state
+            .lock()
+            .map(|state| state.status.clone())
+            .unwrap_or(AppManagerRuntimeStatus {
+                configured: self.client.config().configured,
+                connection: "offline".to_string(),
+                device: None,
+                last_error: Some("App Manager runtime state is unavailable.".to_string()),
+                retry_after_seconds: 60,
+                last_sync_epoch_ms: None,
+            })
+    }
+}
+
+fn epoch_ms() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_millis().min(u128::from(u64::MAX)) as u64)
+        .unwrap_or_default()
+}
+
+fn execute_remote_command(command: &RemoteCommand) -> (bool, serde_json::Value) {
+    match command {
+        RemoteCommand::CheckUpdate { .. } => (
+            true,
+            json!({
+                "supported": false,
+                "reason": "signed-updater-is-introduced-in-p9",
+                "phase": "P8"
+            }),
+        ),
+        RemoteCommand::RunHealthScan { .. } => match pc_windows::collect_system_inventory() {
+            Ok(inventory) => {
+                let report = evaluate_health(&inventory);
+                (
+                    true,
+                    json!({
+                        "score": report.score,
+                        "coveragePercent": report.coverage_percent,
+                        "supportedCategories": report.supported_categories,
+                        "totalCategories": report.total_categories,
+                        "findingCount": report.findings.len(),
+                        "inventoryWarningCount": report.inventory_warnings.len()
+                    }),
+                )
+            }
+            Err(error) => (
+                false,
+                json!({
+                    "code": error.code,
+                    "message": error.message,
+                    "recoverable": error.recoverable
+                }),
+            ),
+        },
+        RemoteCommand::RefreshDeviceStatus { .. } => (
+            true,
+            json!({
+                "appId": "pc-manager",
+                "platform": "windows",
+                "deviceType": "desktop-native",
+                "version": env!("CARGO_PKG_VERSION"),
+                "phase": AppInfo::current().phase
+            }),
+        ),
+        RemoteCommand::DisableLicense { .. } => (
+            true,
+            json!({
+                "applied": true,
+                "entitlementState": "disabled",
+                "note": "Local maintenance remains safe and offline-capable; managed entitlement state is disabled."
+            }),
+        ),
+    }
+}
+
+fn run_app_manager_cycle(client: AppManagerClient) -> Result<(AgentDeviceState, u64, Vec<String>), app_manager_client::ClientError> {
+    let heartbeat = client.heartbeat()?;
+    let mut command_errors = Vec::new();
+
+    for command in &heartbeat.commands {
+        let (succeeded, result) = execute_remote_command(command);
+        if let Err(error) = client.submit_result(
+            &heartbeat.device.device_id,
+            command.command_id(),
+            succeeded,
+            &result,
+        ) {
+            command_errors.push(format!("{}: {}", command.kind(), error.message));
+        }
+    }
+
+    Ok((
+        heartbeat.device,
+        bounded_heartbeat_seconds(heartbeat.heartbeat_after_seconds),
+        command_errors,
+    ))
+}
+
+#[tauri::command]
+fn get_app_manager_status(runtime: State<'_, AppManagerRuntime>) -> AppManagerRuntimeStatus {
+    runtime.snapshot()
+}
+
+#[tauri::command]
+async fn sync_app_manager(runtime: State<'_, AppManagerRuntime>) -> AppManagerRuntimeStatus {
+    if !runtime.client.config().configured {
+        return runtime.snapshot();
+    }
+
+    if runtime.syncing.swap(true, Ordering::AcqRel) {
+        return runtime.snapshot();
+    }
+
+    let client = runtime.client.clone();
+    let result = tauri::async_runtime::spawn_blocking(move || run_app_manager_cycle(client)).await;
+    runtime.syncing.store(false, Ordering::Release);
+
+    if let Ok(mut state) = runtime.state.lock() {
+        match result {
+            Ok(Ok((device, heartbeat_after_seconds, command_errors))) => {
+                state.failure_count = 0;
+                state.status = AppManagerRuntimeStatus {
+                    configured: true,
+                    connection: "online".to_string(),
+                    device: Some(device),
+                    last_error: if command_errors.is_empty() {
+                        None
+                    } else {
+                        Some(command_errors.join("; "))
+                    },
+                    retry_after_seconds: heartbeat_after_seconds,
+                    last_sync_epoch_ms: Some(epoch_ms()),
+                };
+            }
+            Ok(Err(error)) => {
+                let delay = retry_delay_seconds(state.failure_count);
+                state.failure_count = state.failure_count.saturating_add(1);
+                state.status.connection = "offline".to_string();
+                state.status.last_error = Some(error.message);
+                state.status.retry_after_seconds = delay;
+                state.status.last_sync_epoch_ms = Some(epoch_ms());
+            }
+            Err(error) => {
+                let delay = retry_delay_seconds(state.failure_count);
+                state.failure_count = state.failure_count.saturating_add(1);
+                state.status.connection = "offline".to_string();
+                state.status.last_error =
+                    Some(format!("App Manager sync task failed safely: {error}"));
+                state.status.retry_after_seconds = delay;
+                state.status.last_sync_epoch_ms = Some(epoch_ms());
+            }
+        }
+
+        state.status.clone()
+    } else {
+        runtime.snapshot()
+    }
+}
 
 #[derive(Debug, Default)]
 struct ScanRootStore {
@@ -360,12 +573,15 @@ fn validate_request_id(request_id: &str) -> Result<(), FilesystemError> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(AppManagerRuntime::new())
         .manage(Mutex::new(CleanupPlanStore::default()))
         .manage(Mutex::new(DuplicateScanPlanStore::default()))
         .manage(Mutex::new(ScanRootStore::default()))
         .manage(Mutex::new(ScanCancellationStore::default()))
         .invoke_handler(tauri::generate_handler![
             get_app_info,
+            get_app_manager_status,
+            sync_app_manager,
             get_system_inventory,
             get_monitor_snapshot,
             run_health_check,
