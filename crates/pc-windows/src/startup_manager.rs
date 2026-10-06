@@ -430,6 +430,7 @@ fn map_raw_entry(raw: RawStartupEntry) -> Option<NativeStartupEntry> {
     })
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn parse_source_type(value: &str) -> Option<StartupSourceType> {
     match value {
         "registryCurrentUserRun" => Some(StartupSourceType::RegistryCurrentUserRun),
@@ -443,6 +444,7 @@ fn parse_source_type(value: &str) -> Option<StartupSourceType> {
     }
 }
 
+#[cfg(target_os = "windows")]
 fn source_label(source: StartupSourceType) -> &'static str {
     match source {
         StartupSourceType::RegistryCurrentUserRun => "Current user Run",
@@ -455,6 +457,7 @@ fn source_label(source: StartupSourceType) -> &'static str {
     }
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn startup_entry_id(source: StartupSourceType, identity: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(b"pc-manager-startup-v1:");
@@ -779,6 +782,7 @@ fn set_scheduled_task_enabled(
     }
 }
 
+#[cfg(target_os = "windows")]
 fn discover_disabled_startup_files() -> Result<Vec<NativeStartupEntry>, StartupError> {
     let root = disabled_startup_root()?;
     if !root.exists() {
@@ -936,6 +940,7 @@ fn reject_reparse_or_symlink(path: &Path) -> Result<(), StartupError> {
     Ok(())
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn is_supported_hkcu_key(key: &str) -> bool {
     matches!(
         key.to_ascii_lowercase().as_str(),
@@ -1115,13 +1120,13 @@ mod tests {
     #[test]
     fn startup_folder_candidate_must_be_direct_child() {
         assert!(verify_direct_child(
-            Path::new(r"C:\Users\Test\Startup"),
-            Path::new(r"C:\Users\Test\Startup\example.lnk")
+            Path::new("/tmp/startup"),
+            Path::new("/tmp/startup/example.lnk")
         )
         .is_ok());
         assert!(verify_direct_child(
-            Path::new(r"C:\Users\Test\Startup"),
-            Path::new(r"C:\Users\Test\Documents\example.lnk")
+            Path::new("/tmp/startup"),
+            Path::new("/tmp/documents/example.lnk")
         )
         .is_err());
     }
