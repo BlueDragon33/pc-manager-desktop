@@ -359,18 +359,21 @@ fn discover_native_entries() -> Result<Vec<NativeStartupEntry>, StartupError> {
         let trimmed = stdout.trim();
         let raw: Vec<RawStartupEntry> = if trimmed.is_empty() || trimmed == "null" {
             Vec::new()
-        } else if trimmed.starts_with('[') {
-            serde_json::from_str(trimmed)
         } else {
-            serde_json::from_str::<RawStartupEntry>(trimmed).map(|entry| vec![entry])
-        }
-        .map_err(|error| {
-            StartupError::new(
-                "startup_provider_payload",
-                format!("Unable to parse Startup Manager data: {error}"),
-                true,
-            )
-        })?;
+            let parsed = if trimmed.starts_with('[') {
+                serde_json::from_str(trimmed)
+            } else {
+                serde_json::from_str::<RawStartupEntry>(trimmed).map(|entry| vec![entry])
+            };
+
+            parsed.map_err(|error| {
+                StartupError::new(
+                    "startup_provider_payload",
+                    format!("Unable to parse Startup Manager data: {error}"),
+                    true,
+                )
+            })?
+        };
 
         let mut entries = raw
             .into_iter()
