@@ -159,7 +159,10 @@ export function StoragePage() {
         </label>
         <div className="p6-scan-actions">
           {scanState.status === "scanning" ? (
-            <button className="secondary-action" onClick={() => void cancelScan()}>
+            <button
+              className="secondary-action"
+              onClick={() => void cancelScan()}
+            >
               Cancel scan
             </button>
           ) : (
