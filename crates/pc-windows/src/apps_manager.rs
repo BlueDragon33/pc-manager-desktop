@@ -1,6 +1,7 @@
-use pc_core::{AppsError, InstalledAppEntry, InstalledAppSource, UninstallLaunchResult, UninstallRequest};
+use pc_core::{AppsError, InstalledAppEntry, UninstallLaunchResult, UninstallRequest};
 #[cfg(any(target_os = "windows", test))]
-use pc_core::UninstallKind;
+use pc_core::{InstalledAppSource, UninstallKind};
+#[cfg(any(target_os = "windows", test))]
 use sha2::{Digest, Sha256};
 #[cfg(target_os = "windows")]
 use std::collections::BTreeMap;
