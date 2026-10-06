@@ -317,8 +317,8 @@ fn map_raw_snapshot(raw: RawMonitorSnapshot, sample_duration_ms: u64) -> Monitor
 
     let disk_available =
         raw.disk_read_bytes_persec.is_some() || raw.disk_write_bytes_persec.is_some();
-    let network_available = raw.network_receive_bytes_persec.is_some()
-        || raw.network_send_bytes_persec.is_some();
+    let network_available =
+        raw.network_receive_bytes_persec.is_some() || raw.network_send_bytes_persec.is_some();
 
     MonitorSnapshot {
         collected_at_epoch_ms: now_epoch_ms(),
