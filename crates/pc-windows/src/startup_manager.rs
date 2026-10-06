@@ -16,7 +16,6 @@ const STARTUP_AUDIT_FILE: &str = "startup-operations.jsonl";
 #[derive(Debug, Clone)]
 struct NativeStartupEntry {
     public: StartupEntry,
-    identity: String,
     registry_key: Option<String>,
     registry_value_name: Option<String>,
     startup_path: Option<PathBuf>,
@@ -24,6 +23,7 @@ struct NativeStartupEntry {
     scheduled_task_path: Option<String>,
 }
 
+#[cfg(target_os = "windows")]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RawStartupEntry {
@@ -52,6 +52,7 @@ struct DisabledFolderMeta {
     command: String,
 }
 
+#[cfg(target_os = "windows")]
 const STARTUP_INVENTORY_SCRIPT: &str = r#"
 $ErrorActionPreference = 'Stop'
 $entries = [System.Collections.Generic.List[object]]::new()
@@ -390,6 +391,7 @@ fn discover_native_entries() -> Result<Vec<NativeStartupEntry>, StartupError> {
     }
 }
 
+#[cfg(target_os = "windows")]
 fn map_raw_entry(raw: RawStartupEntry) -> Option<NativeStartupEntry> {
     let source_type = parse_source_type(&raw.source_type)?;
     let identity = raw.identity.trim().to_string();
@@ -414,7 +416,6 @@ fn map_raw_entry(raw: RawStartupEntry) -> Option<NativeStartupEntry> {
             impact_evidence: None,
             detail: raw.detail,
         },
-        identity,
         registry_key: raw.registry_key,
         registry_value_name: raw.registry_value_name,
         startup_path: raw.startup_path.map(PathBuf::from),
@@ -824,7 +825,6 @@ fn discover_disabled_startup_files() -> Result<Vec<NativeStartupEntry>, StartupE
                 detail: "Disabled by PC Manager; original Startup folder location preserved."
                     .to_string(),
             },
-            identity,
             registry_key: None,
             registry_value_name: None,
             startup_path: Some(original),
