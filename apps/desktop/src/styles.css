@@ -2154,3 +2154,261 @@ h4 {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* P7 — System Monitor */
+
+.monitor-page {
+  gap: 18px;
+}
+
+.monitor-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+}
+
+.monitor-hero h2 {
+  max-width: 780px;
+  margin: 4px 0 8px;
+}
+
+.monitor-controls {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.monitor-controls label {
+  display: grid;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.monitor-controls select {
+  min-height: 40px;
+  padding: 0 34px 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+.monitor-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.monitor-card,
+.monitor-process-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.monitor-card {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+  padding: 18px;
+}
+
+.monitor-card > strong {
+  font-size: clamp(1.65rem, 3vw, 2.35rem);
+  line-height: 1;
+}
+
+.monitor-card > small,
+.monitor-reason,
+.monitor-sensor small {
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.monitor-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.monitor-card-heading > span:first-child {
+  font-weight: 800;
+}
+
+.monitor-unavailable {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.monitor-pairs {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.monitor-pairs > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.monitor-pairs dt {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+.monitor-pairs dd {
+  margin: 0;
+  font-weight: 800;
+  text-align: right;
+}
+
+.monitor-history {
+  display: flex;
+  align-items: end;
+  gap: 2px;
+  height: 52px;
+  overflow: hidden;
+  padding-top: 4px;
+}
+
+.monitor-history > .muted {
+  align-self: center;
+  font-size: 0.75rem;
+}
+
+.history-bar {
+  flex: 1 1 0;
+  min-width: 2px;
+  max-width: 10px;
+  border-radius: 3px 3px 1px 1px;
+  background: var(--accent);
+  opacity: 0.75;
+}
+
+.history-bar.unavailable {
+  background: var(--border);
+  opacity: 0.6;
+}
+
+.monitor-sensor {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  padding-top: 4px;
+}
+
+.monitor-sensor small {
+  grid-column: 1 / -1;
+}
+
+.monitor-process-card {
+  padding: 18px;
+}
+
+.monitor-sample-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px 16px;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+.monitor-process-table {
+  display: grid;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.monitor-process-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) 80px 100px 120px;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+  padding: 11px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.monitor-process-row:first-child {
+  border-top: 0;
+}
+
+.monitor-process-row.header {
+  color: var(--text-muted);
+  background: var(--surface-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.monitor-process-row strong {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.monitor-process-row > span:nth-child(n + 2) {
+  text-align: right;
+}
+
+@media (max-width: 1100px) {
+  .monitor-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 820px) {
+  .monitor-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .monitor-controls {
+    width: 100%;
+  }
+
+  .monitor-process-table {
+    overflow-x: auto;
+  }
+
+  .monitor-process-row {
+    min-width: 620px;
+  }
+}
+
+@media (max-width: 600px) {
+  .monitor-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .monitor-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .monitor-controls button {
+    min-height: 40px;
+  }
+}
