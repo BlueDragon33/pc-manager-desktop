@@ -1,10 +1,10 @@
+#[cfg(target_os = "windows")]
+use pc_core::DuplicateDeleteError;
 use pc_core::{
     DuplicateDeleteResult, DuplicateFile, DuplicateGroup, DuplicatePlanItem, DuplicateScanOptions,
     DuplicateScanPlan, DuplicateScanSummary, FilesystemError, FilesystemWarning, StorageFileEntry,
     StorageFolderAggregate, StorageScanOptions, StorageScanSummary, StorageTypeAggregate,
 };
-#[cfg(target_os = "windows")]
-use pc_core::DuplicateDeleteError;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 #[cfg(target_os = "windows")]
@@ -890,9 +890,9 @@ fn now_epoch_ms() -> u64 {
 
 #[cfg(test)]
 mod tests {
-    use super::{scan_duplicate_files, scan_storage};
     #[cfg(target_os = "windows")]
     use super::delete_duplicate_files;
+    use super::{scan_duplicate_files, scan_storage};
     use pc_core::{DuplicateScanOptions, StorageScanOptions};
     use std::fs;
     use std::sync::atomic::AtomicBool;
