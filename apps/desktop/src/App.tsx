@@ -204,7 +204,7 @@ function OverviewPage({
           </div>
           <div>
             <dt>Product phase</dt>
-            <dd>{appInfo?.phase ?? "P7"}</dd>
+            <dd>{appInfo?.phase ?? "P8"}</dd>
           </div>
         </dl>
       </section>
@@ -243,7 +243,7 @@ function PlaceholderPage({
         <div className="info-callout">
           <strong>No system data is being simulated.</strong>
           <span>
-            This module is not implemented in P7. Real actions arrive only in
+            This module is not implemented in P8. Real actions arrive only in
             later, separately gated phases.
           </span>
         </div>
