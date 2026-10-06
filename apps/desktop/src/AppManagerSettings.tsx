@@ -114,9 +114,7 @@ export function AppManagerSettings() {
             className="secondary-action"
             disabled={busy}
             onClick={() =>
-              void update(() =>
-                setAppManagerEndpoint(endpoint.trim() || null),
-              )
+              void update(() => setAppManagerEndpoint(endpoint.trim() || null))
             }
             type="button"
           >
