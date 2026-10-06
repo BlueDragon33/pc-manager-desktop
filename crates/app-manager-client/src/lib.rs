@@ -410,8 +410,7 @@ fn normalize_origin(value: &str) -> Result<String, ClientError> {
         .as_deref()
         == Some("1");
     if allow_local
-        && (origin.starts_with("http://127.0.0.1:")
-            || origin.starts_with("http://localhost:"))
+        && (origin.starts_with("http://127.0.0.1:") || origin.starts_with("http://localhost:"))
     {
         return Ok(origin.to_string());
     }
@@ -513,7 +512,8 @@ fn run_windows_provider(
         return Err(ClientError::new(
             "gateway_request_failed",
             if detail.trim().is_empty() {
-                "App Manager request failed. Local PC Manager features remain available.".to_string()
+                "App Manager request failed. Local PC Manager features remain available."
+                    .to_string()
             } else {
                 format!("App Manager request failed: {}", detail.trim())
             },
