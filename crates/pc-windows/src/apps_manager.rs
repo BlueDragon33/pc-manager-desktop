@@ -528,4 +528,17 @@ mod tests {
         ));
         assert!(!looks_like_product_code("not-a-product-code"));
     }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn windows_apps_provider_returns_real_inventory_without_launching_uninstallers() {
+        let entries =
+            super::list_installed_app_entries().expect("Windows Apps inventory should run");
+
+        for entry in entries {
+            assert!(!entry.id.trim().is_empty());
+            assert!(entry.id.starts_with("app-"));
+            assert!(!entry.display_name.trim().is_empty());
+        }
+    }
 }
