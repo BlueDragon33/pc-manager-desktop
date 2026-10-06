@@ -239,35 +239,40 @@ Sequencing exception recorded 2026-10-06: P6 implementation may proceed while th
 
 ### Uninstaller
 
-- [ ] enumerate installed programs
-- [ ] search/filter
-- [ ] open standard uninstall flow
-- [ ] refresh after uninstall
-- [ ] no forced silent uninstall in V1
+- [x] enumerate installed programs
+- [x] search/filter
+- [x] open standard uninstall flow
+- [x] refresh after uninstall — explicit refresh after the external uninstaller returns
+- [x] no forced silent uninstall in V1
 
 ### Duplicate Finder
 
-- [ ] folder selection
-- [ ] exclusions
-- [ ] size grouping
-- [ ] partial hashing
-- [ ] full hashing
-- [ ] preview
-- [ ] user-selected deletion only
+- [x] folder selection — native Windows folder picker with session-scoped root IDs
+- [x] exclusions
+- [x] size grouping
+- [x] partial hashing
+- [x] full hashing
+- [x] preview
+- [x] user-selected deletion only
 
 ### Storage Analyzer
 
-- [ ] tree aggregation
-- [ ] largest files
-- [ ] file-type grouping
-- [ ] exclusions
-- [ ] cancellation
+- [x] tree aggregation
+- [x] largest files
+- [x] file-type grouping
+- [x] exclusions
+- [x] cancellation
 
 Acceptance:
 
-- symlink/reparse-point loops are handled;
-- inaccessible paths do not crash scans;
-- duplicates are only declared after full hash verification.
+- [x] symlink/reparse-point loops are skipped by the shared filesystem walker;
+- [x] inaccessible paths become bounded warnings instead of crashing scans;
+- [x] duplicates are declared only after exact-size, partial-hash, and full-hash verification;
+- [x] duplicate deletion uses opaque scan IDs, preserves at least one verified copy, revalidates path/metadata/full hash immediately before deletion, and records an audit result;
+- [x] Apps rediscover the selected opaque app ID before launch and never accept a frontend-supplied command line;
+- [x] silent uninstall flags are rejected and MSI uninstall uses the standard interactive flow;
+- [x] frontend lint/typecheck/tests/build/format, Rust fmt/check/tests/Clippy, Windows provider tests, and native Windows build are green in CI;
+- [ ] representative P6 behavior is verified manually on a real Windows machine — deferred by explicit user instruction.
 
 ---
 
