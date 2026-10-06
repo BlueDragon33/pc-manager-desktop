@@ -47,8 +47,11 @@ jobs:
       - name: Build frontend
         run: npm run build:frontend
 
-      - name: Check formatting
-        run: npm run format:check
+      - name: Diagnose formatting
+        run: |
+          npm run format
+          git diff -- apps/desktop/src/App.tsx apps/desktop/src/apps.ts apps/desktop/src/AppsPage.tsx apps/desktop/src/DuplicateFinderPage.tsx apps/desktop/src/duplicates.ts apps/desktop/src/StoragePage.tsx apps/desktop/src/styles.css
+          test -z "$(git status --porcelain)"
 
   rust:
     name: Rust checks
