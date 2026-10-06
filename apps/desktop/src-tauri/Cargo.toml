@@ -12,7 +12,10 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+app-manager-client = { path = "../../../crates/app-manager-client" }
 pc-core = { path = "../../../crates/pc-core" }
 pc-monitor = { path = "../../../crates/pc-monitor" }
 pc-windows = { path = "../../../crates/pc-windows" }
+serde.workspace = true
+serde_json = "1"
 tauri = { version = "2", features = [] }
