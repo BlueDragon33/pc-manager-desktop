@@ -8,9 +8,9 @@ use std::collections::BTreeMap;
 use std::fs;
 #[cfg(target_os = "windows")]
 use std::fs::OpenOptions;
-use std::io::{BufRead, BufReader};
 #[cfg(target_os = "windows")]
 use std::io::Write;
+use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 #[cfg(target_os = "windows")]
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
