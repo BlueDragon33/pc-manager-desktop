@@ -1,5 +1,3 @@
-#[cfg(test)]
-use pc_core::StartupImpact;
 use pc_core::{
     StartupChangeRequest, StartupEntry, StartupError, StartupOperationRecord, StartupSourceType,
 };
@@ -420,7 +418,7 @@ fn map_raw_entry(raw: RawStartupEntry) -> Option<NativeStartupEntry> {
             enabled: raw.enabled,
             can_change: raw.can_change,
             requires_elevation: raw.requires_elevation,
-            impact: StartupImpact::Unknown,
+            impact: pc_core::StartupImpact::Unknown,
             impact_evidence: None,
             detail: raw.detail,
         },
@@ -832,7 +830,7 @@ fn discover_disabled_startup_files() -> Result<Vec<NativeStartupEntry>, StartupE
                 enabled: false,
                 can_change: true,
                 requires_elevation: false,
-                impact: StartupImpact::Unknown,
+                impact: pc_core::StartupImpact::Unknown,
                 impact_evidence: None,
                 detail: "Disabled by PC Manager; original Startup folder location preserved."
                     .to_string(),
