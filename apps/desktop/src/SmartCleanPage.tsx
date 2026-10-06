@@ -50,7 +50,9 @@ function errorMessage(error: unknown, fallback: string): string {
 
 export function SmartCleanPage() {
   const [state, setState] = useState<ScanState>({ status: "idle" });
-  const [execution, setExecution] = useState<ExecutionState>({ status: "idle" });
+  const [execution, setExecution] = useState<ExecutionState>({
+    status: "idle",
+  });
   const [includeRecycleBin, setIncludeRecycleBin] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const generationRef = useRef(0);
@@ -76,7 +78,10 @@ export function SmartCleanPage() {
 
         setState({
           status: "error",
-          message: errorMessage(error, "Smart Clean preview could not complete."),
+          message: errorMessage(
+            error,
+            "Smart Clean preview could not complete.",
+          ),
         });
       });
   };
@@ -141,15 +146,18 @@ export function SmartCleanPage() {
           <span className="status-badge good">Safety gate enabled</span>
           <strong>Every planned file is checked again before deletion.</strong>
           <p>
-            PC Manager revalidates the provider root, resolved path, reparse-point
-            state, file size, modification state, and temp-file age rule. A changed
-            or unsafe candidate is skipped instead of deleted.
+            PC Manager revalidates the provider root, resolved path,
+            reparse-point state, file size, modification state, and temp-file
+            age rule. A changed or unsafe candidate is skipped instead of
+            deleted.
           </p>
         </div>
         <label className="cleaner-option">
           <input
             checked={includeRecycleBin}
-            disabled={state.status === "scanning" || execution.status === "running"}
+            disabled={
+              state.status === "scanning" || execution.status === "running"
+            }
             onChange={(event) => setIncludeRecycleBin(event.target.checked)}
             type="checkbox"
           />
@@ -169,8 +177,8 @@ export function SmartCleanPage() {
           <div>
             <strong>Scanning explicit temp and cache roots…</strong>
             <span>
-              Junctions, symlinks, reparse points, and arbitrary user folders are
-              excluded.
+              Junctions, symlinks, reparse points, and arbitrary user folders
+              are excluded.
             </span>
           </div>
         </section>
@@ -214,7 +222,9 @@ export function SmartCleanPage() {
               </div>
               <div>
                 <dt>Execution</dt>
-                <dd>{summary.executionAvailable ? "Available" : "Unavailable"}</dd>
+                <dd>
+                  {summary.executionAvailable ? "Available" : "Unavailable"}
+                </dd>
               </div>
             </dl>
           </section>
@@ -294,7 +304,9 @@ export function SmartCleanPage() {
                 </span>
               </div>
               <button
-                disabled={!summary.executionAvailable || summary.totalFiles === 0}
+                disabled={
+                  !summary.executionAvailable || summary.totalFiles === 0
+                }
                 onClick={() => {
                   setConfirmed(false);
                   setExecution({ status: "confirming" });
@@ -307,7 +319,11 @@ export function SmartCleanPage() {
           )}
 
           {execution.status === "confirming" && (
-            <section className="cleanup-confirmation" role="dialog" aria-modal="true">
+            <section
+              className="cleanup-confirmation"
+              role="dialog"
+              aria-modal="true"
+            >
               <p className="eyebrow">Confirmation required</p>
               <h3>
                 Delete up to {formatBytes(summary.totalBytes)} from{" "}
@@ -326,8 +342,8 @@ export function SmartCleanPage() {
                   type="checkbox"
                 />
                 <span>
-                  I understand that successfully deleted cache/temp files are not
-                  restorable by PC Manager.
+                  I understand that successfully deleted cache/temp files are
+                  not restorable by PC Manager.
                 </span>
               </label>
               <div className="confirmation-actions">
@@ -418,8 +434,8 @@ export function SmartCleanPage() {
           <section className="empty-health-state">
             <strong>No Smart Clean preview yet.</strong>
             <span>
-              Scan first. PC Manager never executes cleanup without a native plan
-              and an explicit confirmation.
+              Scan first. PC Manager never executes cleanup without a native
+              plan and an explicit confirmation.
             </span>
           </section>
         )
