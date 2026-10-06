@@ -242,8 +242,9 @@ impl AppManagerClient {
 
         #[cfg(target_os = "windows")]
         {
+            let script = windows_heartbeat_script();
             let raw = run_windows_provider(
-                WINDOWS_HEARTBEAT_PROVIDER,
+                &script,
                 origin,
                 &self.app_version,
                 self.release_channel,
@@ -310,8 +311,9 @@ impl AppManagerClient {
                 "status": if succeeded { "completed" } else { "failed" },
                 "result": result,
             });
+            let script = windows_result_script();
             let raw = run_windows_provider(
-                WINDOWS_RESULT_PROVIDER,
+                &script,
                 origin,
                 &self.app_version,
                 self.release_channel,
@@ -577,27 +579,6 @@ $register = Invoke-RestMethod -Method Post -Uri $gateway -ContentType 'applicati
 $deviceId = [string]$register.device.deviceId
 $challenge = [string]$register.challenge
 "#;
-
-#[cfg(target_os = "windows")]
-const WINDOWS_HEARTBEAT_PROVIDER: &str = concat!(
-    r#"$helpers = @'
-"#,
-    r#"'@
-"#,
-);
-
-#[cfg(target_os = "windows")]
-const WINDOWS_RESULT_PROVIDER: &str = concat!(
-    r#"$helpers = @'
-"#,
-    r#"'@
-"#,
-);
-
-#[cfg(target_os = "windows")]
-fn _provider_scripts_are_built() -> (&'static str, &'static str, &'static str) {
-    (WINDOWS_KEY_HELPERS, WINDOWS_HEARTBEAT_BODY, WINDOWS_RESULT_BODY)
-}
 
 #[cfg(target_os = "windows")]
 const WINDOWS_HEARTBEAT_BODY: &str = r#"
