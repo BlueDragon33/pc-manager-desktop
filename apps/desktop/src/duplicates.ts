@@ -73,7 +73,9 @@ export async function scanDuplicates(
   });
 }
 
-export async function cancelFilesystemScan(requestId: string): Promise<boolean> {
+export async function cancelFilesystemScan(
+  requestId: string,
+): Promise<boolean> {
   return invoke<boolean>("cancel_filesystem_scan", { requestId });
 }
 
