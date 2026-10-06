@@ -132,8 +132,9 @@ export function MonitorPage() {
           <p className="eyebrow">System Monitor — P7</p>
           <h2>Live Windows telemetry without permanent background polling</h2>
           <p className="muted">
-            Sampling runs only while this page is open and not paused. Unsupported
-            hardware sources stay explicitly unavailable instead of being guessed.
+            Sampling runs only while this page is open and not paused.
+            Unsupported hardware sources stay explicitly unavailable instead of
+            being guessed.
           </p>
         </div>
         <div className="monitor-controls">
