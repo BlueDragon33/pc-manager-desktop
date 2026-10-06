@@ -5,6 +5,7 @@ import { HealthCheckPage } from "./HealthCheckPage";
 import { InventorySummary } from "./InventorySummary";
 import { SmartCleanPage } from "./SmartCleanPage";
 import { RestorePage } from "./RestorePage";
+import { StartupPage } from "./StartupPage";
 import { NAV_ITEMS, getNavItem, type PageId } from "./navigation";
 import {
   readSidebarCollapsed,
@@ -167,7 +168,7 @@ function OverviewPage({
           </div>
           <div>
             <dt>Product phase</dt>
-            <dd>{appInfo?.phase ?? "P4B"}</dd>
+            <dd>{appInfo?.phase ?? "P5"}</dd>
           </div>
         </dl>
       </section>
@@ -180,7 +181,7 @@ function PlaceholderPage({
 }: {
   page: Exclude<
     PageId,
-    "overview" | "health" | "clean" | "restore" | "settings"
+    "overview" | "health" | "clean" | "startup" | "restore" | "settings"
   >;
 }) {
   const item = getNavItem(page);
@@ -197,7 +198,7 @@ function PlaceholderPage({
         <div className="info-callout">
           <strong>No system data is being simulated.</strong>
           <span>
-            This module is not implemented in P4B. Real actions arrive only in
+            This module is not implemented in P5. Real actions arrive only in
             later, separately gated phases.
           </span>
         </div>
@@ -388,7 +389,7 @@ export default function App() {
             <h1>{activeItem.label}</h1>
           </div>
           <div className="topbar-actions">
-            <span className="phase-chip">P4B</span>
+            <span className="phase-chip">P5</span>
             <button
               className="icon-button"
               onClick={() =>
@@ -411,6 +412,8 @@ export default function App() {
             <HealthCheckPage />
           ) : page === "clean" ? (
             <SmartCleanPage />
+          ) : page === "startup" ? (
+            <StartupPage />
           ) : page === "restore" ? (
             <RestorePage />
           ) : page === "settings" ? (

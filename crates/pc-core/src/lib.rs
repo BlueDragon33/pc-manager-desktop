@@ -4,6 +4,7 @@ mod cleanup;
 mod health;
 mod inventory;
 mod operation;
+mod startup;
 
 pub use cleanup::{
     summarize_cleanup_plan, CleanupCategory, CleanupError, CleanupPlan, CleanupPlanItem,
@@ -21,6 +22,10 @@ pub use inventory::{
 };
 pub use operation::{
     CleanupExecutionError, CleanupOperationRecord, CleanupProviderExecutionResult,
+};
+pub use startup::{
+    StartupChangeRequest, StartupEntry, StartupError, StartupImpact, StartupOperationRecord,
+    StartupSourceType,
 };
 
 use serde::Serialize;
@@ -43,7 +48,7 @@ impl AppInfo {
             app_id: "pc-manager",
             platform: "windows",
             device_type: "desktop-native",
-            phase: "P4B",
+            phase: "P5",
         }
     }
 }
@@ -59,6 +64,6 @@ mod tests {
         assert_eq!(info.app_id, "pc-manager");
         assert_eq!(info.platform, "windows");
         assert_eq!(info.device_type, "desktop-native");
-        assert_eq!(info.phase, "P4B");
+        assert_eq!(info.phase, "P5");
     }
 }

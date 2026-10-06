@@ -1,6 +1,7 @@
 use pc_core::{
     evaluate_health, AppInfo, CleanupError, CleanupOperationRecord, CleanupPlanStore,
-    CleanupScanOptions, CleanupScanSummary, HealthReport, InventoryError, SystemInventory,
+    CleanupScanOptions, CleanupScanSummary, HealthReport, InventoryError, StartupChangeRequest,
+    StartupEntry, StartupError, StartupOperationRecord, SystemInventory,
 };
 use std::sync::Mutex;
 use tauri::State;
@@ -70,6 +71,23 @@ fn list_cleanup_operations() -> Result<Vec<CleanupOperationRecord>, CleanupError
     pc_windows::list_cleanup_operations()
 }
 
+#[tauri::command]
+fn list_startup_entries() -> Result<Vec<StartupEntry>, StartupError> {
+    pc_windows::list_startup_entries()
+}
+
+#[tauri::command]
+fn set_startup_entry_enabled(
+    request: StartupChangeRequest,
+) -> Result<StartupOperationRecord, StartupError> {
+    pc_windows::set_startup_entry_enabled(&request)
+}
+
+#[tauri::command]
+fn list_startup_operations() -> Result<Vec<StartupOperationRecord>, StartupError> {
+    pc_windows::list_startup_operations()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -80,7 +98,10 @@ pub fn run() {
             run_health_check,
             scan_cleanup_candidates,
             execute_cleanup_plan,
-            list_cleanup_operations
+            list_cleanup_operations,
+            list_startup_entries,
+            set_startup_entry_enabled,
+            list_startup_operations
         ])
         .run(tauri::generate_context!())
         .expect("error while running PC Manager Desktop");

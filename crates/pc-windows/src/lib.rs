@@ -5,8 +5,12 @@
 
 mod cleanup;
 mod cleanup_execution;
+mod startup_manager;
 pub use cleanup::scan_cleanup_candidates;
 pub use cleanup_execution::{execute_cleanup_plan, list_cleanup_operations};
+pub use startup_manager::{
+    list_startup_entries, list_startup_operations, set_startup_entry_enabled,
+};
 
 #[cfg(any(target_os = "windows", test))]
 use pc_core::InstalledApplication;
