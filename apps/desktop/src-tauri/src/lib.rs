@@ -1,5 +1,6 @@
 use app_manager_client::{
-    bounded_heartbeat_seconds, retry_delay_seconds, AgentDeviceState, AppManagerClient, RemoteCommand,
+    bounded_heartbeat_seconds, retry_delay_seconds, AgentDeviceState, AppManagerClient,
+    RemoteCommand,
 };
 use pc_core::{
     evaluate_health, AppInfo, AppsError, CleanupError, CleanupOperationRecord, CleanupPlanStore,
@@ -146,7 +147,9 @@ fn execute_remote_command(command: &RemoteCommand) -> (bool, serde_json::Value) 
     }
 }
 
-fn run_app_manager_cycle(client: AppManagerClient) -> Result<(AgentDeviceState, u64, Vec<String>), app_manager_client::ClientError> {
+fn run_app_manager_cycle(
+    client: AppManagerClient,
+) -> Result<(AgentDeviceState, u64, Vec<String>), app_manager_client::ClientError> {
     let heartbeat = client.heartbeat()?;
     let mut command_errors = Vec::new();
 
