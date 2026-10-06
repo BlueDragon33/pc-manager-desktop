@@ -586,14 +586,8 @@ pub fn sync_once() -> Result<SyncBatch, AppManagerError> {
                 )
             })?;
 
-        let state = base_state(endpoint.clone(), &register.device, &register.policy);
-        if register.device.status != "approved" {
-            return Ok(SyncBatch {
-                state,
-                commands: Vec::new(),
-                heartbeat_interval_seconds: DEFAULT_HEARTBEAT_SECONDS,
-            });
-        }
+        let _registration_state =
+            base_state(endpoint.clone(), &register.device, &register.policy);
 
         let challenge_value = post_json(
             &endpoint,
