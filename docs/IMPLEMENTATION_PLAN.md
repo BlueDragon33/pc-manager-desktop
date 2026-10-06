@@ -229,7 +229,9 @@ Acceptance:
 - [x] disabling startup never invokes an uninstaller;
 - [x] every attempted mutable change produces an operation record;
 - [x] frontend, Rust tests, Clippy, and native Windows build pass in CI;
-- [ ] real Windows machine verifies inventory and a safe/disposable enable-disable-enable round trip before P6.
+- [~] real Windows verification: inventory has been proven on the user's Windows machine; the disposable enable-disable-enable round trip is intentionally deferred by user direction and remains an open P5 verification item.
+
+Sequencing exception recorded 2026-10-06: P6 implementation may proceed while this P5 round-trip remains open. P5 must not be represented as fully accepted until that round-trip is completed.
 
 ---
 
