@@ -1,13 +1,19 @@
 //! Windows-specific system integration for PC Manager Desktop.
 //!
-//! Inventory remains read-only. P4B adds narrowly scoped Smart Clean file deletion
-//! only for native plans produced by the built-in cleanup scanner.
+//! Windows providers remain feature-scoped and typed. P4B added narrowly scoped Smart Clean
+//! deletion, P5 added startup control, and P6 adds app inventory plus user-selected filesystem analysis.
 
+mod apps_manager;
 mod cleanup;
 mod cleanup_execution;
+mod filesystem_tools;
 mod startup_manager;
+pub use apps_manager::{launch_standard_uninstall, list_installed_app_entries};
 pub use cleanup::scan_cleanup_candidates;
 pub use cleanup_execution::{execute_cleanup_plan, list_cleanup_operations};
+pub use filesystem_tools::{
+    delete_duplicate_files, scan_duplicate_files, scan_root_id, scan_storage, select_user_scan_root,
+};
 pub use startup_manager::{
     list_startup_entries, list_startup_operations, set_startup_entry_enabled,
 };
