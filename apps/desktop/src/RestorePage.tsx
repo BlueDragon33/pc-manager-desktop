@@ -40,9 +40,9 @@ export function RestorePage() {
           <p className="eyebrow">Restore Center</p>
           <h2>Operation history and rollback capability</h2>
           <p className="muted">
-            Restore Center does not pretend deleted cache files can be recovered.
-            P4B records cleanup operations and clearly labels whether a safe
-            rollback exists.
+            Restore Center does not pretend deleted cache files can be
+            recovered. P4B records cleanup operations and clearly labels whether
+            a safe rollback exists.
           </p>
         </div>
         <button className="secondary-action" onClick={load}>
@@ -81,7 +81,10 @@ export function RestorePage() {
       )}
 
       {state.status === "ready" && state.records.length > 0 && (
-        <section className="operation-history" aria-labelledby="history-heading">
+        <section
+          className="operation-history"
+          aria-labelledby="history-heading"
+        >
           <div className="section-heading">
             <div>
               <p className="eyebrow">Local audit</p>
