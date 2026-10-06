@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { type AppInfo, getAppInfo } from "./appInfo";
+import { AppManagerSettings } from "./AppManagerSettings";
 import { AppsPage } from "./AppsPage";
 import { DuplicateFinderPage } from "./DuplicateFinderPage";
 import { HealthCheckPage } from "./HealthCheckPage";
@@ -172,7 +173,7 @@ function OverviewPage({
           </div>
           <div>
             <dt>Product phase</dt>
-            <dd>{appInfo?.phase ?? "P7"}</dd>
+            <dd>{appInfo?.phase ?? "P8"}</dd>
           </div>
         </dl>
       </section>
@@ -211,7 +212,7 @@ function PlaceholderPage({
         <div className="info-callout">
           <strong>No system data is being simulated.</strong>
           <span>
-            This module is not implemented in P7. Real actions arrive only in
+            This module is not implemented in P8. Real actions arrive only in
             later, separately gated phases.
           </span>
         </div>
@@ -273,6 +274,7 @@ function SettingsPage({
           </button>
         </div>
       </section>
+      <AppManagerSettings />
     </div>
   );
 }
@@ -402,7 +404,7 @@ export default function App() {
             <h1>{activeItem.label}</h1>
           </div>
           <div className="topbar-actions">
-            <span className="phase-chip">P7</span>
+            <span className="phase-chip">P8</span>
             <button
               className="icon-button"
               onClick={() =>
