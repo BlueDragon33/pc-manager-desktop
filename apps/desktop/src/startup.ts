@@ -52,7 +52,9 @@ export async function setStartupEntryEnabled(
   });
 }
 
-export async function listStartupOperations(): Promise<StartupOperationRecord[]> {
+export async function listStartupOperations(): Promise<
+  StartupOperationRecord[]
+> {
   return invoke<StartupOperationRecord[]>("list_startup_operations");
 }
 
