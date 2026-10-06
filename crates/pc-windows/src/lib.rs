@@ -1,10 +1,12 @@
 //! Windows-specific system integration for PC Manager Desktop.
 //!
-//! Windows integration remains non-destructive through P4A. Inventory and Smart Clean
-//! preview scanning never modify files, the registry, startup state, or privileges.
+//! Inventory remains read-only. P4B adds narrowly scoped Smart Clean file deletion
+//! only for native plans produced by the built-in cleanup scanner.
 
 mod cleanup;
+mod cleanup_execution;
 pub use cleanup::scan_cleanup_candidates;
+pub use cleanup_execution::{execute_cleanup_plan, list_cleanup_operations};
 
 #[cfg(any(target_os = "windows", test))]
 use pc_core::InstalledApplication;
