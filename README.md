@@ -35,9 +35,9 @@ Read these before feature work:
 
 ## Current phase
 
-**P0 — Repository Foundation**
+**P6 — Apps, Duplicate Finder, Storage Analyzer**
 
-P0 proves the monorepo, React/Tauri bridge, Rust workspace, test tooling, and CI. It intentionally does not implement cleaning, optimization, monitoring, or privileged system changes.
+P0–P5 foundations are implemented. P6 adds real installed-app inventory and standard uninstall launch, staged full-hash duplicate detection with user-selected deletion, and a cancellable storage analyzer. P5's real-Windows enable-disable-enable round-trip verification remains deferred and is not considered complete.
 
 ## Prerequisites
 
