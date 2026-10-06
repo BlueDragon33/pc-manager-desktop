@@ -43,6 +43,12 @@ jobs:
       - name: Build frontend
         run: npm run build:frontend
 
+      - name: Show P4B formatting diff
+        run: |
+          npx prettier --write apps/desktop/src/App.tsx apps/desktop/src/RestorePage.tsx apps/desktop/src/smartClean.ts apps/desktop/src/SmartCleanPage.tsx apps/desktop/src/styles.css
+          git diff -- apps/desktop/src/App.tsx apps/desktop/src/RestorePage.tsx apps/desktop/src/smartClean.ts apps/desktop/src/SmartCleanPage.tsx apps/desktop/src/styles.css
+          git checkout -- apps/desktop/src/App.tsx apps/desktop/src/RestorePage.tsx apps/desktop/src/smartClean.ts apps/desktop/src/SmartCleanPage.tsx apps/desktop/src/styles.css
+
       - name: Check formatting
         run: npm run format:check
 
