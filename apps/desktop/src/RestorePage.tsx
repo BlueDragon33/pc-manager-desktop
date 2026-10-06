@@ -19,13 +19,17 @@ export function RestorePage() {
     listCleanupOperations()
       .then((records) => setState({ status: "ready", records }))
       .catch((error: unknown) => {
-        setState({
-          status: "error",
-          message:
-            error instanceof Error
+        const message =
+          typeof error === "object" &&
+          error !== null &&
+          "message" in error &&
+          typeof (error as { message?: unknown }).message === "string"
+            ? (error as { message: string }).message
+            : error instanceof Error
               ? error.message
-              : "Operation history could not be loaded.",
-        });
+              : "Operation history could not be loaded.";
+
+        setState({ status: "error", message });
       });
   };
 
