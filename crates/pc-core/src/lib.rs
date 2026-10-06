@@ -3,8 +3,8 @@
 mod cleanup;
 mod health;
 mod inventory;
-mod startup;
 mod operation;
+mod startup;
 
 pub use cleanup::{
     summarize_cleanup_plan, CleanupCategory, CleanupError, CleanupPlan, CleanupPlanItem,
@@ -15,10 +15,6 @@ pub use health::{
     evaluate_health, HealthCategory, HealthCategoryResult, HealthFinding, HealthReport,
     HealthSeverity, HealthStatus, RiskLevel,
 };
-pub use startup::{
-    StartupChangeRequest, StartupEntry, StartupError, StartupImpact, StartupOperationRecord,
-    StartupSourceType,
-};
 pub use inventory::{
     CpuSummary, DeviceIdentity, DiskVolume, InstalledApplication, InventoryError, InventoryWarning,
     MemorySummary, NetworkAdapter, OperatingSystemSummary, ProcessEntry, ProcessSummary,
@@ -26,6 +22,10 @@ pub use inventory::{
 };
 pub use operation::{
     CleanupExecutionError, CleanupOperationRecord, CleanupProviderExecutionResult,
+};
+pub use startup::{
+    StartupChangeRequest, StartupEntry, StartupError, StartupImpact, StartupOperationRecord,
+    StartupSourceType,
 };
 
 use serde::Serialize;
