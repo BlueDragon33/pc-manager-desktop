@@ -1,9 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 
 export type InstalledAppSource =
-  | "currentUser"
-  | "localMachine64"
-  | "localMachine32";
+  "currentUser" | "localMachine64" | "localMachine32";
 
 export type UninstallKind = "msi" | "executable" | "unavailable";
 
