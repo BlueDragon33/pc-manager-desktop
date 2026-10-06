@@ -1753,7 +1753,6 @@ h4 {
   }
 }
 
-
 /* P6 — Apps, Duplicate Finder, Storage Analyzer */
 
 .p6-hero {
@@ -1876,7 +1875,10 @@ h4 {
 }
 
 .p6-scan-config {
-  grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.9fr) minmax(150px, 0.4fr) auto;
+  grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.9fr) minmax(
+      150px,
+      0.4fr
+    ) auto;
   align-items: end;
 }
 
