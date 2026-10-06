@@ -5,6 +5,7 @@ import { AppsPage } from "./AppsPage";
 import { DuplicateFinderPage } from "./DuplicateFinderPage";
 import { HealthCheckPage } from "./HealthCheckPage";
 import { InventorySummary } from "./InventorySummary";
+import { MonitorPage } from "./MonitorPage";
 import { SmartCleanPage } from "./SmartCleanPage";
 import { RestorePage } from "./RestorePage";
 import { StartupPage } from "./StartupPage";
@@ -171,7 +172,7 @@ function OverviewPage({
           </div>
           <div>
             <dt>Product phase</dt>
-            <dd>{appInfo?.phase ?? "P6"}</dd>
+            <dd>{appInfo?.phase ?? "P7"}</dd>
           </div>
         </dl>
       </section>
@@ -191,6 +192,7 @@ function PlaceholderPage({
     | "apps"
     | "storage"
     | "duplicates"
+    | "monitor"
     | "restore"
     | "settings"
   >;
@@ -209,7 +211,7 @@ function PlaceholderPage({
         <div className="info-callout">
           <strong>No system data is being simulated.</strong>
           <span>
-            This module is not implemented in P6. Real actions arrive only in
+            This module is not implemented in P7. Real actions arrive only in
             later, separately gated phases.
           </span>
         </div>
@@ -400,7 +402,7 @@ export default function App() {
             <h1>{activeItem.label}</h1>
           </div>
           <div className="topbar-actions">
-            <span className="phase-chip">P6</span>
+            <span className="phase-chip">P7</span>
             <button
               className="icon-button"
               onClick={() =>
@@ -431,6 +433,8 @@ export default function App() {
             <StoragePage />
           ) : page === "duplicates" ? (
             <DuplicateFinderPage />
+          ) : page === "monitor" ? (
+            <MonitorPage />
           ) : page === "restore" ? (
             <RestorePage />
           ) : page === "settings" ? (

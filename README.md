@@ -35,9 +35,9 @@ Read these before feature work:
 
 ## Current phase
 
-**P6 — Apps, Duplicate Finder, Storage Analyzer**
+**P7 — System Monitor**
 
-P0–P5 foundations are implemented. P6 adds real installed-app inventory and standard uninstall launch, staged full-hash duplicate detection with user-selected deletion, and a cancellable storage analyzer. P5's real-Windows enable-disable-enable round-trip verification remains deferred and is not considered complete.
+P0–P6 foundations are implemented. P7 adds live Windows CPU, memory, disk, network, process, and capability-aware GPU/sensor telemetry with configurable polling and pause/resume. Representative manual Windows verification and idle-overhead measurement remain deferred where explicitly noted in the implementation plan.
 
 ## Prerequisites
 

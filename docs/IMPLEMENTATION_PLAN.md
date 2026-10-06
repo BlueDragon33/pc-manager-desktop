@@ -280,20 +280,23 @@ Acceptance:
 
 Goal: low-overhead useful telemetry.
 
-- [ ] CPU
-- [ ] RAM
-- [ ] disk activity where reliable
-- [ ] network
-- [ ] process top consumers
-- [ ] GPU where reliable
-- [ ] sensor capability detection
+- [x] CPU
+- [x] RAM
+- [x] disk activity where reliable
+- [x] network
+- [x] process top consumers
+- [x] GPU where reliable
+- [x] sensor capability detection
 
 Acceptance:
 
-- unsupported sensors show "Unavailable";
-- sampling interval configurable;
-- monitor can be paused;
-- idle overhead measured and documented.
+- [x] unsupported sensors show "Unavailable" instead of fabricated values;
+- [x] sampling interval is configurable with conservative 2s/5s/10s choices;
+- [x] monitor can be paused and requests no new native samples while paused;
+- [x] every native snapshot records provider sample duration and the UI surfaces it;
+- [x] Windows CI executes the real monitor provider and native build successfully;
+- [x] frontend lint/typecheck/tests/build/format and Rust fmt/check/tests/Clippy are green before merge;
+- [ ] representative idle-overhead behavior is measured manually on a real Windows machine — deferred by explicit user instruction.
 
 ---
 

@@ -13,6 +13,6 @@ Rules:
 
 Current prompt:
 
-- `P6_APPS_DUPLICATES_STORAGE.md` — implement Apps/Uninstaller, Duplicate Finder, and Storage Analyzer using safe typed Windows providers.
+- `P7_SYSTEM_MONITOR.md` — implement low-overhead Windows resource telemetry with honest capability detection, configurable sampling, and pause/resume.
 
 Previous phase prompts remain in this directory as implementation history.

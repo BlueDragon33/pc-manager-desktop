@@ -6,6 +6,7 @@ use pc_core::{
     StartupEntry, StartupError, StartupOperationRecord, StorageScanOptions, StorageScanSummary,
     SystemInventory, UninstallLaunchResult, UninstallRequest,
 };
+use pc_monitor::{MonitorError, MonitorSnapshot};
 use std::{
     collections::HashMap,
     path::PathBuf,
@@ -34,6 +35,19 @@ fn get_app_info() -> AppInfo {
 #[tauri::command]
 fn get_system_inventory() -> Result<SystemInventory, InventoryError> {
     pc_windows::collect_system_inventory()
+}
+
+#[tauri::command]
+async fn get_monitor_snapshot() -> Result<MonitorSnapshot, MonitorError> {
+    tauri::async_runtime::spawn_blocking(pc_monitor::sample_monitor)
+        .await
+        .map_err(|error| {
+            MonitorError::new(
+                "monitor_task_failed",
+                format!("The monitor sampling task failed: {error}"),
+                true,
+            )
+        })?
 }
 
 #[tauri::command]
@@ -353,6 +367,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_app_info,
             get_system_inventory,
+            get_monitor_snapshot,
             run_health_check,
             scan_cleanup_candidates,
             execute_cleanup_plan,
