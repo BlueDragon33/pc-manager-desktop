@@ -86,6 +86,14 @@ impl CleanupPlanStore {
     pub fn latest_id(&self) -> Option<&str> {
         self.latest.as_ref().map(|plan| plan.plan_id.as_str())
     }
+
+    pub fn take_by_id(&mut self, plan_id: &str) -> Option<CleanupPlan> {
+        if self.latest.as_ref().is_some_and(|plan| plan.plan_id == plan_id) {
+            self.latest.take()
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -190,5 +198,11 @@ mod tests {
         assert_eq!(store.latest_id(), Some("cleanup-plan-a"));
         assert!(store.get_by_id("cleanup-plan-a").is_some());
         assert!(store.get_by_id("cleanup-plan-b").is_none());
+        assert!(store.take_by_id("cleanup-plan-b").is_none());
+        assert_eq!(
+            store.take_by_id("cleanup-plan-a").map(|plan| plan.plan_id),
+            Some("cleanup-plan-a".to_string())
+        );
+        assert!(store.latest_id().is_none());
     }
 }
