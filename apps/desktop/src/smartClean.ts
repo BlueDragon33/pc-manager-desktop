@@ -57,3 +57,47 @@ export function formatCleanupCategory(category: CleanupCategory): string {
 export function isCurrentScan(generation: number, current: number): boolean {
   return generation === current;
 }
+
+
+export interface CleanupExecutionError {
+  providerId: string;
+  code: string;
+  message: string;
+}
+
+export interface CleanupProviderExecutionResult {
+  providerId: string;
+  requestedFiles: number;
+  requestedBytes: number;
+  deletedFiles: number;
+  deletedBytes: number;
+  failedFiles: number;
+}
+
+export interface CleanupOperationRecord {
+  operationId: string;
+  planId: string;
+  startedAtEpochMs: number;
+  completedAtEpochMs: number;
+  requestedFiles: number;
+  requestedBytes: number;
+  deletedFiles: number;
+  deletedBytes: number;
+  failedFiles: number;
+  providerResults: CleanupProviderExecutionResult[];
+  rollbackAvailable: boolean;
+  rollbackLabel: string;
+  errors: CleanupExecutionError[];
+}
+
+export async function executeCleanupPlan(
+  planId: string,
+): Promise<CleanupOperationRecord> {
+  return invoke<CleanupOperationRecord>("execute_cleanup_plan", { planId });
+}
+
+export async function listCleanupOperations(): Promise<
+  CleanupOperationRecord[]
+> {
+  return invoke<CleanupOperationRecord[]>("list_cleanup_operations");
+}
