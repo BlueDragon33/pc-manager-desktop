@@ -1,6 +1,8 @@
 use pc_core::{AppsError, InstalledAppEntry, UninstallLaunchResult, UninstallRequest};
 #[cfg(any(target_os = "windows", test))]
-use pc_core::{InstalledAppSource, UninstallKind};
+use pc_core::InstalledAppSource;
+#[cfg(target_os = "windows")]
+use pc_core::UninstallKind;
 #[cfg(any(target_os = "windows", test))]
 use sha2::{Digest, Sha256};
 #[cfg(target_os = "windows")]
