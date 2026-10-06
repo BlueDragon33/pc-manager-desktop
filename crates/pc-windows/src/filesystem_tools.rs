@@ -1,9 +1,10 @@
 use pc_core::{
-    DuplicateDeleteError, DuplicateDeleteResult, DuplicateFile, DuplicateGroup, DuplicatePlanItem,
-    DuplicateScanOptions, DuplicateScanPlan, DuplicateScanSummary, FilesystemError,
-    FilesystemWarning, StorageFileEntry, StorageFolderAggregate, StorageScanOptions,
-    StorageScanSummary, StorageTypeAggregate,
+    DuplicateDeleteResult, DuplicateFile, DuplicateGroup, DuplicatePlanItem, DuplicateScanOptions,
+    DuplicateScanPlan, DuplicateScanSummary, FilesystemError, FilesystemWarning, StorageFileEntry,
+    StorageFolderAggregate, StorageScanOptions, StorageScanSummary, StorageTypeAggregate,
 };
+#[cfg(target_os = "windows")]
+use pc_core::DuplicateDeleteError;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 #[cfg(target_os = "windows")]
