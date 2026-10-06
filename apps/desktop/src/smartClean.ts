@@ -58,7 +58,6 @@ export function isCurrentScan(generation: number, current: number): boolean {
   return generation === current;
 }
 
-
 export interface CleanupExecutionError {
   providerId: string;
   code: string;
