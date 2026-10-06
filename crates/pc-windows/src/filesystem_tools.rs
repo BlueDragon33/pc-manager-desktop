@@ -6,12 +6,12 @@ use pc_core::{
 };
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
-use std::fs::{self, File};
-use std::io::{Read, Seek, SeekFrom};
 #[cfg(target_os = "windows")]
 use std::fs::OpenOptions;
+use std::fs::{self, File};
 #[cfg(target_os = "windows")]
 use std::io::Write;
+use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -177,10 +177,7 @@ pub fn scan_duplicate_files(
     }
 
     let mut by_full: HashMap<(u64, String), Vec<FileRecord>> = HashMap::new();
-    for ((size, _partial), group) in by_partial
-        .into_iter()
-        .filter(|(_, files)| files.len() > 1)
-    {
+    for ((size, _partial), group) in by_partial.into_iter().filter(|(_, files)| files.len() > 1) {
         for file in group {
             ensure_not_cancelled(cancel)?;
             match full_hash(&file.path) {
@@ -629,14 +626,15 @@ fn partial_hash(path: &Path, size: u64) -> std::io::Result<String> {
     let mut hasher = Sha256::new();
     hasher.update(size.to_le_bytes());
 
-    let first_len = usize::try_from(size.min(PARTIAL_HASH_BYTES as u64)).unwrap_or(PARTIAL_HASH_BYTES);
+    let first_len =
+        usize::try_from(size.min(PARTIAL_HASH_BYTES as u64)).unwrap_or(PARTIAL_HASH_BYTES);
     let mut first = vec![0_u8; first_len];
     file.read_exact(&mut first)?;
     hasher.update(&first);
 
     if size > PARTIAL_HASH_BYTES as u64 {
-        let tail_len = usize::try_from(size.min(PARTIAL_HASH_BYTES as u64))
-            .unwrap_or(PARTIAL_HASH_BYTES);
+        let tail_len =
+            usize::try_from(size.min(PARTIAL_HASH_BYTES as u64)).unwrap_or(PARTIAL_HASH_BYTES);
         file.seek(SeekFrom::End(-(tail_len as i64)))?;
         let mut tail = vec![0_u8; tail_len];
         file.read_exact(&mut tail)?;
