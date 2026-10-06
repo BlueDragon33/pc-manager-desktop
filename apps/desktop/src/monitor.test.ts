@@ -5,6 +5,7 @@ import {
   MAX_MONITOR_HISTORY,
   normalizeMonitorInterval,
   shouldScheduleMonitor,
+  type MonitorHistoryPoint,
   type MonitorSnapshot,
 } from "./monitor";
 
@@ -57,7 +58,7 @@ describe("System Monitor helpers", () => {
   });
 
   it("bounds recent history", () => {
-    let history = [];
+    let history: MonitorHistoryPoint[] = [];
     for (let index = 0; index < MAX_MONITOR_HISTORY + 5; index += 1) {
       history = appendMonitorHistory(history, snapshot(index));
     }
