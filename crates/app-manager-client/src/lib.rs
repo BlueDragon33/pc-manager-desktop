@@ -491,7 +491,11 @@ fn post_json(endpoint: &str, payload: &Value) -> Result<Value, AppManagerError> 
     if !output.status.success() {
         return Err(AppManagerError::new(
             "agent_transport_failed",
-            String::from_utf8_lossy(&output.stderr).trim().chars().take(500).collect::<String>(),
+            String::from_utf8_lossy(&output.stderr)
+                .trim()
+                .chars()
+                .take(500)
+                .collect::<String>(),
             true,
         ));
     }
@@ -585,9 +589,6 @@ pub fn sync_once() -> Result<SyncBatch, AppManagerError> {
                     true,
                 )
             })?;
-
-        let _registration_state =
-            base_state(endpoint.clone(), &register.device, &register.policy);
 
         let challenge_value = post_json(
             &endpoint,
