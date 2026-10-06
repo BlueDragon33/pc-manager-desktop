@@ -73,11 +73,7 @@ function BridgeBadge({ state }: { state: BridgeState }) {
   return <span className="status-badge good">Native bridge connected</span>;
 }
 
-function AppManagerBadge({
-  state,
-}: {
-  state: AppManagerRuntimeStatus | null;
-}) {
+function AppManagerBadge({ state }: { state: AppManagerRuntimeStatus | null }) {
   if (!state) {
     return <span className="status-badge neutral">App Manager checking…</span>;
   }
@@ -308,7 +304,10 @@ function SettingsPage({
         </div>
       </section>
 
-      <section className="native-status-card" aria-labelledby="app-manager-heading">
+      <section
+        className="native-status-card"
+        aria-labelledby="app-manager-heading"
+      >
         <div>
           <p className="eyebrow">Central management — P8</p>
           <h2 id="app-manager-heading">App Manager</h2>
