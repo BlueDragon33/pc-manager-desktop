@@ -68,7 +68,11 @@ describe("App Manager runtime state", () => {
   it("reports offline and unconfigured without blocking local features", () => {
     expect(
       appManagerStatusText(
-        status({ configured: false, connection: "notConfigured", device: null }),
+        status({
+          configured: false,
+          connection: "notConfigured",
+          device: null,
+        }),
       ),
     ).toBe("Not configured");
     expect(
