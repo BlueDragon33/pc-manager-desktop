@@ -4,10 +4,13 @@
 //! polling loop in this crate.
 
 use serde::{Deserialize, Serialize};
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 #[cfg(target_os = "windows")]
 use std::process::Command;
+#[cfg(target_os = "windows")]
+use std::time::Instant;
+#[cfg(any(target_os = "windows", test))]
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -178,6 +181,7 @@ if ($gpuRows.Count -gt 0) {
 } | ConvertTo-Json -Depth 5 -Compress
 "#;
 
+#[cfg(any(target_os = "windows", test))]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RawMonitorSnapshot {
@@ -193,6 +197,7 @@ struct RawMonitorSnapshot {
     processes: Vec<RawProcessUsage>,
 }
 
+#[cfg(any(target_os = "windows", test))]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RawProcessUsage {
@@ -275,6 +280,7 @@ pub fn sample_monitor() -> Result<MonitorSnapshot, MonitorError> {
     }
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn map_raw_snapshot(raw: RawMonitorSnapshot, sample_duration_ms: u64) -> MonitorSnapshot {
     let cpu = match raw.cpu_percent {
         Some(value) => PercentMetric {
@@ -380,6 +386,7 @@ fn map_raw_snapshot(raw: RawMonitorSnapshot, sample_duration_ms: u64) -> Monitor
     }
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn now_epoch_ms() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
