@@ -3,6 +3,7 @@ use pc_core::{
     UninstallRequest,
 };
 use sha2::{Digest, Sha256};
+#[cfg(target_os = "windows")]
 use std::collections::BTreeMap;
 
 #[cfg(target_os = "windows")]
@@ -263,6 +264,7 @@ fn installed_app_id(source: InstalledAppSource, identity: &str) -> String {
     )
 }
 
+#[cfg(target_os = "windows")]
 fn parse_source(value: &str) -> Option<InstalledAppSource> {
     match value {
         "currentUser" => Some(InstalledAppSource::CurrentUser),
@@ -272,6 +274,7 @@ fn parse_source(value: &str) -> Option<InstalledAppSource> {
     }
 }
 
+#[cfg(target_os = "windows")]
 fn non_empty(value: Option<String>) -> Option<String> {
     value.and_then(|value| {
         let trimmed = value.trim();
