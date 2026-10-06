@@ -52,7 +52,9 @@ function formatBytes(bytes: number | null): string {
 
 export function AppsPage() {
   const [loadState, setLoadState] = useState<LoadState>({ status: "loading" });
-  const [actionState, setActionState] = useState<ActionState>({ status: "idle" });
+  const [actionState, setActionState] = useState<ActionState>({
+    status: "idle",
+  });
   const [query, setQuery] = useState("");
 
   const load = () => {
@@ -62,7 +64,10 @@ export function AppsPage() {
       .catch((error: unknown) =>
         setLoadState({
           status: "error",
-          message: errorMessage(error, "Installed applications could not be loaded."),
+          message: errorMessage(
+            error,
+            "Installed applications could not be loaded.",
+          ),
         }),
       );
   };
@@ -247,11 +252,12 @@ export function AppsPage() {
           >
             <p className="eyebrow">Confirmation required</p>
             <h3 id="apps-confirmation-title">
-              Open the standard uninstall flow for {actionState.app.displayName}?
+              Open the standard uninstall flow for {actionState.app.displayName}
+              ?
             </h3>
             <p>
-              PC Manager will launch only the uninstall action registered by this
-              application. It will not force a silent removal.
+              PC Manager will launch only the uninstall action registered by
+              this application. It will not force a silent removal.
             </p>
             <div className="confirmation-actions">
               <button
