@@ -1632,6 +1632,28 @@ h4 {
   line-height: 1.5;
 }
 
+.startup-confirmation-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(4 10 20 / 72%);
+  backdrop-filter: blur(3px);
+}
+
+.startup-confirmation-dialog {
+  width: min(560px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  box-shadow: 0 24px 80px rgb(0 0 0 / 40%);
+}
+
+.startup-confirmation-dialog h3 {
+  margin: 0;
+}
+
 .startup-list {
   display: grid;
   gap: 12px;

@@ -247,39 +247,51 @@ export function StartupPage() {
       )}
 
       {changeState.status === "confirming" && (
-        <section
-          className="cleanup-confirmation"
-          role="dialog"
-          aria-modal="true"
+        <div
+          className="startup-confirmation-backdrop"
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target) {
+              setChangeState({ status: "idle" });
+            }
+          }}
+          role="presentation"
         >
-          <p className="eyebrow">Confirmation required</p>
-          <h3>
-            {changeState.nextEnabled ? "Enable" : "Disable"}{" "}
-            {changeState.entry.name} at Windows startup?
-          </h3>
-          <p>
-            This changes startup behavior only. It does not uninstall the
-            application or delete its program files.
-          </p>
-          <div className="confirmation-actions">
-            <button
-              className="secondary-action"
-              onClick={() => setChangeState({ status: "idle" })}
-              type="button"
-            >
-              Cancel
-            </button>
-            <button
-              className="primary-action"
-              onClick={() =>
-                void executeChange(changeState.entry, changeState.nextEnabled)
-              }
-              type="button"
-            >
-              Confirm change
-            </button>
-          </div>
-        </section>
+          <section
+            aria-labelledby="startup-confirmation-title"
+            aria-modal="true"
+            className="cleanup-confirmation startup-confirmation-dialog"
+            role="dialog"
+          >
+            <p className="eyebrow">Confirmation required</p>
+            <h3 id="startup-confirmation-title">
+              {changeState.nextEnabled ? "Enable" : "Disable"}{" "}
+              {changeState.entry.name} at Windows startup?
+            </h3>
+            <p>
+              This changes startup behavior only. It does not uninstall the
+              application or delete its program files.
+            </p>
+            <div className="confirmation-actions">
+              <button
+                autoFocus
+                className="secondary-action"
+                onClick={() => setChangeState({ status: "idle" })}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                className="primary-action"
+                onClick={() =>
+                  void executeChange(changeState.entry, changeState.nextEnabled)
+                }
+                type="button"
+              >
+                Confirm change
+              </button>
+            </div>
+          </section>
+        </div>
       )}
 
       {changeState.status === "running" && (
