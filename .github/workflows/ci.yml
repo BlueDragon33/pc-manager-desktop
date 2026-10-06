@@ -47,12 +47,6 @@ jobs:
       - name: Build frontend
         run: npm run build:frontend
 
-      - name: Show P5 formatting diff
-        run: |
-          npx prettier --write apps/desktop/src/startup.ts apps/desktop/src/StartupPage.tsx apps/desktop/src/styles.css
-          git diff -- apps/desktop/src/startup.ts apps/desktop/src/StartupPage.tsx apps/desktop/src/styles.css
-          git checkout -- apps/desktop/src/startup.ts apps/desktop/src/StartupPage.tsx apps/desktop/src/styles.css
-
       - name: Check formatting
         run: npm run format:check
 
