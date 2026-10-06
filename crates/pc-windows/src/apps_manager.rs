@@ -1,7 +1,6 @@
-use pc_core::{
-    AppsError, InstalledAppEntry, InstalledAppSource, UninstallKind, UninstallLaunchResult,
-    UninstallRequest,
-};
+use pc_core::{AppsError, InstalledAppEntry, InstalledAppSource, UninstallLaunchResult, UninstallRequest};
+#[cfg(any(target_os = "windows", test))]
+use pc_core::UninstallKind;
 use sha2::{Digest, Sha256};
 #[cfg(target_os = "windows")]
 use std::collections::BTreeMap;
@@ -14,7 +13,9 @@ use std::process::Command;
 #[derive(Debug, Clone)]
 struct NativeInstalledApp {
     public: InstalledAppEntry,
+    #[cfg(target_os = "windows")]
     uninstall_string: Option<String>,
+    #[cfg(target_os = "windows")]
     product_code: Option<String>,
 }
 
@@ -253,6 +254,7 @@ fn map_raw_apps(apps: Vec<RawApp>) -> Vec<NativeInstalledApp> {
     mapped.into_values().collect()
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn installed_app_id(source: InstalledAppSource, identity: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(b"pc-manager-installed-app-v1:");
@@ -285,6 +287,7 @@ fn non_empty(value: Option<String>) -> Option<String> {
     })
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn looks_like_product_code(value: &str) -> bool {
     let value = value.trim();
     value.len() == 38
@@ -374,6 +377,7 @@ fn launch_native_uninstaller(_entry: &NativeInstalledApp) -> Result<(), AppsErro
     ))
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn parse_registered_uninstall(command: &str) -> Option<(String, Vec<String>)> {
     let command = command.trim();
     if command.is_empty() {
@@ -399,6 +403,7 @@ fn parse_registered_uninstall(command: &str) -> Option<(String, Vec<String>)> {
     Some((executable, tokenize_windows_arguments(rest)))
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn tokenize_windows_arguments(input: &str) -> Vec<String> {
     let mut args = Vec::new();
     let mut current = String::new();
@@ -428,6 +433,7 @@ fn tokenize_windows_arguments(input: &str) -> Vec<String> {
     args
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn is_silent_flag(value: &str) -> bool {
     matches!(
         value.trim().to_ascii_lowercase().as_str(),
