@@ -246,9 +246,7 @@ pub fn set_startup_entry_enabled(
         StartupSourceType::UserStartupFolder => {
             set_user_startup_file_enabled(&entry, request.enabled)
         }
-        StartupSourceType::ScheduledTask => {
-            set_scheduled_task_enabled(&entry, request.enabled)
-        }
+        StartupSourceType::ScheduledTask => set_scheduled_task_enabled(&entry, request.enabled),
         StartupSourceType::RegistryLocalMachineRun
         | StartupSourceType::RegistryLocalMachineRunOnce
         | StartupSourceType::CommonStartupFolder => Err(StartupError::new(
@@ -273,13 +271,7 @@ pub fn set_startup_entry_enabled(
         }
     };
 
-    let record = operation_record(
-        &entry,
-        previous_enabled,
-        request.enabled,
-        success,
-        message,
-    );
+    let record = operation_record(&entry, previous_enabled, request.enabled, success, message);
     append_operation(&record)?;
     Ok(record)
 }
@@ -383,9 +375,7 @@ fn discover_native_entries() -> Result<Vec<NativeStartupEntry>, StartupError> {
 
         let mut deduplicated = BTreeMap::new();
         for entry in entries {
-            deduplicated
-                .entry(entry.public.id.clone())
-                .or_insert(entry);
+            deduplicated.entry(entry.public.id.clone()).or_insert(entry);
         }
         Ok(deduplicated.into_values().collect())
     }
@@ -548,7 +538,10 @@ Remove-ItemProperty -LiteralPath $key -Name $name -ErrorAction Stop
             .env("PCM_REG_KEY", key)
             .env("PCM_REG_NAME", value_name)
             .env("PCM_BACKUP_KEY", &backup_key)
-            .env("PCM_SOURCE_TYPE", source_type_wire(entry.public.source_type))
+            .env(
+                "PCM_SOURCE_TYPE",
+                source_type_wire(entry.public.source_type),
+            )
             .output()
             .map_err(|error| {
                 StartupError::new(
@@ -953,10 +946,7 @@ fn source_type_wire(source: StartupSourceType) -> &'static str {
     }
 }
 
-fn ensure_provider_success(
-    output: std::process::Output,
-    action: &str,
-) -> Result<(), StartupError> {
+fn ensure_provider_success(output: std::process::Output, action: &str) -> Result<(), StartupError> {
     if output.status.success() {
         return Ok(());
     }
@@ -1068,9 +1058,7 @@ fn now_epoch_ms() -> u64 {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        is_supported_hkcu_key, parse_source_type, startup_entry_id, verify_direct_child,
-    };
+    use super::{is_supported_hkcu_key, parse_source_type, startup_entry_id, verify_direct_child};
     use pc_core::StartupSourceType;
     use std::path::Path;
 
