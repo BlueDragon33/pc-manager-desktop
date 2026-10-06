@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { type AppInfo, getAppInfo } from "./appInfo";
+import {
+  appManagerStatusText,
+  getAppManagerStatus,
+  syncAppManager,
+  type AppManagerRuntimeStatus,
+} from "./appManager";
 import { AppsPage } from "./AppsPage";
 import { DuplicateFinderPage } from "./DuplicateFinderPage";
 import { HealthCheckPage } from "./HealthCheckPage";
@@ -65,6 +71,32 @@ function BridgeBadge({ state }: { state: BridgeState }) {
   }
 
   return <span className="status-badge good">Native bridge connected</span>;
+}
+
+function AppManagerBadge({
+  state,
+}: {
+  state: AppManagerRuntimeStatus | null;
+}) {
+  if (!state) {
+    return <span className="status-badge neutral">App Manager checking…</span>;
+  }
+
+  const label = appManagerStatusText(state);
+  const className =
+    state.connection === "online" &&
+    state.device?.status === "approved" &&
+    state.device?.entitlementState !== "disabled"
+      ? "status-badge good"
+      : state.connection === "notConfigured"
+        ? "status-badge neutral"
+        : "status-badge warning";
+
+  return (
+    <span className={className} title={state.lastError ?? undefined}>
+      App Manager: {label}
+    </span>
+  );
 }
 
 function OverviewPage({
@@ -225,11 +257,13 @@ function SettingsPage({
   onThemeChange,
   sidebarCollapsed,
   onSidebarChange,
+  appManagerState,
 }: {
   theme: ThemePreference;
   onThemeChange: (theme: ThemePreference) => void;
   sidebarCollapsed: boolean;
   onSidebarChange: (collapsed: boolean) => void;
+  appManagerState: AppManagerRuntimeStatus | null;
 }) {
   return (
     <div className="page-stack">
@@ -273,6 +307,54 @@ function SettingsPage({
           </button>
         </div>
       </section>
+
+      <section className="native-status-card" aria-labelledby="app-manager-heading">
+        <div>
+          <p className="eyebrow">Central management — P8</p>
+          <h2 id="app-manager-heading">App Manager</h2>
+          <p className="muted">
+            PC Manager connects outbound only. It does not open an inbound port,
+            and remote actions are restricted to a typed allow-list.
+          </p>
+        </div>
+        <AppManagerBadge state={appManagerState} />
+        <dl>
+          <div>
+            <dt>Device</dt>
+            <dd>{appManagerState?.device?.deviceCode ?? "Unavailable"}</dd>
+          </div>
+          <div>
+            <dt>Approval</dt>
+            <dd>{appManagerState?.device?.status ?? "Unavailable"}</dd>
+          </div>
+          <div>
+            <dt>Entitlement</dt>
+            <dd>
+              {appManagerState?.device?.entitlementState ?? "Unavailable"}
+            </dd>
+          </div>
+          <div>
+            <dt>Release channel</dt>
+            <dd>{appManagerState?.device?.releaseChannel ?? "Unavailable"}</dd>
+          </div>
+        </dl>
+        {!appManagerState?.configured && (
+          <div className="info-callout">
+            <strong>Gateway not configured.</strong>
+            <span>
+              Set PC_MANAGER_APP_MANAGER_ORIGIN to the approved HTTPS
+              Application Management origin. Local maintenance features continue
+              to work without it.
+            </span>
+          </div>
+        )}
+        {appManagerState?.lastError && (
+          <div className="info-callout health-error">
+            <strong>Last App Manager connection issue</strong>
+            <span>{appManagerState.lastError}</span>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
@@ -288,6 +370,8 @@ export default function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
     readSidebarCollapsed(),
   );
+  const [appManagerState, setAppManagerState] =
+    useState<AppManagerRuntimeStatus | null>(null);
   const [prefersDark, setPrefersDark] = useState(
     () => window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
@@ -320,6 +404,44 @@ export default function App() {
 
     return () => {
       active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const schedule = (seconds: number) => {
+      if (!active) return;
+      const boundedSeconds = Math.max(5, Math.min(300, seconds));
+      timer = setTimeout(() => {
+        void synchronize();
+      }, boundedSeconds * 1000);
+    };
+
+    const synchronize = async () => {
+      try {
+        const status = await syncAppManager();
+        if (!active) return;
+        setAppManagerState(status);
+        schedule(status.retryAfterSeconds);
+      } catch {
+        if (!active) return;
+        schedule(60);
+      }
+    };
+
+    getAppManagerStatus()
+      .then((status) => {
+        if (active) setAppManagerState(status);
+      })
+      .catch(() => undefined);
+
+    void synchronize();
+
+    return () => {
+      active = false;
+      if (timer !== undefined) clearTimeout(timer);
     };
   }, []);
 
@@ -392,6 +514,7 @@ export default function App() {
 
         <div className="sidebar-footer">
           <BridgeBadge state={bridgeState} />
+          <AppManagerBadge state={appManagerState} />
         </div>
       </aside>
 
@@ -402,7 +525,7 @@ export default function App() {
             <h1>{activeItem.label}</h1>
           </div>
           <div className="topbar-actions">
-            <span className="phase-chip">P7</span>
+            <span className="phase-chip">P8</span>
             <button
               className="icon-button"
               onClick={() =>
@@ -441,6 +564,7 @@ export default function App() {
             <SettingsPage
               onSidebarChange={updateSidebar}
               onThemeChange={updateTheme}
+              appManagerState={appManagerState}
               sidebarCollapsed={sidebarCollapsed}
               theme={theme}
             />
