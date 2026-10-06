@@ -61,7 +61,7 @@ impl AppInfo {
             app_id: "pc-manager",
             platform: "windows",
             device_type: "desktop-native",
-            phase: "P6",
+            phase: "P7",
         }
     }
 }
@@ -77,6 +77,6 @@ mod tests {
         assert_eq!(info.app_id, "pc-manager");
         assert_eq!(info.platform, "windows");
         assert_eq!(info.device_type, "desktop-native");
-        assert_eq!(info.phase, "P6");
+        assert_eq!(info.phase, "P7");
     }
 }
