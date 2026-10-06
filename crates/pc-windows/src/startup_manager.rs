@@ -4,10 +4,12 @@ use pc_core::{
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+#[cfg(target_os = "windows")]
 use std::collections::BTreeMap;
 use std::fs::{self, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
+#[cfg(target_os = "windows")]
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -16,10 +18,14 @@ const STARTUP_AUDIT_FILE: &str = "startup-operations.jsonl";
 #[derive(Debug, Clone)]
 struct NativeStartupEntry {
     public: StartupEntry,
+    #[cfg(target_os = "windows")]
     registry_key: Option<String>,
+    #[cfg(target_os = "windows")]
     registry_value_name: Option<String>,
     startup_path: Option<PathBuf>,
+    #[cfg(target_os = "windows")]
     scheduled_task_name: Option<String>,
+    #[cfg(target_os = "windows")]
     scheduled_task_path: Option<String>,
 }
 
@@ -825,10 +831,14 @@ fn discover_disabled_startup_files() -> Result<Vec<NativeStartupEntry>, StartupE
                 detail: "Disabled by PC Manager; original Startup folder location preserved."
                     .to_string(),
             },
+            #[cfg(target_os = "windows")]
             registry_key: None,
+            #[cfg(target_os = "windows")]
             registry_value_name: None,
             startup_path: Some(original),
+            #[cfg(target_os = "windows")]
             scheduled_task_name: None,
+            #[cfg(target_os = "windows")]
             scheduled_task_path: None,
         });
     }
@@ -934,6 +944,7 @@ fn is_supported_hkcu_key(key: &str) -> bool {
     )
 }
 
+#[cfg(target_os = "windows")]
 fn source_type_wire(source: StartupSourceType) -> &'static str {
     match source {
         StartupSourceType::RegistryCurrentUserRun => "registryCurrentUserRun",
@@ -946,6 +957,7 @@ fn source_type_wire(source: StartupSourceType) -> &'static str {
     }
 }
 
+#[cfg(target_os = "windows")]
 fn ensure_provider_success(output: std::process::Output, action: &str) -> Result<(), StartupError> {
     if output.status.success() {
         return Ok(());
