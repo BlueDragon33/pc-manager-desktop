@@ -14,13 +14,13 @@ pub use health::{
     evaluate_health, HealthCategory, HealthCategoryResult, HealthFinding, HealthReport,
     HealthSeverity, HealthStatus, RiskLevel,
 };
-pub use operation::{
-    CleanupExecutionError, CleanupOperationRecord, CleanupProviderExecutionResult,
-};
 pub use inventory::{
     CpuSummary, DeviceIdentity, DiskVolume, InstalledApplication, InventoryError, InventoryWarning,
     MemorySummary, NetworkAdapter, OperatingSystemSummary, ProcessEntry, ProcessSummary,
     StartupItem, SystemInventory,
+};
+pub use operation::{
+    CleanupExecutionError, CleanupOperationRecord, CleanupProviderExecutionResult,
 };
 
 use serde::Serialize;
