@@ -71,9 +71,13 @@ function History({
                   ? "Unavailable"
                   : `${new Date(point.at).toLocaleTimeString()}: ${value.toFixed(1)}%`
               }
-              className={value === null ? "history-bar unavailable" : "history-bar"}
+              className={
+                value === null ? "history-bar unavailable" : "history-bar"
+              }
               key={point.at}
-              style={{ height: `${Math.max(4, Math.min(100, value ?? 4))}%` }}
+              style={{
+                height: `${Math.max(4, Math.min(100, value ?? 4))}%`,
+              }}
               title={value === null ? "Unavailable" : `${value.toFixed(1)}%`}
             />
           );
@@ -138,7 +142,9 @@ export function MonitorPage() {
             <select
               disabled={paused}
               onChange={(event) =>
-                setIntervalMs(normalizeMonitorInterval(Number(event.target.value)))
+                setIntervalMs(
+                  normalizeMonitorInterval(Number(event.target.value)),
+                )
               }
               value={intervalMs}
             >
@@ -205,7 +211,11 @@ export function MonitorPage() {
                 />
               </div>
               <strong>{formatPercent(snapshot.cpu.value)}</strong>
-              <History history={history} field="cpu" label="Recent CPU history" />
+              <History
+                history={history}
+                field="cpu"
+                label="Recent CPU history"
+              />
             </article>
 
             <article className="monitor-card">
@@ -287,7 +297,9 @@ export function MonitorPage() {
               <div className="monitor-card-heading">
                 <span>Sensors</span>
                 <Availability
-                  available={snapshot.sensors.some((sensor) => sensor.available)}
+                  available={snapshot.sensors.some(
+                    (sensor) => sensor.available,
+                  )}
                   reason="No supported generic temperature source."
                 />
               </div>
