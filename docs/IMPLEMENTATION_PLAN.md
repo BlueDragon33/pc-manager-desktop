@@ -207,24 +207,29 @@ Goal: safe startup control.
 
 Sources:
 
-- [ ] supported Run/RunOnce registry locations
-- [ ] startup folders
-- [ ] selected scheduled tasks when they clearly represent startup behavior
+- [x] supported Run/RunOnce registry locations
+- [x] startup folders
+- [x] selected scheduled tasks when they clearly represent startup behavior
 
 Capabilities:
 
-- [ ] inventory
-- [ ] enable/disable where safe
-- [ ] publisher/source display
-- [ ] command display
-- [ ] rollback record
-- [ ] search/filter
+- [x] inventory
+- [x] enable/disable where safe
+- [x] publisher/source display — publisher remains unavailable when Windows does not provide trustworthy evidence
+- [x] command display
+- [x] rollback record
+- [x] search/filter
 
 Acceptance:
 
-- changes survive reboot semantics correctly;
-- disabling does not delete the underlying application;
-- every change has an operation record.
+- [x] supported current-user Run/RunOnce entries preserve rollback state in the PC Manager backup namespace;
+- [x] current-user Startup folder items use a PC Manager-owned disabled store and restore to their recorded Startup folder;
+- [x] machine-wide/elevated entries remain read-only instead of elevating the whole desktop app;
+- [x] scheduled startup/logon tasks are discovered; unsupported permission changes fail closed;
+- [x] disabling startup never invokes an uninstaller;
+- [x] every attempted mutable change produces an operation record;
+- [x] frontend, Rust tests, Clippy, and native Windows build pass in CI;
+- [ ] real Windows machine verifies inventory and a safe/disposable enable-disable-enable round trip before P6.
 
 ---
 
