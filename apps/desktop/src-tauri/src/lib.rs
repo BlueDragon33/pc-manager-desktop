@@ -39,10 +39,11 @@ struct AppManagerRuntimeState {
     failure_count: u32,
 }
 
+#[derive(Clone)]
 struct AppManagerRuntime {
     client: AppManagerClient,
-    state: Mutex<AppManagerRuntimeState>,
-    syncing: AtomicBool,
+    state: Arc<Mutex<AppManagerRuntimeState>>,
+    syncing: Arc<AtomicBool>,
 }
 
 impl AppManagerRuntime {
@@ -51,7 +52,7 @@ impl AppManagerRuntime {
         let config = client.config();
         Self {
             client,
-            state: Mutex::new(AppManagerRuntimeState {
+            state: Arc::new(Mutex::new(AppManagerRuntimeState {
                 status: AppManagerRuntimeStatus {
                     configured: config.configured,
                     connection: if config.configured {
@@ -65,8 +66,8 @@ impl AppManagerRuntime {
                     last_sync_epoch_ms: None,
                 },
                 failure_count: 0,
-            }),
-            syncing: AtomicBool::new(false),
+            })),
+            syncing: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -178,20 +179,24 @@ fn get_app_manager_status(runtime: State<'_, AppManagerRuntime>) -> AppManagerRu
 }
 
 #[tauri::command]
-async fn sync_app_manager(runtime: State<'_, AppManagerRuntime>) -> AppManagerRuntimeStatus {
+async fn sync_app_manager(
+    runtime: State<'_, AppManagerRuntime>,
+) -> Result<AppManagerRuntimeStatus, String> {
+    let runtime = runtime.inner().clone();
+
     if !runtime.client.config().configured {
-        return runtime.snapshot();
+        return Ok(runtime.snapshot());
     }
 
     if runtime.syncing.swap(true, Ordering::AcqRel) {
-        return runtime.snapshot();
+        return Ok(runtime.snapshot());
     }
 
     let client = runtime.client.clone();
     let result = tauri::async_runtime::spawn_blocking(move || run_app_manager_cycle(client)).await;
     runtime.syncing.store(false, Ordering::Release);
 
-    if let Ok(mut state) = runtime.state.lock() {
+    let status = if let Ok(mut state) = runtime.state.lock() {
         match result {
             Ok(Ok((device, heartbeat_after_seconds, command_errors))) => {
                 state.failure_count = 0;
@@ -230,7 +235,9 @@ async fn sync_app_manager(runtime: State<'_, AppManagerRuntime>) -> AppManagerRu
         state.status.clone()
     } else {
         runtime.snapshot()
-    }
+    };
+
+    Ok(status)
 }
 
 #[derive(Debug, Default)]
