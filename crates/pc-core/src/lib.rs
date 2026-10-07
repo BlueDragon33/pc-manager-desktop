@@ -2,6 +2,7 @@
 
 mod apps;
 mod cleanup;
+mod drivers;
 mod filesystem;
 mod health;
 mod inventory;
@@ -16,6 +17,10 @@ pub use cleanup::{
     summarize_cleanup_plan, CleanupCategory, CleanupError, CleanupPlan, CleanupPlanItem,
     CleanupPlanStore, CleanupProviderSummary, CleanupScanOptions, CleanupScanSummary,
     CleanupWarning,
+};
+pub use drivers::{
+    DriverCenterError, DriverCenterSnapshot, DriverCenterWarning, DriverInventoryEntry,
+    DriverSettingsLaunchResult, DriverUpdateCandidate,
 };
 pub use filesystem::{
     DuplicateDeleteError, DuplicateDeleteRequest, DuplicateDeleteResult, DuplicateFile,
@@ -61,7 +66,7 @@ impl AppInfo {
             app_id: "pc-manager",
             platform: "windows",
             device_type: "desktop-native",
-            phase: "P10",
+            phase: "P11",
         }
     }
 }
@@ -77,6 +82,6 @@ mod tests {
         assert_eq!(info.app_id, "pc-manager");
         assert_eq!(info.platform, "windows");
         assert_eq!(info.device_type, "desktop-native");
-        assert_eq!(info.phase, "P10");
+        assert_eq!(info.phase, "P11");
     }
 }
