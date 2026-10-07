@@ -2160,17 +2160,7 @@ dependencies = [
 [[package]]
 name = "pc-manager-desktop"
 version = "0.1.0"
-dependencies = [
- "app-manager-client",
- "pc-core",
- "pc-monitor",
- "pc-windows",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
-]
-
+dependencies = [\n "app-manager-client",\n "pc-core",\n "pc-monitor",\n "pc-updater",\n "pc-windows",\n "serde",\n "serde_json",\n "tauri",\n "tauri-build",\n]\n
 [[package]]
 name = "pc-manager-windows-service"
 version = "0.1.0"
@@ -2186,7 +2176,7 @@ dependencies = [
 [[package]]
 name = "pc-updater"
 version = "0.1.0"
-
+dependencies = [\n "serde",\n "serde_json",\n "sha2",\n]\n
 [[package]]
 name = "pc-windows"
 version = "0.1.0"
