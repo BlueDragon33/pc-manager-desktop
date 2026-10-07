@@ -51,7 +51,7 @@ jobs:
         run: |
           npm --workspace @pc-manager/desktop run tauri -- build --bundles nsis
           New-Item -ItemType Directory -Force artifacts | Out-Null
-          Get-ChildItem apps/desktop/src-tauri/target/release/bundle/nsis/*.exe | Copy-Item -Destination artifacts
+          Get-ChildItem target/release/bundle/nsis/*.exe | Copy-Item -Destination artifacts
           "UNSIGNED PREVIEW BUILD - DO NOT DISTRIBUTE AS PRODUCTION" | Set-Content artifacts/UNSIGNED_PREVIEW.txt
 
       - name: Generate preview metadata and checksums
