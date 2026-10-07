@@ -262,7 +262,9 @@ export function DriverCenterPage() {
                     <div className="p6-item-main">
                       <div className="p6-item-heading">
                         <div>
-                          <span className="startup-source">\n                            {update.source}\n                          </span>
+                          <span className="startup-source">
+                            {update.source}
+                          </span>
                           <h4>{update.title}</h4>
                         </div>
                         <span className="status-badge good">Applicable</span>
