@@ -13,6 +13,7 @@ import { DuplicateFinderPage } from "./DuplicateFinderPage";
 import { HealthCheckPage } from "./HealthCheckPage";
 import { InventorySummary } from "./InventorySummary";
 import { MonitorPage } from "./MonitorPage";
+import { PerformanceOptimizerPage } from "./PerformanceOptimizerPage";
 import { SmartCleanPage } from "./SmartCleanPage";
 import { RestorePage } from "./RestorePage";
 import { StartupPage } from "./StartupPage";
@@ -225,6 +226,7 @@ function PlaceholderPage({
     | "storage"
     | "duplicates"
     | "monitor"
+    | "performance"
     | "restore"
     | "settings"
   >;
@@ -528,7 +530,7 @@ export default function App() {
             <h1>{activeItem.label}</h1>
           </div>
           <div className="topbar-actions">
-            <span className="phase-chip">P11</span>
+            <span className="phase-chip">P12</span>
             <button
               className="icon-button"
               onClick={() =>
@@ -565,6 +567,8 @@ export default function App() {
             <DuplicateFinderPage />
           ) : page === "monitor" ? (
             <MonitorPage />
+          ) : page === "performance" ? (
+            <PerformanceOptimizerPage onNavigate={setPage} />
           ) : page === "restore" ? (
             <RestorePage />
           ) : page === "settings" ? (
