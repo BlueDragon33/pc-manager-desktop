@@ -100,11 +100,15 @@ Examples:
 
 P11 keeps driver mutation outside PC Manager V1: the native provider may inspect installed driver metadata and available driver-class updates, but installation is handed to the standard Windows Optional Updates UI. No arbitrary driver URL, generic package execution, Update All, force-install, downgrade, or unsigned-driver path is exposed.
 
+P12 adds one bounded read-only Windows provider for automatic-running service evidence. The provider never calls Stop-Service, Set-Service, sc.exe mutation, or a generic command primitive. Service evidence is only correlated with repeated P7 process samples; Windows-system-path services are excluded from optimization recommendations.
+
 ### pc-monitor
 
 Owns sampling and resource-monitoring abstractions.
 
 It must rate-limit and avoid high polling overhead.
+
+P12 reuses P7 foreground sampling rather than adding a permanent optimizer daemon. A P12 analysis takes a small bounded set of short samples, maps them into platform-neutral `PerformanceSample` values, and evaluates repeated evidence in `pc-core`. One spike is intentionally insufficient.
 
 ### pc-updater
 
