@@ -41,7 +41,7 @@ try {
     Pop-Location
   }
 
-  $installers = Get-ChildItem apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
+  $installers = Get-ChildItem target/release/bundle/nsis/*.exe
   if (-not $installers) { throw "No NSIS installer was produced." }
   $installers | Copy-Item -Destination $OutputDirectory
 
