@@ -302,42 +302,46 @@ Acceptance:
 
 ## P8 — App Manager integration
 
-Goal: connect PC Manager to the existing administration platform.
+Goal: connect PC Manager to the existing administration platform through the approved outbound-only Desktop Agent Gateway.
 
 Client capabilities:
 
-- [ ] device identity
-- [ ] registration
-- [ ] approval state
-- [ ] heartbeat
-- [ ] online/offline semantics
-- [ ] app version
-- [ ] release channel
-- [ ] entitlement/license state
-- [ ] update policy
-- [ ] typed remote command envelope
+- [x] device identity — persistent Windows CNG P-256 key; only the public JWK leaves the device
+- [x] registration — idempotent `pc-manager/windows/desktop-native` registration
+- [x] approval state — pending/approved/blocked
+- [x] heartbeat — one-time signed challenge with server-directed interval
+- [x] online/offline semantics — heartbeat presence is separate from local PC Manager availability
+- [x] app version
+- [x] release channel
+- [x] entitlement/license state
+- [x] update policy
+- [x] typed remote command envelope
 
 Remote command allow-list initially:
 
-- [ ] CHECK_UPDATE
-- [ ] RUN_HEALTH_SCAN
-- [ ] REFRESH_DEVICE_STATUS
-- [ ] DISABLE_LICENSE
+- [x] CHECK_UPDATE
+- [x] RUN_HEALTH_SCAN
+- [x] REFRESH_DEVICE_STATUS
+- [x] DISABLE_LICENSE
 
 Explicitly prohibited:
 
 - arbitrary shell;
-- arbitrary PowerShell;
+- arbitrary PowerShell supplied by the server;
 - arbitrary process execution;
 - arbitrary registry mutation;
 - arbitrary file download-and-run.
 
 Acceptance:
 
-- offline mode works;
-- retries use backoff;
-- authentication is not stored as plaintext when avoidable;
-- server cannot turn a typed command into arbitrary OS execution.
+- [x] offline/not-configured mode leaves local PC Manager maintenance usable;
+- [x] retries use bounded backoff;
+- [x] the device private key remains in Windows CNG instead of plaintext application storage;
+- [x] server commands deserialize into and dispatch through a four-command allow-list only;
+- [x] health-scan command returns privacy-bounded aggregate evidence instead of paths/file contents;
+- [x] Application Management exposes a separate authenticated admin surface while the native transport is outbound-only;
+- [x] frontend/Rust/native Windows CI are green for the final P8 client head;
+- [ ] Production gateway migration/deployment and a real signed PC Manager handshake are verified — deferred until the approved HTTPS Application Management origin is deployed/configured.
 
 ---
 
