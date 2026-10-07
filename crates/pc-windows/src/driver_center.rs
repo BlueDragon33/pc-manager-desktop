@@ -1,17 +1,23 @@
-use pc_core::{
-    DriverCenterError, DriverCenterSnapshot, DriverCenterWarning, DriverInventoryEntry,
-    DriverSettingsLaunchResult, DriverUpdateCandidate,
-};
+use pc_core::{DriverCenterError, DriverCenterSnapshot, DriverSettingsLaunchResult};
+#[cfg(any(target_os = "windows", test))]
+use pc_core::{DriverCenterWarning, DriverInventoryEntry, DriverUpdateCandidate};
+#[cfg(any(target_os = "windows", test))]
 use serde::Deserialize;
+#[cfg(any(target_os = "windows", test))]
 use sha2::{Digest, Sha256};
 
 #[cfg(target_os = "windows")]
 use std::process::Command;
+#[cfg(any(target_os = "windows", test))]
 use std::time::{SystemTime, UNIX_EPOCH};
 
+#[cfg(any(target_os = "windows", test))]
 const DRIVER_CENTER_PROVIDER: &str = "Windows Update Agent";
+#[cfg(target_os = "windows")]
 const OPTIONAL_UPDATES_URI: &str = "ms-settings:windowsupdate-optionalupdates";
+#[cfg(any(target_os = "windows", test))]
 const MAX_INSTALLED_DRIVERS: usize = 500;
+#[cfg(any(target_os = "windows", test))]
 const MAX_AVAILABLE_UPDATES: usize = 100;
 
 #[cfg(target_os = "windows")]
@@ -72,20 +78,30 @@ try {
 
             $updateId = ''
             $revisionNumber = 0
+            $hardwareId = ''
+            $manufacturer = $null
+            $provider = $null
+            $model = $null
+            $className = $null
             try {
                 $updateId = [string]$update.Identity.UpdateID
                 $revisionNumber = [int]$update.Identity.RevisionNumber
             } catch {}
+            try { $hardwareId = [string]$update.DriverHardwareID } catch {}
+            try { if ($update.DriverManufacturer) { $manufacturer = [string]$update.DriverManufacturer } } catch {}
+            try { if ($update.DriverProvider) { $provider = [string]$update.DriverProvider } } catch {}
+            try { if ($update.DriverModel) { $model = [string]$update.DriverModel } } catch {}
+            try { if ($update.DriverClass) { $className = [string]$update.DriverClass } } catch {}
 
             [pscustomobject]@{
                 updateId = $updateId
                 revisionNumber = $revisionNumber
                 title = [string]$update.Title
-                hardwareId = try { [string]$update.DriverHardwareID } catch { '' }
-                manufacturer = try { if ($update.DriverManufacturer) { [string]$update.DriverManufacturer } else { $null } } catch { $null }
-                provider = try { if ($update.DriverProvider) { [string]$update.DriverProvider } else { $null } } catch { $null }
-                model = try { if ($update.DriverModel) { [string]$update.DriverModel } else { $null } } catch { $null }
-                className = try { if ($update.DriverClass) { [string]$update.DriverClass } else { $null } } catch { $null }
+                hardwareId = $hardwareId
+                manufacturer = $manufacturer
+                provider = $provider
+                model = $model
+                className = $className
                 driverDate = $driverDate
                 downloaded = [bool]$update.IsDownloaded
                 eulaAccepted = [bool]$update.EulaAccepted
@@ -108,6 +124,7 @@ try {
 } | ConvertTo-Json -Depth 7 -Compress
 "#;
 
+#[cfg(any(target_os = "windows", test))]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RawDriverCenterSnapshot {
@@ -121,6 +138,7 @@ struct RawDriverCenterSnapshot {
     warnings: Vec<DriverCenterWarning>,
 }
 
+#[cfg(any(target_os = "windows", test))]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RawInstalledDriver {
@@ -137,6 +155,7 @@ struct RawInstalledDriver {
     is_signed: Option<bool>,
 }
 
+#[cfg(any(target_os = "windows", test))]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RawDriverUpdate {
@@ -160,6 +179,7 @@ struct RawDriverUpdate {
     reboot_required: bool,
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn opaque_id(namespace: &[u8], parts: &[&str]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(namespace);
@@ -174,6 +194,7 @@ fn opaque_id(namespace: &[u8], parts: &[&str]) -> String {
         .collect::<String>()
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn normalize_optional(value: Option<String>) -> Option<String> {
     value.and_then(|value| {
         let trimmed = value.trim();
@@ -181,6 +202,7 @@ fn normalize_optional(value: Option<String>) -> Option<String> {
     })
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn generated_epoch_ms() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -188,6 +210,7 @@ fn generated_epoch_ms() -> u64 {
         .unwrap_or_default()
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn snapshot_from_raw(mut raw: RawDriverCenterSnapshot) -> DriverCenterSnapshot {
     let mut warnings = raw.warnings;
 
@@ -458,6 +481,25 @@ mod tests {
         let reason = &snapshot.available_updates[0].recommendation;
         assert!(reason.contains("applicable to this PC"));
         assert!(reason.contains("does not recommend a driver merely because it is old"));
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn windows_driver_provider_smoke_is_read_only() {
+        match scan_driver_center() {
+            Ok(snapshot) => {
+                assert_eq!(snapshot.provider, DRIVER_CENTER_PROVIDER);
+                assert!(snapshot.installed_drivers.len() <= MAX_INSTALLED_DRIVERS);
+                assert!(snapshot.available_updates.len() <= MAX_AVAILABLE_UPDATES);
+            }
+            Err(error) => {
+                assert!(
+                    error.code.starts_with("driver_center_"),
+                    "unexpected Driver Center error: {}",
+                    error.code
+                );
+            }
+        }
     }
 
     #[test]
