@@ -2186,6 +2186,11 @@ dependencies = [
 [[package]]
 name = "pc-updater"
 version = "0.1.0"
+dependencies = [
+ "semver",
+ "serde",
+ "sha2",
+]
 
 [[package]]
 name = "pc-windows"
