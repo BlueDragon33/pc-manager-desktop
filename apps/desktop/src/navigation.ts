@@ -4,6 +4,7 @@ export type PageId =
   | "clean"
   | "startup"
   | "apps"
+  | "updates"
   | "storage"
   | "duplicates"
   | "monitor"
@@ -57,6 +58,14 @@ export const NAV_ITEMS: NavItem[] = [
     description:
       "Inspect installed applications and use standard uninstall flows.",
     icon: "▦",
+  },
+  {
+    id: "updates",
+    label: "Software Updates",
+    shortLabel: "Updates",
+    description:
+      "Check verified WinGet updates and launch one exact package at a time.",
+    icon: "↻",
   },
   {
     id: "storage",
