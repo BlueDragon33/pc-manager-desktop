@@ -349,16 +349,16 @@ Acceptance:
 
 Goal: reliable release pipeline.
 
-- [ ] preview build workflow
-- [ ] production workflow
-- [ ] production confirmation input
-- [ ] Windows installer
-- [ ] checksums
-- [ ] signing integration hooks
-- [ ] release notes
-- [ ] updater metadata
-- [ ] stable/beta/dev policy
-- [ ] rollback/failed-update strategy
+- [x] preview build workflow — manual Windows NSIS build, explicitly labelled `UNSIGNED-PREVIEW`
+- [x] production workflow — separate manual signed release path
+- [x] production confirmation input — exact `DEPLOY_PRODUCTION`
+- [x] Windows installer — Tauri NSIS bundle target configured
+- [x] checksums — SHA-256 generated after final artifact creation/signing
+- [x] signing integration hooks — protected PFX environment hook with Authenticode verification and fail-closed Production behavior
+- [x] release notes
+- [x] updater metadata
+- [x] stable/beta/dev policy — enforced in `pc-updater`
+- [x] rollback/failed-update strategy — documented in `docs/RELEASE_AND_ROLLBACK.md`
 
 Desired production trigger pattern:
 
@@ -368,10 +368,13 @@ gh workflow run production-release.yml --ref main -f confirm=DEPLOY_PRODUCTION
 
 Acceptance:
 
-- a clean Windows machine can install;
-- upgrade preserves local state;
-- downgrade/rollback policy documented;
-- unsigned test builds are clearly distinguishable from production.
+- [ ] frontend/Rust/native Windows CI are green for the final P9 implementation head;
+- [ ] preview NSIS workflow is executed successfully and its artifact inspected on Windows;
+- [ ] a signed Production artifact is generated with real protected signing material;
+- [ ] a clean Windows machine can install;
+- [ ] an in-place upgrade preserves local state;
+- [x] downgrade/rollback policy is documented and automatic downgrade remains disabled;
+- [x] unsigned test builds are clearly distinguishable from production and cannot be auto-promoted.
 
 ---
 
