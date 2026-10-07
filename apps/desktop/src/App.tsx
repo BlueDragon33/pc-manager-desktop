@@ -16,6 +16,7 @@ import { SmartCleanPage } from "./SmartCleanPage";
 import { RestorePage } from "./RestorePage";
 import { StartupPage } from "./StartupPage";
 import { StoragePage } from "./StoragePage";
+import { SoftwareUpdaterPage } from "./SoftwareUpdaterPage";
 import { NAV_ITEMS, getNavItem, type PageId } from "./navigation";
 import {
   readSidebarCollapsed,
@@ -200,7 +201,7 @@ function OverviewPage({
           </div>
           <div>
             <dt>Product phase</dt>
-            <dd>{appInfo?.phase ?? "P9"}</dd>
+            <dd>{appInfo?.phase ?? "P10"}</dd>
           </div>
         </dl>
       </section>
@@ -218,6 +219,7 @@ function PlaceholderPage({
     | "clean"
     | "startup"
     | "apps"
+    | "updates"
     | "storage"
     | "duplicates"
     | "monitor"
@@ -239,7 +241,7 @@ function PlaceholderPage({
         <div className="info-callout">
           <strong>No system data is being simulated.</strong>
           <span>
-            This module is not implemented in P9. Real actions arrive only in
+            This module is not implemented in P10. Real actions arrive only in
             later, separately gated phases.
           </span>
         </div>
@@ -524,7 +526,7 @@ export default function App() {
             <h1>{activeItem.label}</h1>
           </div>
           <div className="topbar-actions">
-            <span className="phase-chip">P9</span>
+            <span className="phase-chip">P10</span>
             <button
               className="icon-button"
               onClick={() =>
@@ -551,6 +553,8 @@ export default function App() {
             <StartupPage />
           ) : page === "apps" ? (
             <AppsPage />
+          ) : page === "updates" ? (
+            <SoftwareUpdaterPage />
           ) : page === "storage" ? (
             <StoragePage />
           ) : page === "duplicates" ? (
