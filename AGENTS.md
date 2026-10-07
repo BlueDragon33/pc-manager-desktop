@@ -241,3 +241,24 @@ Stop implementation and report clearly when:
 - CI or build failures cannot be explained from available logs.
 
 Do not bypass these constraints merely to make a demo appear successful.
+
+
+## 13. Constitution 1.2 dependency sovereignty
+
+This repository adopts `blueprint-os:universal-century-grade@1.2.0` at B4.
+
+The mandatory operational-sovereignty rule is:
+
+`LOCAL PRIVILEGED AUTHORITY → OPTIONAL REMOTE COORDINATION`
+
+Non-negotiable consequences:
+
+1. Cleanup, startup, uninstall, restore, monitor and other privileged machine actions remain locally authorized.
+2. App Manager may coordinate registration, heartbeat, release/update metadata, entitlement and explicitly supported typed requests; it never becomes generic system authority.
+3. Google Drive/Sheets/Apps Script or another cloud service may only be optional backup/sync/report adapters.
+4. Core maintenance must remain usable during App Manager, Internet or cloud outages.
+5. Remote generic shell, PowerShell, arbitrary process execution and arbitrary registry mutation remain forbidden.
+6. Secrets, raw sensitive scan data and privileged state must not be stored in Drive/Sheets plaintext.
+7. Any new external dependency must update `.blueprint/dependency-budget.json` with purpose, data boundary, degraded behavior and exit path.
+
+Every AI coding task must preserve `.blueprint/constitution-adoption.json` and the dependency budget. Do not weaken the validator merely to make CI green.
