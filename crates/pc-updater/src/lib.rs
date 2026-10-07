@@ -224,13 +224,16 @@ struct ParsedUpgradeRow {
 
 #[cfg(target_os = "windows")]
 fn run_winget(args: &[&str]) -> Result<std::process::Output, SoftwareUpdateError> {
-    Command::new("winget.exe").args(args).output().map_err(|error| {
-        SoftwareUpdateError::new(
-            "winget_unavailable",
-            format!("Windows Package Manager could not be started: {error}"),
-            true,
-        )
-    })
+    Command::new("winget.exe")
+        .args(args)
+        .output()
+        .map_err(|error| {
+            SoftwareUpdateError::new(
+                "winget_unavailable",
+                format!("Windows Package Manager could not be started: {error}"),
+                true,
+            )
+        })
 }
 
 #[cfg(target_os = "windows")]
@@ -301,9 +304,9 @@ fn parse_trusted_source(stdout: &str) -> Result<TrustedWingetSource, SoftwareUpd
 fn valid_package_id(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 200
-        && value.bytes().all(|byte| {
-            byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'-' | b'_' | b'+')
-        })
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'-' | b'_' | b'+'))
 }
 
 #[cfg(any(target_os = "windows", test))]
@@ -724,7 +727,11 @@ mod tests {
     #[cfg(target_os = "windows")]
     #[test]
     fn winget_provider_smoke_is_read_only_when_winget_is_present() {
-        if Command::new("winget.exe").arg("--version").output().is_err() {
+        if Command::new("winget.exe")
+            .arg("--version")
+            .output()
+            .is_err()
+        {
             return;
         }
 
