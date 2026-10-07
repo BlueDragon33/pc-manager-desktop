@@ -458,3 +458,26 @@ Next phase:
 ```
 
 The implementation plan is defined in `docs/IMPLEMENTATION_PLAN.md`.
+
+
+---
+
+## Dependency posture
+
+This master build prompt inherits Universal Constitution 1.2.
+
+Default decision order:
+
+`LOCAL/ON-DEVICE → OPEN/SELF-CONTROLLED → FREE EXTERNAL → PAID EXTERNAL ONLY WHEN JUSTIFIED`
+
+For PC Manager Desktop:
+
+- privileged Windows operations are always local;
+- local SQLite is the durable application-state default;
+- App Manager is optional coordination and update policy, never arbitrary privileged authority;
+- Google Drive/Sheets/Apps Script are optional backup/report/sync adapters only;
+- AI services are optional advisory helpers and must not own cleanup/restore truth;
+- new external dependencies require an update to `.blueprint/dependency-budget.json`;
+- the app must retain useful local behavior when Internet/cloud services are unavailable.
+
+Do not introduce a mandatory SaaS or paid runtime when the same requirement can be met safely on-device.
