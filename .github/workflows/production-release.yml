@@ -1,0 +1,157 @@
+name: Production Windows release
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type DEPLOY_PRODUCTION exactly"
+        required: true
+        type: string
+      channel:
+        description: "Release channel"
+        required: true
+        default: stable
+        type: choice
+        options:
+          - stable
+          - beta
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pc-manager-production-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Signed production release
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    env:
+      WINDOWS_SIGNING_PFX_BASE64: ${{ secrets.WINDOWS_SIGNING_PFX_BASE64 }}
+      WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
+      WINDOWS_SIGNING_TIMESTAMP_URL: ${{ vars.WINDOWS_SIGNING_TIMESTAMP_URL }}
+    steps:
+      - name: Require explicit confirmation
+        shell: pwsh
+        run: |
+          if ("${{ inputs.confirm }}" -ne "DEPLOY_PRODUCTION") {
+            throw "Production confirmation must be DEPLOY_PRODUCTION exactly."
+          }
+
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Setup Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Full release checks
+        run: |
+          npm run lint
+          npm run typecheck
+          npm run test
+          npm run format:check
+          npm run build:frontend
+          cargo fmt --check
+          cargo check --workspace --locked
+          cargo test --workspace --locked
+          cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      - name: Require signing configuration
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_PFX_BASE64) -or
+              [string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_PFX_PASSWORD)) {
+            throw "Production signing secrets are not configured."
+          }
+
+      - name: Build NSIS installer
+        run: npm run bundle:windows
+
+      - name: Sign, verify, checksum and metadata
+        id: package
+        shell: pwsh
+        run: |
+          $artifact = Get-ChildItem "target/release/bundle/nsis" -Filter "*.exe" | Select-Object -First 1
+          if (-not $artifact) { throw "NSIS production installer was not produced." }
+
+          ./scripts/sign-windows-artifact.ps1 -ArtifactPath $artifact.FullName
+
+          $version = (Get-Content "apps/desktop/src-tauri/tauri.conf.json" | ConvertFrom-Json).version
+          $channel = "${{ inputs.channel }}"
+          $tag = if ($channel -eq "stable") { "v$version" } else { "v$version-beta.${{ github.run_number }}" }
+          $name = "PC-Manager-$version-$channel-windows-x86_64.exe"
+
+          New-Item -ItemType Directory -Path "release-production" -Force | Out-Null
+          Copy-Item $artifact.FullName (Join-Path "release-production" $name)
+
+          $signature = Get-AuthenticodeSignature (Join-Path "release-production" $name)
+          if ($signature.Status -ne "Valid") {
+            throw "Copied production artifact does not retain a valid Authenticode signature."
+          }
+
+          $hash = (Get-FileHash (Join-Path "release-production" $name) -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $name" | Set-Content "release-production/$name.sha256" -Encoding ASCII
+
+          @(
+            "PC Manager Desktop $version ($channel)"
+            ""
+            "Commit: ${{ github.sha }}"
+            "Installer: Authenticode signed and verified in the release workflow."
+            "Update installation remains user-controlled in P9."
+          ) | Set-Content "release-production/release-notes.txt"
+
+          $url = "https://github.com/${{ github.repository }}/releases/download/$tag/$name"
+          ./scripts/generate-release-metadata.ps1 `
+            -ArtifactPath (Join-Path "release-production" $name) `
+            -Version $version `
+            -Channel $channel `
+            -ArtifactUrl $url `
+            -OutputPath "release-production/update-$channel.json" `
+            -ReleaseNotesPath "release-production/release-notes.txt"
+
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "artifact=$name" >> $env:GITHUB_OUTPUT
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Publish immutable GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $args = @(
+            "release", "create", "${{ steps.package.outputs.tag }}",
+            "release-production/${{ steps.package.outputs.artifact }}",
+            "release-production/${{ steps.package.outputs.artifact }}.sha256",
+            "release-production/update-${{ inputs.channel }}.json",
+            "--target", "${{ github.sha }}",
+            "--title", "PC Manager Desktop ${{ steps.package.outputs.version }} (${{ inputs.channel }})",
+            "--notes-file", "release-production/release-notes.txt"
+          )
+          if ("${{ inputs.channel }}" -eq "beta") { $args += "--prerelease" }
+          & gh @args
+          if ($LASTEXITCODE -ne 0) { throw "GitHub release creation failed." }
+
+      - name: Upload release evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: pc-manager-production-${{ steps.package.outputs.tag }}
+          path: release-production/
+          retention-days: 30
+          if-no-files-found: error
