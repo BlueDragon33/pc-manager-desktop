@@ -403,15 +403,24 @@ V1 safety boundary:
 
 ## P11 — Driver Center
 
-Only after P0–P10.
+Sequencing exception recorded 2026-10-07: implementation may proceed while the documented P9/P10 manual gates remain open. Those earlier phases must not be represented as fully accepted until their manual gates are proven.
 
-Principles:
+V1 capabilities:
 
-- old does not automatically mean bad;
-- prefer Windows Update/vendor sources;
-- explain why an update is recommended;
-- do not mass-update drivers blindly;
-- create restore protection when feasible.
+- [x] enumerate installed signed-driver inventory locally;
+- [x] discover driver-class updates through Windows Update Agent without installing them;
+- [x] use opaque local identifiers rather than exposing raw hardware IDs as control tokens;
+- [x] explain available update evidence and provider/source state;
+- [x] old driver age alone never creates a recommendation;
+- [x] no mass update / Update All action;
+- [x] no arbitrary driver URL, download-and-run, force-install, downgrade, or unsigned-driver path;
+- [x] hand installation control to the standard Windows Optional Updates surface;
+- [x] bounded provider results and warnings;
+- [ ] representative real-Windows inventory and Optional Updates handoff are manually verified.
+
+Restore protection rule:
+
+P11 V1 performs no direct driver mutation, so it does not fabricate a restore point or rollback promise. If a later phase performs direct driver installation, restore-point/rollback feasibility becomes a mandatory gate before that mutation is enabled.
 
 ---
 
@@ -444,4 +453,4 @@ For each phase:
 8. create preview artifact where relevant;
 9. proceed only after the acceptance gate passes.
 
-The next implementation task after these planning documents are merged is **P0 — Repository foundation**.
+The next implementation phase after P11 is **P12 — Advanced Performance Optimizer**, subject to the remaining manual gates being tracked honestly.
