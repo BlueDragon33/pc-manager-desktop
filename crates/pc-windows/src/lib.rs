@@ -6,11 +6,13 @@
 mod apps_manager;
 mod cleanup;
 mod cleanup_execution;
+mod driver_center;
 mod filesystem_tools;
 mod startup_manager;
 pub use apps_manager::{launch_standard_uninstall, list_installed_app_entries};
 pub use cleanup::scan_cleanup_candidates;
 pub use cleanup_execution::{execute_cleanup_plan, list_cleanup_operations};
+pub use driver_center::{open_driver_update_settings, scan_driver_center};
 pub use filesystem_tools::{
     delete_duplicate_files, scan_duplicate_files, scan_root_id, scan_storage, select_user_scan_root,
 };
