@@ -7,9 +7,11 @@ use pc_core::{
     CleanupScanOptions, CleanupScanSummary, DriverCenterError, DriverCenterSnapshot,
     DriverSettingsLaunchResult, DuplicateDeleteRequest, DuplicateDeleteResult,
     DuplicateScanOptions, DuplicateScanPlanStore, DuplicateScanSummary, FilesystemError,
-    HealthReport, InstalledAppEntry, InventoryError, ScanRootSelection, StartupChangeRequest,
-    StartupEntry, StartupError, StartupOperationRecord, StorageScanOptions, StorageScanSummary,
-    SystemInventory, UninstallLaunchResult, UninstallRequest,
+    HealthReport, InstalledAppEntry, InventoryError, PerformanceOptimizerError,
+    PerformanceOptimizerReport, PerformanceProcessSample, PerformanceSample, ScanRootSelection,
+    StartupChangeRequest, StartupEntry, StartupError, StartupOperationRecord, StorageScanOptions,
+    StorageScanSummary, SystemInventory, UninstallLaunchResult, UninstallRequest,
+    evaluate_performance_optimizer,
 };
 use pc_monitor::{MonitorError, MonitorSnapshot};
 use pc_updater::{
@@ -292,6 +294,82 @@ async fn get_monitor_snapshot() -> Result<MonitorSnapshot, MonitorError> {
                 true,
             )
         })?
+}
+
+fn optimizer_sample_from_monitor(snapshot: MonitorSnapshot) -> PerformanceSample {
+    PerformanceSample {
+        collected_at_epoch_ms: snapshot.collected_at_epoch_ms,
+        cpu_percent: if snapshot.cpu.available {
+            snapshot.cpu.value
+        } else {
+            None
+        },
+        memory_used_percent: if snapshot.memory.available {
+            snapshot.memory.used_percent
+        } else {
+            None
+        },
+        processes: snapshot
+            .top_processes
+            .into_iter()
+            .map(|process| PerformanceProcessSample {
+                name: process.name,
+                cpu_percent: process.cpu_percent,
+                memory_bytes: process.memory_bytes,
+            })
+            .collect(),
+    }
+}
+
+#[tauri::command]
+async fn run_performance_optimizer(
+) -> Result<PerformanceOptimizerReport, PerformanceOptimizerError> {
+    tauri::async_runtime::spawn_blocking(|| {
+        let startup_entries = pc_windows::list_startup_entries().map_err(|error| {
+            PerformanceOptimizerError::new(
+                "performance_startup_provider_failed",
+                format!("Startup evidence could not be collected: {}", error.message),
+                error.recoverable,
+            )
+        })?;
+
+        let (services, service_warning) = match pc_windows::list_performance_services() {
+            Ok(services) => (services, None),
+            Err(error) => (Vec::new(), Some(error.message)),
+        };
+
+        let mut samples = Vec::with_capacity(3);
+        for index in 0..3 {
+            let snapshot = pc_monitor::sample_monitor().map_err(|error| {
+                PerformanceOptimizerError::new(
+                    "performance_monitor_sample_failed",
+                    format!("Performance evidence could not be sampled: {}", error.message),
+                    error.recoverable,
+                )
+            })?;
+            samples.push(optimizer_sample_from_monitor(snapshot));
+            if index < 2 {
+                std::thread::sleep(std::time::Duration::from_millis(600));
+            }
+        }
+
+        let mut report =
+            evaluate_performance_optimizer(&samples, &startup_entries, &services);
+        if let Some(warning) = service_warning {
+            report.limitations.push(format!(
+                "Service correlation was unavailable for this scan: {warning}"
+            ));
+        }
+        Ok(report)
+    })
+    .await
+    .map_err(|error| {
+        PerformanceOptimizerError::new(
+            "performance_optimizer_task_failed",
+            format!("The Performance Optimizer task failed: {error}"),
+            true,
+        )
+    })?
 }
 
 #[tauri::command]
@@ -676,6 +754,7 @@ pub fn run() {
             sync_app_manager,
             get_system_inventory,
             get_monitor_snapshot,
+            run_performance_optimizer,
             run_health_check,
             scan_cleanup_candidates,
             execute_cleanup_plan,
