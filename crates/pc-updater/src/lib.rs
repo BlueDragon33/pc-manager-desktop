@@ -108,11 +108,7 @@ pub fn validate_metadata(metadata: &UpdateMetadata) -> Result<(), UpdateError> {
         )
     })?;
 
-    if metadata.sha256.len() != 64
-        || !metadata
-            .sha256
-            .bytes()
-            .all(|byte| byte.is_ascii_hexdigit())
+    if metadata.sha256.len() != 64 || !metadata.sha256.bytes().all(|byte| byte.is_ascii_hexdigit())
     {
         return Err(UpdateError::new(
             "invalid_update_checksum",
@@ -231,13 +227,21 @@ mod tests {
     #[test]
     fn newer_version_is_available_only_on_allowed_channel() {
         assert_eq!(
-            evaluate_update("0.1.0", ReleaseChannel::Stable, &metadata(ReleaseChannel::Stable, "0.2.0"))
-                .expect("valid metadata"),
+            evaluate_update(
+                "0.1.0",
+                ReleaseChannel::Stable,
+                &metadata(ReleaseChannel::Stable, "0.2.0"),
+            )
+            .expect("valid metadata"),
             UpdateDecision::Available { mandatory: false }
         );
         assert_eq!(
-            evaluate_update("0.1.0", ReleaseChannel::Stable, &metadata(ReleaseChannel::Beta, "0.2.0"))
-                .expect("valid metadata"),
+            evaluate_update(
+                "0.1.0",
+                ReleaseChannel::Stable,
+                &metadata(ReleaseChannel::Beta, "0.2.0"),
+            )
+            .expect("valid metadata"),
             UpdateDecision::ChannelNotAllowed
         );
     }
@@ -247,7 +251,9 @@ mod tests {
         let mut value = metadata(ReleaseChannel::Stable, "0.2.0");
         value.artifact_url = "http://example.invalid/update.exe".to_string();
         assert_eq!(
-            validate_metadata(&value).expect_err("http must be rejected").code,
+            validate_metadata(&value)
+                .expect_err("http must be rejected")
+                .code,
             "insecure_update_url"
         );
     }
@@ -260,11 +266,10 @@ mod tests {
             "checksum"
         ));
         fs::write(&path, b"pc-manager").expect("write fixture");
-        let correct =
-            "5971fff264e4a6a2e315d3f868c066af1dbcf342a7c1098fd7515021357104c0";
+        let correct = "5971fff264e4a6a2e315d3f868c066af1dbcf342a7c1098fd7515021357104c0";
         verify_file_sha256(&path, correct).expect("checksum should match");
-        let error = verify_file_sha256(&path, &"0".repeat(64))
-            .expect_err("wrong checksum must fail");
+        let error =
+            verify_file_sha256(&path, &"0".repeat(64)).expect_err("wrong checksum must fail");
         assert_eq!(error.code, "update_checksum_mismatch");
         let _ = fs::remove_file(path);
     }
