@@ -35,9 +35,9 @@ Read these before feature work:
 
 ## Current phase
 
-**P8 — App Manager integration**
+**P9 — Production packaging and update system**
 
-P0–P7 foundations are implemented. P8 adds the outbound-only Application Management Desktop Agent Gateway client: persistent P-256 device identity, registration/approval state, heartbeat/backoff, release channel, entitlement/update policy, and a four-command typed allow-list. Local maintenance remains usable when the gateway is offline or not configured.
+P0–P8 foundations are implemented. P9 adds separate preview/Production Windows packaging, an explicit Production confirmation gate, NSIS installer configuration, SHA-256/update metadata, fail-closed Authenticode signing hooks, release-channel policy, and documented rollback behavior. Clean-install, upgrade-preservation, and real signed-release verification remain manual gates.
 
 ## Prerequisites
 
