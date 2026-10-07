@@ -340,7 +340,7 @@ Acceptance:
 - [x] server commands deserialize into and dispatch through a four-command allow-list only;
 - [x] health-scan command returns privacy-bounded aggregate evidence instead of paths/file contents;
 - [x] Application Management exposes a separate authenticated admin surface while the native transport is outbound-only;
-- [ ] frontend/Rust/native Windows CI are green for the final P8 client head;
+- [x] frontend/Rust/native Windows CI are green for the final P8 client head;
 - [ ] Production gateway migration/deployment and a real signed PC Manager handshake are verified — deferred until the approved HTTPS Application Management origin is deployed/configured.
 
 ---
