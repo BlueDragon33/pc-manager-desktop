@@ -379,14 +379,25 @@ Acceptance:
 
 ## P10 — Software Updater
 
-Only after P0–P9.
+Sequencing exception recorded 2026-10-07: implementation may proceed while P9's clean-machine install and upgrade/state-preservation manual gates remain open. P9 must not be represented as fully accepted until those gates are proven.
 
 Goals:
 
-- detect supported application updates;
-- verify publisher/source;
-- prefer trusted vendor/package-manager mechanisms;
-- never download executables from unverified URLs.
+- [~] detect supported application updates;
+- [~] verify publisher/source — official WinGet source trust is verified in V1; publisher evidence must remain explicit and may be unavailable until structured verification exists;
+- [x] prefer trusted vendor/package-manager mechanisms — WinGet is the V1 provider;
+- [x] never download executables from unverified URLs;
+- [ ] real Windows representative update launch is manually verified.
+
+V1 safety boundary:
+
+- no arbitrary URL download;
+- no Update All;
+- no frontend-supplied command line or WinGet flags;
+- exact package ID from a native opaque scan plan only;
+- revalidate the candidate immediately before launch;
+- official trusted `winget` source only;
+- request interactive installer mode and never bypass installer hash checks.
 
 ---
 

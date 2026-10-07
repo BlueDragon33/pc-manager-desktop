@@ -12,6 +12,7 @@ describe("navigation model", () => {
       "clean",
       "startup",
       "apps",
+      "updates",
       "storage",
       "duplicates",
       "monitor",

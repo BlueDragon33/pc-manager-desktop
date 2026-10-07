@@ -37,6 +37,15 @@
       "dataBoundary": "No secrets, private keys, raw scan state, personal file inventory or privileged operation authority",
       "offlineBehavior": "No impact on core functionality",
       "exitPath": "Portable encrypted export files; provider can be removed without loss of local operation"
+    },
+    {
+      "id": "windows-package-manager-winget",
+      "class": "OPTIONAL_LOCAL_PROVIDER",
+      "costClass": "os-provided-free",
+      "purpose": "P10 software update discovery and exact-package interactive upgrade handoff through the official trusted WinGet source",
+      "dataBoundary": "Local installed package identity/version is processed on-device by WinGet; PC Manager does not accept arbitrary download URLs or upload the package inventory to App Manager",
+      "offlineBehavior": "Software update discovery is unavailable offline or when WinGet is absent; all other local PC Manager maintenance remains operational",
+      "exitPath": "Provider is isolated in pc-updater and can be replaced by another trusted local/vendor update provider without changing privileged local authority"
     }
   ],
   "forbidden": [

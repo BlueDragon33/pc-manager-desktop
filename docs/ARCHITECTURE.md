@@ -107,10 +107,14 @@ It must rate-limit and avoid high polling overhead.
 
 Owns:
 
-- update metadata parsing;
-- channel policy;
+- PC Manager update metadata parsing;
+- release-channel policy;
 - checksum verification;
-- handoff to signed updater/install mechanism.
+- handoff to signed PC Manager updater/install mechanism;
+- P10 trusted third-party software update discovery through the official WinGet source;
+- opaque update scan plans and stale-candidate revalidation before WinGet launch.
+
+P10 V1 never accepts arbitrary package URLs or package-manager arguments from the UI/App Manager. It verifies the configured `winget` source identity/trust metadata, exposes only typed candidates, and launches one exact package ID at a time. Publisher metadata that cannot be independently verified remains explicitly unavailable.
 
 ### app-manager-client
 

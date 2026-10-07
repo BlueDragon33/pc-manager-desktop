@@ -2164,6 +2164,7 @@ dependencies = [
  "app-manager-client",
  "pc-core",
  "pc-monitor",
+ "pc-updater",
  "pc-windows",
  "serde",
  "serde_json",
@@ -2186,6 +2187,11 @@ dependencies = [
 [[package]]
 name = "pc-updater"
 version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sha2",
+]
 
 [[package]]
 name = "pc-windows"
