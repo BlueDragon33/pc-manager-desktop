@@ -349,16 +349,16 @@ Acceptance:
 
 Goal: reliable release pipeline.
 
-- [ ] preview build workflow
-- [ ] production workflow
-- [ ] production confirmation input
-- [ ] Windows installer
-- [ ] checksums
-- [ ] signing integration hooks
-- [ ] release notes
-- [ ] updater metadata
-- [ ] stable/beta/dev policy
-- [ ] rollback/failed-update strategy
+- [x] preview build workflow — unsigned NSIS artifact, explicitly labeled preview-only
+- [x] production workflow — manual signed release from `main`
+- [x] production confirmation input — exact `DEPLOY_PRODUCTION`
+- [x] Windows installer — NSIS bundle target
+- [x] checksums — SHA-256 manifest plus per-artifact metadata digest
+- [x] signing integration hooks — production fails closed without the configured PFX credentials
+- [x] release notes — generated from the release commit history
+- [x] updater metadata — `pc-manager.update/v1`
+- [x] stable/beta/dev policy — enforced by `pc-updater` policy helpers
+- [x] rollback/failed-update strategy — documented in `docs/RELEASE_POLICY.md`
 
 Desired production trigger pattern:
 
@@ -368,10 +368,12 @@ gh workflow run production-release.yml --ref main -f confirm=DEPLOY_PRODUCTION
 
 Acceptance:
 
-- a clean Windows machine can install;
-- upgrade preserves local state;
-- downgrade/rollback policy documented;
-- unsigned test builds are clearly distinguishable from production.
+- [ ] a clean Windows machine can install the produced signed installer — manual gate;
+- [ ] upgrade preserves local state and the CNG App Manager identity — manual gate;
+- [x] downgrade/rollback policy is documented and normal update policy blocks automatic downgrade;
+- [x] unsigned test builds are clearly distinguishable from production;
+- [x] production packaging refuses to proceed without signing credentials;
+- [x] automated frontend/Rust/native packaging checks are green before merge.
 
 ---
 

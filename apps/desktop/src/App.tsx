@@ -200,7 +200,7 @@ function OverviewPage({
           </div>
           <div>
             <dt>Product phase</dt>
-            <dd>{appInfo?.phase ?? "P8"}</dd>
+            <dd>{appInfo?.phase ?? "P9"}</dd>
           </div>
         </dl>
       </section>
@@ -239,7 +239,7 @@ function PlaceholderPage({
         <div className="info-callout">
           <strong>No system data is being simulated.</strong>
           <span>
-            This module is not implemented in P8. Real actions arrive only in
+            This module is not implemented in P9. Real actions arrive only in
             later, separately gated phases.
           </span>
         </div>
@@ -524,7 +524,7 @@ export default function App() {
             <h1>{activeItem.label}</h1>
           </div>
           <div className="topbar-actions">
-            <span className="phase-chip">P8</span>
+            <span className="phase-chip">P9</span>
             <button
               className="icon-button"
               onClick={() =>
