@@ -5,8 +5,9 @@ use app_manager_client::{
 use pc_core::{
     evaluate_health, AppInfo, AppsError, CleanupError, CleanupOperationRecord, CleanupPlanStore,
     CleanupScanOptions, CleanupScanSummary, DuplicateDeleteRequest, DuplicateDeleteResult,
-    DuplicateScanOptions, DuplicateScanPlanStore, DuplicateScanSummary, FilesystemError,
-    HealthReport, InstalledAppEntry, InventoryError, ScanRootSelection, StartupChangeRequest,
+    DriverCenterError, DriverCenterSnapshot, DriverSettingsLaunchResult, DuplicateScanOptions,
+    DuplicateScanPlanStore, DuplicateScanSummary, FilesystemError, HealthReport, InstalledAppEntry,
+    InventoryError, ScanRootSelection, StartupChangeRequest,
     StartupEntry, StartupError, StartupOperationRecord, StorageScanOptions, StorageScanSummary,
     SystemInventory, UninstallLaunchResult, UninstallRequest,
 };
@@ -408,6 +409,24 @@ fn launch_software_update(
 }
 
 #[tauri::command]
+async fn scan_driver_center() -> Result<DriverCenterSnapshot, DriverCenterError> {
+    tauri::async_runtime::spawn_blocking(pc_windows::scan_driver_center)
+        .await
+        .map_err(|error| {
+            DriverCenterError::new(
+                "driver_center_task_failed",
+                format!("The Driver Center scan task failed: {error}"),
+                true,
+            )
+        })?
+}
+
+#[tauri::command]
+fn open_driver_update_settings() -> Result<DriverSettingsLaunchResult, DriverCenterError> {
+    pc_windows::open_driver_update_settings()
+}
+
+#[tauri::command]
 fn list_installed_apps() -> Result<Vec<InstalledAppEntry>, AppsError> {
     pc_windows::list_installed_app_entries()
 }
@@ -668,6 +687,8 @@ pub fn run() {
             launch_uninstall,
             check_software_updates,
             launch_software_update,
+            scan_driver_center,
+            open_driver_update_settings,
             select_scan_root,
             scan_duplicates,
             delete_duplicate_files,
