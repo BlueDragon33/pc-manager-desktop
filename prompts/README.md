@@ -13,6 +13,6 @@ Rules:
 
 Current prompt:
 
-- `P10_SOFTWARE_UPDATER.md` — detect and launch one trusted WinGet software update through an opaque, revalidated native plan.
+- `P11_DRIVER_CENTER.md` — inspect drivers and trusted Windows Update driver evidence without blind or mass installation.
 
 Previous phase prompts remain in this directory as implementation history.

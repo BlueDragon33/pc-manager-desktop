@@ -95,7 +95,10 @@ Examples:
 - known folders;
 - installed apps;
 - startup enumeration;
-- process metrics.
+- process metrics;
+- P11 Driver Center inventory and read-only Windows Update Agent discovery.
+
+P11 keeps driver mutation outside PC Manager V1: the native provider may inspect installed driver metadata and available driver-class updates, but installation is handed to the standard Windows Optional Updates UI. No arbitrary driver URL, generic package execution, Update All, force-install, downgrade, or unsigned-driver path is exposed.
 
 ### pc-monitor
 

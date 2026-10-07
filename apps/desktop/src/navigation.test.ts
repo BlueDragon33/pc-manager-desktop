@@ -13,6 +13,7 @@ describe("navigation model", () => {
       "startup",
       "apps",
       "updates",
+      "drivers",
       "storage",
       "duplicates",
       "monitor",

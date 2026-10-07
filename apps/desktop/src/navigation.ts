@@ -5,6 +5,7 @@ export type PageId =
   | "startup"
   | "apps"
   | "updates"
+  | "drivers"
   | "storage"
   | "duplicates"
   | "monitor"
@@ -66,6 +67,14 @@ export const NAV_ITEMS: NavItem[] = [
     description:
       "Check verified WinGet updates and launch one exact package at a time.",
     icon: "↻",
+  },
+  {
+    id: "drivers",
+    label: "Driver Center",
+    shortLabel: "Drivers",
+    description:
+      "Review Windows Update driver evidence without blind mass updates.",
+    icon: "◇",
   },
   {
     id: "storage",
