@@ -13,6 +13,6 @@ Rules:
 
 Current prompt:
 
-- `P8_APP_MANAGER_GATEWAY.md` — connect PC Manager to Application Management through the approved outbound-only P-256 Desktop Agent Gateway.
+- `P9_PRODUCTION_RELEASE.md` — package signed Windows production releases, checksums, release metadata, and channel/rollback policy.
 
 Previous phase prompts remain in this directory as implementation history.
