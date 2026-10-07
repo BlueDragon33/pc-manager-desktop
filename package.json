@@ -14,6 +14,7 @@
     "test": "npm --workspace @pc-manager/desktop run test",
     "format": "prettier --write \"apps/desktop/**/*.{js,json,ts,tsx,css,html}\" package.json",
     "format:check": "prettier --check \"apps/desktop/**/*.{js,json,ts,tsx,css,html}\" package.json",
+    "constitution:check": "node scripts/check-constitution-1.2.mjs",
     "bundle:windows": "npm --workspace @pc-manager/desktop run tauri:bundle"
   },
   "devDependencies": {
