@@ -4,12 +4,20 @@
 //! deliberately separate from P10 Software Updater.
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ReleaseChannel { Dev, Beta, Stable }
+pub enum ReleaseChannel {
+    Dev,
+    Beta,
+    Stable,
+}
 
 impl ReleaseChannel {
     #[must_use]
     pub const fn as_str(self) -> &'static str {
-        match self { Self::Dev => "dev", Self::Beta => "beta", Self::Stable => "stable" }
+        match self {
+            Self::Dev => "dev",
+            Self::Beta => "beta",
+            Self::Stable => "stable",
+        }
     }
 
     #[must_use]
@@ -33,7 +41,13 @@ impl ReleaseChannel {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum UpdateDecision { UpdateAvailable, Current, DowngradeBlocked, ChannelBlocked, InvalidVersion }
+pub enum UpdateDecision {
+    UpdateAvailable,
+    Current,
+    DowngradeBlocked,
+    ChannelBlocked,
+    InvalidVersion,
+}
 
 #[must_use]
 pub fn decide_update(
@@ -42,9 +56,15 @@ pub fn decide_update(
     offered_version: &str,
     offered_channel: ReleaseChannel,
 ) -> UpdateDecision {
-    if !installed_channel.accepts(offered_channel) { return UpdateDecision::ChannelBlocked; }
-    let Some(installed) = parse_version(installed_version) else { return UpdateDecision::InvalidVersion; };
-    let Some(offered) = parse_version(offered_version) else { return UpdateDecision::InvalidVersion; };
+    if !installed_channel.accepts(offered_channel) {
+        return UpdateDecision::ChannelBlocked;
+    }
+    let Some(installed) = parse_version(installed_version) else {
+        return UpdateDecision::InvalidVersion;
+    };
+    let Some(offered) = parse_version(offered_version) else {
+        return UpdateDecision::InvalidVersion;
+    };
     match offered.cmp(&installed) {
         std::cmp::Ordering::Greater => UpdateDecision::UpdateAvailable,
         std::cmp::Ordering::Equal => UpdateDecision::Current,
@@ -58,13 +78,23 @@ pub fn valid_sha256(value: &str) -> bool {
 }
 
 fn parse_version(value: &str) -> Option<Vec<u64>> {
-    let core = value.trim().trim_start_matches('v').split(['-', '+']).next()?;
-    let parts = core.split('.').map(str::parse::<u64>).collect::<Result<Vec<_>, _>>().ok()?;
+    let core = value
+        .trim()
+        .trim_start_matches('v')
+        .split(['-', '+'])
+        .next()?;
+    let parts = core
+        .split('.')
+        .map(str::parse::<u64>)
+        .collect::<Result<Vec<_>, _>>()
+        .ok()?;
     (!parts.is_empty() && parts.len() <= 4).then_some(parts)
 }
 
 #[must_use]
-pub const fn component_name() -> &'static str { "pc-updater" }
+pub const fn component_name() -> &'static str {
+    "pc-updater"
+}
 
 #[cfg(test)]
 mod tests {
@@ -79,9 +109,33 @@ mod tests {
 
     #[test]
     fn version_policy_blocks_downgrades() {
-        assert_eq!(decide_update("1.2.3", ReleaseChannel::Stable, "1.3.0", ReleaseChannel::Stable), UpdateDecision::UpdateAvailable);
-        assert_eq!(decide_update("1.2.3", ReleaseChannel::Stable, "1.2.3", ReleaseChannel::Stable), UpdateDecision::Current);
-        assert_eq!(decide_update("1.2.3", ReleaseChannel::Stable, "1.2.2", ReleaseChannel::Stable), UpdateDecision::DowngradeBlocked);
+        assert_eq!(
+            decide_update(
+                "1.2.3",
+                ReleaseChannel::Stable,
+                "1.3.0",
+                ReleaseChannel::Stable
+            ),
+            UpdateDecision::UpdateAvailable
+        );
+        assert_eq!(
+            decide_update(
+                "1.2.3",
+                ReleaseChannel::Stable,
+                "1.2.3",
+                ReleaseChannel::Stable
+            ),
+            UpdateDecision::Current
+        );
+        assert_eq!(
+            decide_update(
+                "1.2.3",
+                ReleaseChannel::Stable,
+                "1.2.2",
+                ReleaseChannel::Stable
+            ),
+            UpdateDecision::DowngradeBlocked
+        );
     }
 
     #[test]
