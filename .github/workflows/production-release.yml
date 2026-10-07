@@ -1,0 +1,133 @@
+name: Production release
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type DEPLOY_PRODUCTION exactly"
+        required: true
+        type: string
+      channel:
+        description: "Release channel"
+        required: true
+        default: stable
+        type: choice
+        options:
+          - stable
+          - beta
+          - dev
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pc-manager-production-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Signed Windows production release
+    if: ${{ inputs.confirm == 'DEPLOY_PRODUCTION' }}
+    runs-on: windows-latest
+    timeout-minutes: 60
+    environment: production
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Reject non-main dispatch
+        shell: pwsh
+        run: |
+          if ("${{ github.ref_name }}" -ne "main") { throw "Production release must be dispatched from main." }
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Setup Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Full release checks
+        shell: pwsh
+        run: |
+          npm run constitution:check
+          npm run lint
+          npm run typecheck
+          npm run test
+          npm run format:check
+          npm run build:frontend
+          cargo fmt --check
+          cargo check --workspace --locked
+          cargo test --workspace --locked
+          cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      - name: Require Windows signing credentials
+        shell: pwsh
+        env:
+          WINDOWS_CODE_SIGNING_PFX_BASE64: ${{ secrets.WINDOWS_CODE_SIGNING_PFX_BASE64 }}
+          WINDOWS_CODE_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_CODE_SIGNING_PFX_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_CODE_SIGNING_PFX_BASE64) -or [string]::IsNullOrWhiteSpace($env:WINDOWS_CODE_SIGNING_PFX_PASSWORD)) {
+            throw "Production signing credentials are required. Unsigned builds belong only to preview."
+          }
+
+      - name: Build signed NSIS installer
+        shell: pwsh
+        env:
+          WINDOWS_CODE_SIGNING_PFX_BASE64: ${{ secrets.WINDOWS_CODE_SIGNING_PFX_BASE64 }}
+          WINDOWS_CODE_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_CODE_SIGNING_PFX_PASSWORD }}
+        run: ./scripts/build-windows-release.ps1 -OutputDirectory artifacts
+
+      - name: Generate release metadata, notes and checksums
+        id: release
+        shell: pwsh
+        run: |
+          $config = Get-Content apps/desktop/src-tauri/tauri.conf.json | ConvertFrom-Json
+          $version = [string]$config.version
+          $tag = "v$version"
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          node scripts/generate-release-metadata.mjs --dir artifacts --channel "${{ inputs.channel }}" --signed true --output artifacts/update-metadata.json
+          Get-FileHash artifacts/* -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $([IO.Path]::GetFileName($_.Path))" } | Set-Content artifacts/SHA256SUMS.txt
+          @(
+            "# PC Manager Desktop $tag"
+            ""
+            "Channel: ${{ inputs.channel }}"
+            ""
+            "## Changes"
+            (git log --no-merges -20 --pretty=format:"- %s")
+            ""
+            "## Verification"
+            "- Windows installer is Authenticode-signed."
+            "- SHA-256 checksums are attached."
+            "- update-metadata.json is channel-scoped and requires signed artifacts."
+          ) | Set-Content artifacts/RELEASE_NOTES.md
+
+      - name: Refuse duplicate release tag
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "${{ steps.release.outputs.tag }}" 2>$null
+          if ($LASTEXITCODE -eq 0) { throw "Release tag already exists: ${{ steps.release.outputs.tag }}" }
+          exit 0
+
+      - name: Publish GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $args = @("release", "create", "${{ steps.release.outputs.tag }}", "artifacts/*", "--title", "PC Manager Desktop ${{ steps.release.outputs.tag }}", "--notes-file", "artifacts/RELEASE_NOTES.md")
+          if ("${{ inputs.channel }}" -ne "stable") { $args += "--prerelease" }
+          gh @args
