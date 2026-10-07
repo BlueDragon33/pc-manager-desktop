@@ -8,6 +8,7 @@ import {
   type AppManagerRuntimeStatus,
 } from "./appManager";
 import { AppsPage } from "./AppsPage";
+import { DriverCenterPage } from "./DriverCenterPage";
 import { DuplicateFinderPage } from "./DuplicateFinderPage";
 import { HealthCheckPage } from "./HealthCheckPage";
 import { InventorySummary } from "./InventorySummary";
@@ -201,7 +202,7 @@ function OverviewPage({
           </div>
           <div>
             <dt>Product phase</dt>
-            <dd>{appInfo?.phase ?? "P10"}</dd>
+            <dd>{appInfo?.phase ?? "P11"}</dd>
           </div>
         </dl>
       </section>
@@ -220,6 +221,7 @@ function PlaceholderPage({
     | "startup"
     | "apps"
     | "updates"
+    | "drivers"
     | "storage"
     | "duplicates"
     | "monitor"
@@ -241,7 +243,7 @@ function PlaceholderPage({
         <div className="info-callout">
           <strong>No system data is being simulated.</strong>
           <span>
-            This module is not implemented in P10. Real actions arrive only in
+            This module is not implemented in P11. Real actions arrive only in
             later, separately gated phases.
           </span>
         </div>
@@ -526,7 +528,7 @@ export default function App() {
             <h1>{activeItem.label}</h1>
           </div>
           <div className="topbar-actions">
-            <span className="phase-chip">P10</span>
+            <span className="phase-chip">P11</span>
             <button
               className="icon-button"
               onClick={() =>
@@ -555,6 +557,8 @@ export default function App() {
             <AppsPage />
           ) : page === "updates" ? (
             <SoftwareUpdaterPage />
+          ) : page === "drivers" ? (
+            <DriverCenterPage />
           ) : page === "storage" ? (
             <StoragePage />
           ) : page === "duplicates" ? (
