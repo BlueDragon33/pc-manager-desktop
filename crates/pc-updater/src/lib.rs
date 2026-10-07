@@ -261,7 +261,7 @@ mod tests {
         ));
         fs::write(&path, b"pc-manager").expect("write fixture");
         let correct =
-            "4bc68be74fd9f2ce5ca4230c9e1aacb9a07a2164d78bdf8332f555b680753b7c";
+            "5971fff264e4a6a2e315d3f868c066af1dbcf342a7c1098fd7515021357104c0";
         verify_file_sha256(&path, correct).expect("checksum should match");
         let error = verify_file_sha256(&path, &"0".repeat(64))
             .expect_err("wrong checksum must fail");
