@@ -6,3 +6,6 @@ license.workspace = true
 description = "Update policy and verification layer for PC Manager Desktop."
 
 [dependencies]
+semver = "1"
+serde.workspace = true
+sha2 = "0.10"

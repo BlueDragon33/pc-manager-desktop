@@ -1,0 +1,81 @@
+name: Preview Windows package
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: preview-package-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    name: Unsigned preview package
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Setup Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Frontend checks
+        run: |
+          npm run lint
+          npm run typecheck
+          npm run test
+          npm run format:check
+          npm run build:frontend
+
+      - name: Rust checks
+        run: |
+          cargo fmt --check
+          cargo check --workspace --locked
+          cargo test --workspace --locked
+          cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      - name: Build unsigned NSIS preview
+        shell: pwsh
+        env:
+          PC_MANAGER_ALLOW_UNSIGNED_PREVIEW: "1"
+        run: |
+          npm run bundle:windows
+          $artifact = Get-ChildItem "target/release/bundle/nsis" -Filter "*.exe" | Select-Object -First 1
+          if (-not $artifact) { throw "NSIS preview installer was not produced." }
+          ./scripts/sign-windows-artifact.ps1 -ArtifactPath $artifact.FullName
+          $version = (Get-Content "apps/desktop/src-tauri/tauri.conf.json" | ConvertFrom-Json).version
+          New-Item -ItemType Directory -Path "release-preview" -Force | Out-Null
+          $name = "PC-Manager-$version-UNSIGNED-PREVIEW.exe"
+          Copy-Item $artifact.FullName (Join-Path "release-preview" $name)
+          $hash = (Get-FileHash (Join-Path "release-preview" $name) -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $name" | Set-Content "release-preview/$name.sha256" -Encoding ASCII
+          "Unsigned preview build from ${{ github.sha }}" | Set-Content "release-preview/release-notes.txt"
+          ./scripts/generate-release-metadata.ps1 `
+            -ArtifactPath (Join-Path "release-preview" $name) `
+            -Version $version `
+            -Channel dev `
+            -ArtifactUrl "https://example.invalid/unsigned-preview/$name" `
+            -OutputPath "release-preview/update-dev.json" `
+            -ReleaseNotesPath "release-preview/release-notes.txt"
+
+      - name: Upload unsigned preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: pc-manager-UNSIGNED-PREVIEW-${{ github.run_number }}
+          path: release-preview/
+          retention-days: 7
+          if-no-files-found: error
