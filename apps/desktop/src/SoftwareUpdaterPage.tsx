@@ -36,7 +36,9 @@ function errorMessage(error: unknown, fallback: string): string {
 
 export function SoftwareUpdaterPage() {
   const [scanState, setScanState] = useState<ScanState>({ status: "idle" });
-  const [actionState, setActionState] = useState<ActionState>({ status: "idle" });
+  const [actionState, setActionState] = useState<ActionState>({
+    status: "idle",
+  });
   const [query, setQuery] = useState("");
 
   const runScan = async () => {
@@ -94,7 +96,8 @@ export function SoftwareUpdaterPage() {
           <p className="muted">
             PC Manager uses only the verified official WinGet source in V1. It
             does not accept download URLs, custom installer arguments, force
-            flags, silent flags, or hash-bypass flags from the UI or App Manager.
+            flags, silent flags, or hash-bypass flags from the UI or App
+            Manager.
           </p>
         </div>
         <button
@@ -185,7 +188,9 @@ export function SoftwareUpdaterPage() {
               <div>
                 <dt>Provider</dt>
                 <dd>
-                  {scanState.scan.providerAvailable ? "Available" : "Unavailable"}
+                  {scanState.scan.providerAvailable
+                    ? "Available"
+                    : "Unavailable"}
                 </dd>
               </div>
               <div>
@@ -218,8 +223,8 @@ export function SoftwareUpdaterPage() {
                 Publisher verification is intentionally conservative.
               </strong>
               <span>
-                V1 verifies WinGet source/package identity. Publisher metadata is
-                shown only when independently available; otherwise it remains
+                V1 verifies WinGet source/package identity. Publisher metadata
+                is shown only when independently available; otherwise it remains
                 explicitly unavailable.
               </span>
             </div>
@@ -319,8 +324,9 @@ export function SoftwareUpdaterPage() {
               Update {actionState.candidate.name}?
             </h3>
             <p>
-              PC Manager will first re-scan the trusted WinGet source and require
-              the same exact package ID and version transition. If anything
+              PC Manager will first re-scan the trusted WinGet source and
+              require the same exact package ID and version transition. If
+              anything
               changed, the launch is refused.
             </p>
             <div className="p6-meta-grid">
