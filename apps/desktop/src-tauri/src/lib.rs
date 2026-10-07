@@ -11,6 +11,10 @@ use pc_core::{
     SystemInventory, UninstallLaunchResult, UninstallRequest,
 };
 use pc_monitor::{MonitorError, MonitorSnapshot};
+use pc_updater::{
+    launch_software_update as launch_trusted_software_update, scan_software_updates,
+    SoftwareUpdateError, SoftwareUpdateLaunchResult, SoftwareUpdatePlanStore, SoftwareUpdateScan,
+};
 use serde::Serialize;
 use serde_json::json;
 use std::{
@@ -95,14 +99,30 @@ fn epoch_ms() -> u64 {
 
 fn execute_remote_command(command: &RemoteCommand) -> (bool, serde_json::Value) {
     match command {
-        RemoteCommand::CheckUpdate { .. } => (
-            true,
-            json!({
-                "supported": false,
-                "reason": "signed-updater-is-introduced-in-p9",
-                "phase": "P8"
-            }),
-        ),
+        RemoteCommand::CheckUpdate { .. } => match scan_software_updates() {
+            Ok((_plan, scan)) => (
+                true,
+                json!({
+                    "supported": true,
+                    "provider": scan.provider,
+                    "providerAvailable": scan.provider_available,
+                    "sourceVerified": scan.source_verified,
+                    "updateCount": scan.candidates.len(),
+                    "warningCount": scan.warnings.len(),
+                    "phase": "P10"
+                }),
+            ),
+            Err(error) => (
+                false,
+                json!({
+                    "supported": true,
+                    "code": error.code,
+                    "message": error.message,
+                    "recoverable": error.recoverable,
+                    "phase": "P10"
+                }),
+            ),
+        },
         RemoteCommand::RunHealthScan { .. } => match pc_windows::collect_system_inventory() {
             Ok(inventory) => {
                 let report = evaluate_health(&inventory);
@@ -343,6 +363,48 @@ fn set_startup_entry_enabled(
 #[tauri::command]
 fn list_startup_operations() -> Result<Vec<StartupOperationRecord>, StartupError> {
     pc_windows::list_startup_operations()
+}
+
+#[tauri::command]
+fn check_software_updates(
+    update_plans: State<'_, Mutex<SoftwareUpdatePlanStore>>,
+) -> Result<SoftwareUpdateScan, SoftwareUpdateError> {
+    let (plan, scan) = scan_software_updates()?;
+    let mut plans = update_plans.lock().map_err(|_| {
+        SoftwareUpdateError::new(
+            "software_update_plan_store_unavailable",
+            "The native software-update plan store is unavailable.",
+            true,
+        )
+    })?;
+    plans.replace(plan);
+    Ok(scan)
+}
+
+#[tauri::command]
+fn launch_software_update(
+    scan_id: String,
+    candidate_id: String,
+    update_plans: State<'_, Mutex<SoftwareUpdatePlanStore>>,
+) -> Result<SoftwareUpdateLaunchResult, SoftwareUpdateError> {
+    let plan = {
+        let plans = update_plans.lock().map_err(|_| {
+            SoftwareUpdateError::new(
+                "software_update_plan_store_unavailable",
+                "The native software-update plan store is unavailable.",
+                true,
+            )
+        })?;
+        plans.get_by_scan_id(&scan_id).cloned().ok_or_else(|| {
+            SoftwareUpdateError::new(
+                "software_update_plan_not_found",
+                "The software-update scan is missing or stale. Scan again before updating.",
+                true,
+            )
+        })?
+    };
+
+    launch_trusted_software_update(&plan, &candidate_id)
 }
 
 #[tauri::command]
@@ -588,6 +650,7 @@ pub fn run() {
         .manage(Mutex::new(DuplicateScanPlanStore::default()))
         .manage(Mutex::new(ScanRootStore::default()))
         .manage(Mutex::new(ScanCancellationStore::default()))
+        .manage(Mutex::new(SoftwareUpdatePlanStore::default()))
         .invoke_handler(tauri::generate_handler![
             get_app_info,
             get_app_manager_status,
@@ -603,6 +666,8 @@ pub fn run() {
             list_startup_operations,
             list_installed_apps,
             launch_uninstall,
+            check_software_updates,
+            launch_software_update,
             select_scan_root,
             scan_duplicates,
             delete_duplicate_files,
