@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "1.0.0",
+  "policyId": "blueprint-os:universal-century-grade",
+  "policyVersion": "1.2.0",
+  "projectId": "project:pc-manager-desktop",
+  "posture": "LOCAL_CORE",
+  "canonicalAuthority": {
+    "privilegedActions": "local-tauri-rust-and-narrow-windows-service-ipc",
+    "systemState": "local-machine",
+    "durableAppState": "local-sqlite",
+    "remoteManagement": "optional-typed-coordination-only"
+  },
+  "dependencies": [
+    {
+      "id": "windows-host",
+      "class": "EXTERNAL_ESSENTIAL",
+      "costClass": "user-owned-platform",
+      "purpose": "Target OS and privileged system APIs",
+      "dataBoundary": "local-machine",
+      "offlineBehavior": "Full core maintenance remains available offline",
+      "exitPath": "Core domain models remain isolated from unnecessary Windows-specific types for future portability"
+    },
+    {
+      "id": "application-management",
+      "class": "OPTIONAL_SYNC",
+      "costClass": "replaceable-external",
+      "purpose": "Registration, heartbeat, entitlement, release/update coordination and explicit typed non-destructive remote requests",
+      "dataBoundary": "No file contents, browsing history, arbitrary paths, credentials or privileged generic execution",
+      "offlineBehavior": "Local maintenance, monitoring, cleanup and restore remain operational",
+      "exitPath": "App-manager-client is isolated behind one module and can be disabled/replaced"
+    },
+    {
+      "id": "google-drive-or-equivalent",
+      "class": "OPTIONAL_SYNC",
+      "costClass": "free-or-optional-paid",
+      "purpose": "Optional encrypted settings/report backup only",
+      "dataBoundary": "No secrets, private keys, raw scan state, personal file inventory or privileged operation authority",
+      "offlineBehavior": "No impact on core functionality",
+      "exitPath": "Portable encrypted export files; provider can be removed without loss of local operation"
+    }
+  ],
+  "forbidden": [
+    "cloud-required-privileged-operation",
+    "remote-generic-shell",
+    "remote-powershell",
+    "remote-arbitrary-process-execution",
+    "remote-arbitrary-registry-write",
+    "cloud-owned-cleanup-or-restore-authority",
+    "plaintext-sensitive-system-data-in-drive-or-sheets"
+  ],
+  "releaseGate": "Constitution 1.2 local-authority validator plus existing frontend/Rust/Windows CI must pass. Production remains separately authorized."
+}

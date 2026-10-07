@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0.0",
+  "policyId": "blueprint-os:universal-century-grade",
+  "policyVersion": "1.2.0",
+  "projectId": "project:pc-manager-desktop",
+  "blueprintLevel": "B4",
+  "enforcementMode": "enforced",
+  "inheritedPillars": [
+    "structural-capacity",
+    "architectural-longevity",
+    "product-elegance",
+    "premium-usability",
+    "long-term-durability",
+    "fortress-security-disaster-resilience",
+    "operational-sovereignty-dependency-minimization"
+  ],
+  "disabledPillars": [],
+  "constitutionalWaivers": [],
+  "evidenceAuthority": "canonical-quality-gates",
+  "productionAuthority": "separate-explicit-release-gate"
+}

@@ -35,6 +35,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Constitution 1.2 governance
+        run: npm run constitution:check
+
       - name: Lint
         run: npm run lint
 
