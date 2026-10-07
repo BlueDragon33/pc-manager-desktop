@@ -221,3 +221,24 @@ uploaded full browsing path history and filenames
 Windows is the only initial target.
 
 Do not prematurely build Linux/macOS support, but keep core domain models free from unnecessary Windows types so future ports remain possible.
+
+
+## Operational sovereignty
+
+PC Manager Desktop is a `LOCAL_CORE` application.
+
+The canonical authority chain for machine mutations is local:
+
+`UI request → Tauri/Rust domain validation → narrow privileged Windows Service IPC → local Windows state`
+
+Remote services are replaceable adapters:
+
+- App Manager: optional identity/lifecycle/update coordination;
+- Google Drive or equivalent: optional encrypted settings/report backup;
+- future AI providers: optional advisory analysis only.
+
+Loss of Internet or any remote provider must not disable ordinary local health scans, cleaning-plan review/execution, startup management, monitoring or restore operations.
+
+No cloud service may own arbitrary privileged execution, cleanup decisions, rollback authority, private keys or raw sensitive machine inventories.
+
+Canonical dependency posture: `.blueprint/dependency-budget.json`.
