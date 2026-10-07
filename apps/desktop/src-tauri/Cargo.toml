@@ -15,6 +15,7 @@ tauri-build = { version = "2", features = [] }
 app-manager-client = { path = "../../../crates/app-manager-client" }
 pc-core = { path = "../../../crates/pc-core" }
 pc-monitor = { path = "../../../crates/pc-monitor" }
+pc-updater = { path = "../../../crates/pc-updater" }
 pc-windows = { path = "../../../crates/pc-windows" }
 serde.workspace = true
 serde_json = "1"
