@@ -12,3 +12,33 @@ permissions:
 jobs:
   constitution:
     uses: BlueDragon33/Software-Blueprint-Hub/.github/workflows/constitution-compliance.yml@main
+
+  dependency-sovereignty:
+    name: Constitution 1.2 PC Manager dependency sovereignty
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate project dependency budget
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path(".blueprint/constitution-adoption.json").read_text())
+          b=json.loads(Path(".blueprint/dependency-budget.json").read_text())
+          assert a["policyVersion"]=="1.2.0"
+          assert "operational-sovereignty-dependency-minimization" in a["inheritedPillars"]
+          assert b["policyVersion"]=="1.2.0"
+          assert b["projectId"]==a["projectId"]=="project:pc-manager-desktop"
+          assert b["posture"]=="LOCAL_CORE"
+          deps={d["id"]:d for d in b["dependencies"]}
+          assert deps["windows-host"]["class"]=="EXTERNAL_ESSENTIAL"
+          assert deps["application-management"]["class"]=="OPTIONAL_SYNC"
+          for d in b["dependencies"]:
+              assert d.get("offlineBehavior")
+              assert d.get("exitPath")
+          forbidden=set(b["forbidden"])
+          assert {"remote-generic-shell","remote-powershell","remote-arbitrary-process-execution","cloud-required-privileged-operation"} <= forbidden
+          assert "Production remains separately authorized" in b["releaseGate"]
+          print("PC Manager Constitution 1.2 dependency sovereignty: PASS")
+          PY
