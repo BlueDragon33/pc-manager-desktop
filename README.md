@@ -13,6 +13,14 @@ PC Manager Desktop targets Windows 10/11 x64 and uses:
 - SQLite for local state, audit history, snapshots, and rollback metadata
 - App Manager integration for device registration, heartbeat, release channels, licensing, and update coordination
 
+## Governance baseline
+
+- Universal Constitution: **blueprint-os:universal-century-grade@1.2.0**
+- Blueprint level: **B4**
+- Runtime posture: **LOCAL_CORE**
+- Canonical dependency budget: `.blueprint/dependency-budget.json`
+- Cloud/App Manager integrations are optional coordination layers, not privileged local authority.
+
 ## Core principles
 
 1. Never exaggerate system problems to push upgrades.
