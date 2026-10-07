@@ -326,8 +326,7 @@ export function SoftwareUpdaterPage() {
             <p>
               PC Manager will first re-scan the trusted WinGet source and
               require the same exact package ID and version transition. If
-              anything
-              changed, the launch is refused.
+              anything changed, the launch is refused.
             </p>
             <div className="p6-meta-grid">
               <span>{actionState.candidate.installedVersion}</span>
