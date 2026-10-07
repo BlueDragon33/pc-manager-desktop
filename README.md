@@ -43,9 +43,9 @@ Read these before feature work:
 
 ## Current phase
 
-**P9 — Production packaging and update system**
+**P10 — Software Updater**
 
-P0–P8 foundations are implemented. P9 adds reproducible Windows preview/production packaging, an exact-confirmation production gate, Authenticode signing hooks, SHA-256 checksums, release notes, channel-scoped update metadata, and documented rollback/state-preservation policy.
+P0–P9 implementation foundations are present, while P9 still retains its documented manual clean-machine install and upgrade/state-preservation gates. P10 adds conservative software-update discovery and one-at-a-time launch through the verified official WinGet source; arbitrary URLs, custom command lines, silent mass updates, force flags, and hash bypasses remain prohibited.
 
 ## Prerequisites
 
