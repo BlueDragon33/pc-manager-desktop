@@ -5,11 +5,11 @@ use app_manager_client::{
 use pc_core::{
     evaluate_health, AppInfo, AppsError, CleanupError, CleanupOperationRecord, CleanupPlanStore,
     CleanupScanOptions, CleanupScanSummary, DriverCenterError, DriverCenterSnapshot,
-    DriverSettingsLaunchResult, DuplicateDeleteRequest, DuplicateDeleteResult, DuplicateScanOptions,
-    DuplicateScanPlanStore, DuplicateScanSummary, FilesystemError, HealthReport, InstalledAppEntry,
-    InventoryError, ScanRootSelection, StartupChangeRequest, StartupEntry, StartupError,
-    StartupOperationRecord, StorageScanOptions, StorageScanSummary, SystemInventory,
-    UninstallLaunchResult, UninstallRequest,
+    DriverSettingsLaunchResult, DuplicateDeleteRequest, DuplicateDeleteResult,
+    DuplicateScanOptions, DuplicateScanPlanStore, DuplicateScanSummary, FilesystemError,
+    HealthReport, InstalledAppEntry, InventoryError, ScanRootSelection, StartupChangeRequest,
+    StartupEntry, StartupError, StartupOperationRecord, StorageScanOptions, StorageScanSummary,
+    SystemInventory, UninstallLaunchResult, UninstallRequest,
 };
 use pc_monitor::{MonitorError, MonitorSnapshot};
 use pc_updater::{
