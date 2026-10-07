@@ -184,7 +184,9 @@ export function SoftwareUpdaterPage() {
             <dl>
               <div>
                 <dt>Provider</dt>
-                <dd>{scanState.scan.providerAvailable ? "Available" : "Unavailable"}</dd>
+                <dd>
+                  {scanState.scan.providerAvailable ? "Available" : "Unavailable"}
+                </dd>
               </div>
               <div>
                 <dt>Updates</dt>
@@ -212,7 +214,9 @@ export function SoftwareUpdaterPage() {
               />
             </label>
             <div className="p6-note">
-              <strong>Publisher verification is intentionally conservative.</strong>
+              <strong>
+                Publisher verification is intentionally conservative.
+              </strong>
               <span>
                 V1 verifies WinGet source/package identity. Publisher metadata is
                 shown only when independently available; otherwise it remains
@@ -223,7 +227,9 @@ export function SoftwareUpdaterPage() {
 
           {scanState.scan.warnings.length > 0 && (
             <details className="p6-warning-box">
-              <summary>{scanState.scan.warnings.length} provider warnings</summary>
+              <summary>
+                {scanState.scan.warnings.length} provider warnings
+              </summary>
               <ul>
                 {scanState.scan.warnings.map((warning) => (
                   <li key={warning}>{warning}</li>
@@ -258,7 +264,9 @@ export function SoftwareUpdaterPage() {
                     <div className="p6-item-main">
                       <div className="p6-item-heading">
                         <div>
-                          <span className="startup-source">{candidate.source}</span>
+                          <span className="startup-source">
+                            {candidate.source}
+                          </span>
                           <h4>{candidate.name}</h4>
                         </div>
                         <span className="status-badge good">
@@ -273,7 +281,9 @@ export function SoftwareUpdaterPage() {
                           Publisher: {candidate.publisher ?? "Unavailable"}
                         </span>
                       </div>
-                      <p className="p6-path">{candidate.publisherVerification}</p>
+                      <p className="p6-path">
+                        {candidate.publisherVerification}
+                      </p>
                       <p className="muted">{candidate.detail}</p>
                     </div>
                     <div className="p6-item-action">
