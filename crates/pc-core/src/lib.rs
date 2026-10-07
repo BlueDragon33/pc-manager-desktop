@@ -7,6 +7,7 @@ mod filesystem;
 mod health;
 mod inventory;
 mod operation;
+mod performance;
 mod startup;
 
 pub use apps::{
@@ -41,6 +42,11 @@ pub use inventory::{
 pub use operation::{
     CleanupExecutionError, CleanupOperationRecord, CleanupProviderExecutionResult,
 };
+pub use performance::{
+    evaluate_performance_optimizer, PerformanceAction, PerformanceFinding, PerformanceFindingKind,
+    PerformanceOptimizerError, PerformanceOptimizerReport, PerformanceProcessSample,
+    PerformanceSample, PerformanceServiceEvidence,
+};
 pub use startup::{
     StartupChangeRequest, StartupEntry, StartupError, StartupImpact, StartupOperationRecord,
     StartupSourceType,
@@ -66,7 +72,7 @@ impl AppInfo {
             app_id: "pc-manager",
             platform: "windows",
             device_type: "desktop-native",
-            phase: "P11",
+            phase: "P12",
         }
     }
 }
@@ -82,6 +88,6 @@ mod tests {
         assert_eq!(info.app_id, "pc-manager");
         assert_eq!(info.platform, "windows");
         assert_eq!(info.device_type, "desktop-native");
-        assert_eq!(info.phase, "P11");
+        assert_eq!(info.phase, "P12");
     }
 }
