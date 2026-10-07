@@ -13,6 +13,6 @@ Rules:
 
 Current prompt:
 
-- `P9_PRODUCTION_RELEASE.md` — package signed Windows production releases, checksums, release metadata, and channel/rollback policy.
+- `P10_SOFTWARE_UPDATER.md` — detect and launch one trusted WinGet software update through an opaque, revalidated native plan.
 
 Previous phase prompts remain in this directory as implementation history.
