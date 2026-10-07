@@ -5,13 +5,17 @@
 //! Microsoft WinGet community source and never accepts arbitrary URLs or command lines.
 
 use serde::{Deserialize, Serialize};
+#[cfg(any(target_os = "windows", test))]
 use sha2::{Digest, Sha256};
+#[cfg(any(target_os = "windows", test))]
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[cfg(target_os = "windows")]
 use std::process::Command;
 
+#[cfg(any(target_os = "windows", test))]
 const OFFICIAL_WINGET_SOURCE_ID: &str = "Microsoft.Winget.Source_8wekyb3d8bbwe";
+#[cfg(any(target_os = "windows", test))]
 const OFFICIAL_WINGET_SOURCE_ARG: &str = "https://cdn.winget.microsoft.com/cache";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -189,6 +193,7 @@ impl SoftwareUpdatePlanStore {
     }
 }
 
+#[cfg(any(target_os = "windows", test))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct TrustedWingetSource {
     name: String,
@@ -196,6 +201,7 @@ struct TrustedWingetSource {
     argument: String,
 }
 
+#[cfg(any(target_os = "windows", test))]
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 struct WingetSourceExport {
@@ -207,6 +213,7 @@ struct WingetSourceExport {
     trust_level: Vec<String>,
 }
 
+#[cfg(any(target_os = "windows", test))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct ParsedUpgradeRow {
     name: String,
@@ -226,16 +233,18 @@ fn run_winget(args: &[&str]) -> Result<std::process::Output, SoftwareUpdateError
     })
 }
 
+#[cfg(target_os = "windows")]
 fn bounded_provider_message(value: &[u8]) -> String {
     let text = String::from_utf8_lossy(value);
     let compact = text.split_whitespace().collect::<Vec<_>>().join(" ");
-    if compact.len() > 320 {
-        format!("{}…", &compact[..320])
+    if compact.chars().count() > 320 {
+        format!("{}…", compact.chars().take(320).collect::<String>())
     } else {
         compact
     }
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn parse_trusted_source(stdout: &str) -> Result<TrustedWingetSource, SoftwareUpdateError> {
     let start = stdout.find('{').ok_or_else(|| {
         SoftwareUpdateError::new(
@@ -288,6 +297,7 @@ fn parse_trusted_source(stdout: &str) -> Result<TrustedWingetSource, SoftwareUpd
     })
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn valid_package_id(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 200
@@ -296,6 +306,7 @@ fn valid_package_id(value: &str) -> bool {
         })
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn is_separator_line(line: &str) -> bool {
     let trimmed = line.trim();
     trimmed.len() >= 10
@@ -303,6 +314,7 @@ fn is_separator_line(line: &str) -> bool {
         && trimmed.bytes().filter(|byte| *byte == b'-').count() >= 10
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn parse_upgrade_rows(stdout: &str) -> Vec<ParsedUpgradeRow> {
     let normalized = stdout.replace('\r', "");
     let mut in_table = false;
@@ -356,6 +368,7 @@ fn parse_upgrade_rows(stdout: &str) -> Vec<ParsedUpgradeRow> {
     rows
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn candidate_id(row: &ParsedUpgradeRow) -> String {
     let mut hasher = Sha256::new();
     hasher.update(b"pc-manager-software-update-v1:");
@@ -371,6 +384,7 @@ fn candidate_id(row: &ParsedUpgradeRow) -> String {
         .collect::<String>()
 }
 
+#[cfg(any(target_os = "windows", test))]
 fn new_scan_id(candidates: &[PlannedSoftwareUpdate]) -> String {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -704,6 +718,33 @@ mod tests {
         assert_eq!(first_id.len(), 32);
         assert_ne!(first_id, second_id);
         assert!(!first_id.contains("Example"));
+    }
+
+    #[test]
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn winget_provider_smoke_is_read_only_when_winget_is_present() {
+        if Command::new("winget.exe").arg("--version").output().is_err() {
+            return;
+        }
+
+        match scan_software_updates() {
+            Ok((_plan, scan)) => {
+                assert!(scan.provider_available);
+                assert!(scan.source_verified);
+                assert!(scan
+                    .candidates
+                    .iter()
+                    .all(|candidate| candidate.source_verified));
+            }
+            Err(error) => {
+                assert!(
+                    error.code.starts_with("winget_"),
+                    "unexpected provider error: {}",
+                    error.code
+                );
+            }
+        }
     }
 
     #[test]
