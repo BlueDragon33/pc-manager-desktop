@@ -13,7 +13,7 @@
     "typecheck": "npm --workspace @pc-manager/desktop run typecheck",
     "test": "npm --workspace @pc-manager/desktop run test",
     "format": "prettier --write \"apps/desktop/**/*.{js,json,ts,tsx,css,html}\" package.json",
-    "format:check": "prettier --write \"apps/desktop/**/*.{js,json,ts,tsx,css,html}\" package.json && git diff --exit-code",
+    "format:check": "prettier --check \"apps/desktop/**/*.{js,json,ts,tsx,css,html}\" package.json",
     "constitution:check": "node scripts/check-constitution-1.2.mjs"
   },
   "devDependencies": {
