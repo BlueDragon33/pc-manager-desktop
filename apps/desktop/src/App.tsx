@@ -46,15 +46,15 @@ const healthCategories = [
   },
   {
     name: "Security",
-    text: "Unavailable in P3 until a supported security check is implemented.",
+    text: "Not yet assessed by Health Check; no security status is inferred.",
   },
   {
     name: "Updates",
-    text: "Unavailable in P3 until trusted update checks are implemented.",
+    text: "Health Check does not yet include trusted update evidence; use Software Updater.",
   },
   {
     name: "Privacy",
-    text: "Unavailable in P3 until evidence-backed privacy checks are implemented.",
+    text: "Not yet assessed; no privacy score is inferred.",
   },
 ];
 
@@ -112,7 +112,7 @@ function OverviewPage({
       <section className="hero-card" aria-labelledby="overview-heading">
         <div>
           <p className="eyebrow">PC health</p>
-          <h2 id="overview-heading">Health Check V1 is ready</h2>
+          <h2 id="overview-heading">Check your PC with real evidence</h2>
           <p className="muted">
             Run an explainable, read-only scan using the real Windows inventory.
             Unsupported categories stay unavailable instead of being guessed.
@@ -130,10 +130,10 @@ function OverviewPage({
           <div>
             <p className="eyebrow">Health categories</p>
             <h3 id="health-categories-heading">
-              What PC Manager will evaluate
+              Health Check coverage
             </h3>
           </div>
-          <span className="status-badge neutral">2 of 5 supported in P3</span>
+          <span className="status-badge neutral">2 of 5 evaluated</span>
         </div>
 
         <div className="category-grid">
@@ -144,7 +144,7 @@ function OverviewPage({
                 <span className="dot" aria-hidden="true" />
               </div>
               <p>{category.text}</p>
-              <span className="metric-state">Awaiting data</span>
+              <span className="metric-state">Open Health Check to scan</span>
             </article>
           ))}
         </div>
@@ -203,7 +203,7 @@ function OverviewPage({
           </div>
           <div>
             <dt>Product phase</dt>
-            <dd>{appInfo?.phase ?? "P11"}</dd>
+            <dd>{appInfo?.phase ?? "Unavailable"}</dd>
           </div>
         </dl>
       </section>
@@ -245,7 +245,7 @@ function PlaceholderPage({
         <div className="info-callout">
           <strong>No system data is being simulated.</strong>
           <span>
-            This module is not implemented in P11. Real actions arrive only in
+            This module is not implemented yet. Real actions arrive only in
             later, separately gated phases.
           </span>
         </div>
