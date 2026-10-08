@@ -107,7 +107,11 @@ struct ProcessAggregate {
     appearances: usize,
     cpu_total: f64,
     cpu_samples: usize,
+    cpu_high_samples: usize,
+    cpu_medium_samples: usize,
     max_memory_bytes: u64,
+    memory_high_samples: usize,
+    memory_medium_samples: usize,
 }
 
 #[must_use]
@@ -137,37 +141,63 @@ pub fn evaluate_performance_optimizer(
             .filter_map(|sample| sample.memory_used_percent),
     );
 
+    // A name can occur multiple times in one monitor snapshot (e.g. multiple browser
+    // processes). Count DISTINCT snapshots, not rows, as evidence of persistence.
     let mut aggregates: BTreeMap<String, ProcessAggregate> = BTreeMap::new();
     for sample in samples {
+        let mut per_sample: BTreeMap<String, ProcessAggregate> = BTreeMap::new();
         for process in &sample.processes {
             let key = normalize_process_name(&process.name);
             if key.is_empty() || is_system_process(&key) {
                 continue;
             }
-            let aggregate = aggregates.entry(key).or_default();
-            if aggregate.display_name.is_empty() {
-                aggregate.display_name = process.name.trim().to_string();
+            let current = per_sample.entry(key).or_default();
+            if current.display_name.is_empty() {
+                current.display_name = process.name.trim().to_string();
             }
-            aggregate.appearances += 1;
             if let Some(cpu) = process.cpu_percent.filter(|value| value.is_finite()) {
-                aggregate.cpu_total += cpu.max(0.0);
-                aggregate.cpu_samples += 1;
+                current.cpu_total += cpu.clamp(0.0, 100.0);
+                current.cpu_samples += 1;
             }
             if let Some(memory) = process.memory_bytes {
-                aggregate.max_memory_bytes = aggregate.max_memory_bytes.max(memory);
+                current.max_memory_bytes = current.max_memory_bytes.saturating_add(memory);
+            }
+        }
+
+        for (key, observed) in per_sample {
+            let aggregate = aggregates.entry(key).or_default();
+            if aggregate.display_name.is_empty() {
+                aggregate.display_name = observed.display_name;
+            }
+            aggregate.appearances += 1;
+            if observed.cpu_samples > 0 {
+                let cpu = observed.cpu_total.min(100.0);
+                aggregate.cpu_total += cpu;
+                aggregate.cpu_samples += 1;
+                if cpu >= CPU_REVIEW_PERCENT {
+                    aggregate.cpu_high_samples += 1;
+                }
+                if cpu >= CPU_MEDIUM_PERCENT {
+                    aggregate.cpu_medium_samples += 1;
+                }
+            }
+            aggregate.max_memory_bytes =
+                aggregate.max_memory_bytes.max(observed.max_memory_bytes);
+            if observed.max_memory_bytes >= MEMORY_REVIEW_BYTES {
+                aggregate.memory_high_samples += 1;
+            }
+            if observed.max_memory_bytes >= MEMORY_MEDIUM_BYTES {
+                aggregate.memory_medium_samples += 1;
             }
         }
     }
 
-    let minimum_appearances = if samples.len() >= 3 {
-        2
-    } else {
-        samples.len().max(1)
-    };
+    // A report with fewer than two snapshots cannot prove a repeated observation.
+    const MINIMUM_EVIDENCE_SAMPLES: usize = 2;
     let mut findings = Vec::new();
 
     for (process_key, aggregate) in aggregates {
-        if aggregate.appearances < minimum_appearances {
+        if aggregate.appearances < MINIMUM_EVIDENCE_SAMPLES {
             continue;
         }
 
@@ -176,14 +206,14 @@ pub fn evaluate_performance_optimizer(
         } else {
             None
         };
-        let cpu_evidence = average_process_cpu.unwrap_or_default() >= CPU_REVIEW_PERCENT;
-        let memory_evidence = aggregate.max_memory_bytes >= MEMORY_REVIEW_BYTES;
+        let cpu_evidence = aggregate.cpu_high_samples >= MINIMUM_EVIDENCE_SAMPLES;
+        let memory_evidence = aggregate.memory_high_samples >= MINIMUM_EVIDENCE_SAMPLES;
         if !cpu_evidence && !memory_evidence {
             continue;
         }
 
-        let risk = if average_process_cpu.unwrap_or_default() >= CPU_MEDIUM_PERCENT
-            || aggregate.max_memory_bytes >= MEMORY_MEDIUM_BYTES
+        let risk = if aggregate.cpu_medium_samples >= MINIMUM_EVIDENCE_SAMPLES
+            || aggregate.memory_medium_samples >= MINIMUM_EVIDENCE_SAMPLES
         {
             RiskLevel::Medium
         } else {
@@ -196,17 +226,18 @@ pub fn evaluate_performance_optimizer(
             aggregate.display_name.clone()
         };
         let mut evidence = vec![format!(
-            "Seen in {} of {} short samples.",
+            "Seen in {} of {} distinct short samples.",
             aggregate.appearances,
             samples.len()
         )];
         if let Some(cpu) = average_process_cpu {
-            evidence.push(format!("Average sampled CPU: {:.1}%.", cpu));
+            evidence.push(format!("Average sampled CPU: {:.1}% ({} samples above review threshold).", cpu, aggregate.cpu_high_samples));
         }
         if aggregate.max_memory_bytes > 0 {
             evidence.push(format!(
-                "Peak sampled private memory: {} MB.",
-                aggregate.max_memory_bytes / (1024 * 1024)
+                "Peak sampled memory: {} MB ({} samples above review threshold).",
+                aggregate.max_memory_bytes / (1024 * 1024),
+                aggregate.memory_high_samples
             ));
         }
 
@@ -327,8 +358,16 @@ fn startup_matches_process(entry: &StartupEntry, process_key: &str) -> bool {
     if process_key.is_empty() {
         return false;
     }
-    let haystack = format!("{} {}", entry.name, entry.command).to_ascii_lowercase();
-    haystack.contains(process_key)
+    // Inspect the actual executable token, never a substring of display names,
+    // directory names or arguments. Ambiguous unquoted paths fail closed.
+    let command = entry.command.trim();
+    let executable = if let Some(rest) = command.strip_prefix('"') {
+        rest.split('"').next().unwrap_or_default()
+    } else {
+        command.split_whitespace().next().unwrap_or_default()
+    };
+    let basename = executable.rsplit(['\\', '/']).next().unwrap_or_default();
+    normalize_process_name(basename) == process_key
 }
 
 fn is_system_process(process_key: &str) -> bool {
@@ -371,6 +410,57 @@ mod tests {
             impact_evidence: None,
             detail: "test".to_string(),
         }
+    }
+
+    #[test]
+    fn a_single_snapshot_never_proves_persistence() {
+        let report = evaluate_performance_optimizer(
+            &[sample(1, "Example.exe", 90.0, 2 * 1024 * 1024 * 1024)],
+            &[],
+            &[],
+        );
+        assert!(report.findings.is_empty());
+    }
+
+    #[test]
+    fn multiple_same_named_rows_in_one_snapshot_do_not_count_as_repetition() {
+        let mut first = sample(1, "Example.exe", 35.0, 700 * 1024 * 1024);
+        first.processes.push(first.processes[0].clone());
+        let report = evaluate_performance_optimizer(
+            &[first, sample(2, "Different.exe", 0.0, 0), sample(3, "Other.exe", 0.0, 0)],
+            &[],
+            &[],
+        );
+        assert!(report.findings.is_empty());
+    }
+
+    #[test]
+    fn a_one_off_resource_spike_does_not_trigger_a_persistent_warning() {
+        let report = evaluate_performance_optimizer(
+            &[
+                sample(1, "Example.exe", 90.0, 2 * 1024 * 1024 * 1024),
+                sample(2, "Example.exe", 0.1, 10 * 1024 * 1024),
+                sample(3, "Example.exe", 0.2, 10 * 1024 * 1024),
+            ],
+            &[],
+            &[],
+        );
+        assert!(report.findings.is_empty());
+    }
+
+    #[test]
+    fn executable_matching_never_uses_substring_or_argument_overlap() {
+        let report = evaluate_performance_optimizer(
+            &[sample(1, "Example.exe", 25.0, 900 * 1024 * 1024),
+              sample(2, "Example.exe", 25.0, 900 * 1024 * 1024)],
+            &[
+                startup(r#""C:\\Apps\\ExampleHelper.exe" --name Example.exe"#, StartupSourceType::RegistryCurrentUserRun),
+                startup(r#""C:\\Apps\\Other.exe" --name Example.exe"#, StartupSourceType::RegistryCurrentUserRun),
+            ],
+            &[],
+        );
+        assert!(report.findings.iter().any(|finding| finding.kind == PerformanceFindingKind::PersistentProcess));
+        assert!(!report.findings.iter().any(|finding| finding.kind == PerformanceFindingKind::StartupImpact));
     }
 
     #[test]
