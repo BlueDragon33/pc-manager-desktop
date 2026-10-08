@@ -35,6 +35,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Audit npm dependencies (critical severity)
+        run: npm audit --audit-level=critical
+
       - name: Validate release acceptance evidence
         run: |
           node scripts/check-release-acceptance.mjs --validate
