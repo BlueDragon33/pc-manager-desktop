@@ -129,9 +129,13 @@ pub fn evaluate_performance_optimizer(
         })
         .unwrap_or_default();
 
-    let average_cpu_percent = average_metric(samples.iter().filter_map(|sample| sample.cpu_percent));
-    let average_memory_percent =
-        average_metric(samples.iter().filter_map(|sample| sample.memory_used_percent));
+    let average_cpu_percent =
+        average_metric(samples.iter().filter_map(|sample| sample.cpu_percent));
+    let average_memory_percent = average_metric(
+        samples
+            .iter()
+            .filter_map(|sample| sample.memory_used_percent),
+    );
 
     let mut aggregates: BTreeMap<String, ProcessAggregate> = BTreeMap::new();
     for sample in samples {
@@ -155,7 +159,11 @@ pub fn evaluate_performance_optimizer(
         }
     }
 
-    let minimum_appearances = if samples.len() >= 3 { 2 } else { samples.len().max(1) };
+    let minimum_appearances = if samples.len() >= 3 {
+        2
+    } else {
+        samples.len().max(1)
+    };
     let mut findings = Vec::new();
 
     for (process_key, aggregate) in aggregates {
@@ -412,10 +420,10 @@ mod tests {
             .findings
             .iter()
             .any(|finding| finding.kind == PerformanceFindingKind::StartupImpact));
-        assert!(!report
-            .findings
-            .iter()
-            .any(|finding| finding.recommendation.to_ascii_lowercase().contains("disable everything")));
+        assert!(!report.findings.iter().any(|finding| finding
+            .recommendation
+            .to_ascii_lowercase()
+            .contains("disable everything")));
     }
 
     #[test]
