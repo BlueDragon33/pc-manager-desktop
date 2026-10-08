@@ -9,6 +9,7 @@ export type PageId =
   | "storage"
   | "duplicates"
   | "monitor"
+  | "performance"
   | "restore"
   | "settings";
 
@@ -99,6 +100,14 @@ export const NAV_ITEMS: NavItem[] = [
     description:
       "View low-overhead CPU, memory, disk, network, and process activity.",
     icon: "⌁",
+  },
+  {
+    id: "performance",
+    label: "Performance",
+    shortLabel: "Optimize",
+    description:
+      "Correlate repeated resource use with startup, task, and service evidence.",
+    icon: "△",
   },
   {
     id: "restore",

@@ -426,14 +426,22 @@ P11 V1 performs no direct driver mutation, so it does not fabricate a restore po
 
 ## P12 — Advanced Performance Optimizer
 
-Only after the lower-risk foundation is mature.
+Sequencing exception recorded 2026-10-07: P12 implementation may proceed while earlier manual verification gates remain tracked as open. Those earlier phases must not be represented as fully accepted until their manual gates are proven.
 
-Focus on evidence:
+V1 capabilities:
 
-- boot-impact analysis;
-- persistent resource consumers;
-- optional application sleep policies;
-- explainable service/task recommendations.
+- [~] boot-impact analysis — P12 correlates enabled startup/logon sources with repeatedly measured resource consumers; it does not fabricate boot-duration timing that Windows did not provide;
+- [x] persistent resource consumers — three short foreground samples with repeated-visibility plus CPU/RAM thresholds;
+- [~] optional application sleep policies — advisory foundation only; no universal process suspension is enabled because arbitrary desktop-app suspension can break apps or lose work;
+- [x] explainable scheduled-task recommendations — only when a P5 startup/logon task maps to repeated process evidence;
+- [x] explainable service recommendations — read-only, bounded automatic-running service evidence; Windows-system-path services are excluded from recommendations;
+- [x] no direct service/task disable path;
+- [x] no process kill/suspend/freeze path;
+- [x] supported startup changes remain owned by P5 Startup Manager and its rollback/revalidation rules;
+- [x] no generic registry, power-plan, pagefile, Defender, Windows Update, indexing, networking, or visual-effects tuning;
+- [ ] representative real-Windows gate verifies a known high-resource app is surfaced with evidence and an idle/normal machine does not generate fake optimization warnings.
+
+V1 thresholds are evidence gates, not claims of defect: a process must appear in multiple samples and cross a documented CPU or private-memory threshold before it is surfaced.
 
 Avoid "disable everything" optimization.
 
@@ -453,4 +461,4 @@ For each phase:
 8. create preview artifact where relevant;
 9. proceed only after the acceptance gate passes.
 
-The next implementation phase after P11 is **P12 — Advanced Performance Optimizer**, subject to the remaining manual gates being tracked honestly.
+P12 is the current implementation phase. The next phase must be explicitly planned after the P12 real-Windows acceptance gate and remaining deferred manual gates are reviewed.

@@ -13,6 +13,6 @@ Rules:
 
 Current prompt:
 
-- `P11_DRIVER_CENTER.md` — inspect drivers and trusted Windows Update driver evidence without blind or mass installation.
+- `P12_ADVANCED_PERFORMANCE_OPTIMIZER.md` — correlate repeated resource evidence with startup, task, and service state without broad system mutations.
 
 Previous phase prompts remain in this directory as implementation history.

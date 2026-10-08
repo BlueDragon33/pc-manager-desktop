@@ -17,6 +17,7 @@ describe("navigation model", () => {
       "storage",
       "duplicates",
       "monitor",
+      "performance",
       "restore",
       "settings",
     ]);
