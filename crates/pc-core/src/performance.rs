@@ -181,8 +181,7 @@ pub fn evaluate_performance_optimizer(
                     aggregate.cpu_medium_samples += 1;
                 }
             }
-            aggregate.max_memory_bytes =
-                aggregate.max_memory_bytes.max(observed.max_memory_bytes);
+            aggregate.max_memory_bytes = aggregate.max_memory_bytes.max(observed.max_memory_bytes);
             if observed.max_memory_bytes >= MEMORY_REVIEW_BYTES {
                 aggregate.memory_high_samples += 1;
             }
@@ -231,7 +230,10 @@ pub fn evaluate_performance_optimizer(
             samples.len()
         )];
         if let Some(cpu) = average_process_cpu {
-            evidence.push(format!("Average sampled CPU: {:.1}% ({} samples above review threshold).", cpu, aggregate.cpu_high_samples));
+            evidence.push(format!(
+                "Average sampled CPU: {:.1}% ({} samples above review threshold).",
+                cpu, aggregate.cpu_high_samples
+            ));
         }
         if aggregate.max_memory_bytes > 0 {
             evidence.push(format!(
@@ -427,7 +429,11 @@ mod tests {
         let mut first = sample(1, "Example.exe", 35.0, 700 * 1024 * 1024);
         first.processes.push(first.processes[0].clone());
         let report = evaluate_performance_optimizer(
-            &[first, sample(2, "Different.exe", 0.0, 0), sample(3, "Other.exe", 0.0, 0)],
+            &[
+                first,
+                sample(2, "Different.exe", 0.0, 0),
+                sample(3, "Other.exe", 0.0, 0),
+            ],
             &[],
             &[],
         );
@@ -451,16 +457,30 @@ mod tests {
     #[test]
     fn executable_matching_never_uses_substring_or_argument_overlap() {
         let report = evaluate_performance_optimizer(
-            &[sample(1, "Example.exe", 25.0, 900 * 1024 * 1024),
-              sample(2, "Example.exe", 25.0, 900 * 1024 * 1024)],
             &[
-                startup(r#""C:\\Apps\\ExampleHelper.exe" --name Example.exe"#, StartupSourceType::RegistryCurrentUserRun),
-                startup(r#""C:\\Apps\\Other.exe" --name Example.exe"#, StartupSourceType::RegistryCurrentUserRun),
+                sample(1, "Example.exe", 25.0, 900 * 1024 * 1024),
+                sample(2, "Example.exe", 25.0, 900 * 1024 * 1024),
+            ],
+            &[
+                startup(
+                    r#""C:\\Apps\\ExampleHelper.exe" --name Example.exe"#,
+                    StartupSourceType::RegistryCurrentUserRun,
+                ),
+                startup(
+                    r#""C:\\Apps\\Other.exe" --name Example.exe"#,
+                    StartupSourceType::RegistryCurrentUserRun,
+                ),
             ],
             &[],
         );
-        assert!(report.findings.iter().any(|finding| finding.kind == PerformanceFindingKind::PersistentProcess));
-        assert!(!report.findings.iter().any(|finding| finding.kind == PerformanceFindingKind::StartupImpact));
+        assert!(report
+            .findings
+            .iter()
+            .any(|finding| finding.kind == PerformanceFindingKind::PersistentProcess));
+        assert!(!report
+            .findings
+            .iter()
+            .any(|finding| finding.kind == PerformanceFindingKind::StartupImpact));
     }
 
     #[test]
