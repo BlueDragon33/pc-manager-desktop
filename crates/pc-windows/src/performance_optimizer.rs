@@ -42,7 +42,7 @@ foreach ($service in $services) {
   })
 }
 
-@($rows) | ConvertTo-Json -Depth 4 -Compress
+ConvertTo-Json -InputObject $rows.ToArray() -Depth 4 -Compress
 "#;
 
 #[cfg(target_os = "windows")]
@@ -66,8 +66,6 @@ pub fn list_performance_services(
                 "-NoLogo",
                 "-NoProfile",
                 "-NonInteractive",
-                "-ExecutionPolicy",
-                "Bypass",
                 "-Command",
                 PERFORMANCE_SERVICE_SCRIPT,
             ])
@@ -152,5 +150,6 @@ mod tests {
         assert!(!script.contains("Stop-Service"));
         assert!(!script.contains("Set-Service"));
         assert!(!script.contains("sc.exe"));
+        assert!(script.contains("ConvertTo-Json -InputObject $rows.ToArray()"));
     }
 }
