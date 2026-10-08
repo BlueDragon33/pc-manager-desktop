@@ -57,7 +57,8 @@ struct RawPerformanceService {
     windows_system_path: bool,
 }
 
-pub fn list_performance_services() -> Result<Vec<PerformanceServiceEvidence>, PerformanceOptimizerError> {
+pub fn list_performance_services(
+) -> Result<Vec<PerformanceServiceEvidence>, PerformanceOptimizerError> {
     #[cfg(target_os = "windows")]
     {
         let output = Command::new("powershell.exe")
@@ -106,13 +107,14 @@ pub fn list_performance_services() -> Result<Vec<PerformanceServiceEvidence>, Pe
             return Ok(Vec::new());
         }
 
-        let raw: Vec<RawPerformanceService> = serde_json::from_str(stdout.trim()).map_err(|error| {
-            PerformanceOptimizerError::new(
-                "performance_service_provider_payload",
-                format!("Unable to parse Windows service evidence: {error}"),
-                true,
-            )
-        })?;
+        let raw: Vec<RawPerformanceService> =
+            serde_json::from_str(stdout.trim()).map_err(|error| {
+                PerformanceOptimizerError::new(
+                    "performance_service_provider_payload",
+                    format!("Unable to parse Windows service evidence: {error}"),
+                    true,
+                )
+            })?;
 
         Ok(raw
             .into_iter()
