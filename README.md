@@ -9,8 +9,8 @@ PC Manager Desktop targets Windows 10/11 x64 and uses:
 - React + TypeScript for the UI
 - Tauri for the desktop shell
 - Rust for system logic
-- a separate Windows Service boundary for future elevated operations
-- SQLite for local state, audit history, snapshots, and rollback metadata
+- a separate Windows Service boundary planned for future elevated operations
+- SQLite planned as the durable local state store; existing features use documented phase-specific local storage
 - App Manager integration for device registration, heartbeat, release channels, licensing, and update coordination
 
 ## Governance baseline
@@ -41,11 +41,13 @@ Read these before feature work:
 - `docs/ARCHITECTURE.md`
 - the active phase prompt under `prompts/`
 
-## Current phase
+## Current implementation: P12
 
-**P10 — Software Updater**
+P0–P12 feature foundations are implemented. P12 analyzes repeated Windows resource samples and correlates them with startup, scheduled-task and service evidence. It offers review-only recommendations, not automatic service/task disabling or process suspension.
 
-P0–P9 implementation foundations are present, while P9 still retains its documented manual clean-machine install and upgrade/state-preservation gates. P10 adds conservative software-update discovery and one-at-a-time launch through the verified official WinGet source; arbitrary URLs, custom command lines, silent mass updates, force flags, and hash bypasses remain prohibited.
+**Not yet a verified production release.** Windows hardware acceptance gates remain open for P5–P12, including signed installer/upgrade and live App Manager gateway checks. The Windows preview installer is unsigned and must not be presented as a production package.
+
+The build roadmap and exact outstanding checks are tracked in `docs/IMPLEMENTATION_PLAN.md`.
 
 ## Prerequisites
 
