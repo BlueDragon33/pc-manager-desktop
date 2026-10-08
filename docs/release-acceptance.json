@@ -1,0 +1,69 @@
+{
+  "schema": "pc-manager.release-acceptance/v1",
+  "note": "Pending means NOT verified. Each acceptance requires real Windows evidence and reviewer confirmation. Never infer acceptance from CI or previews.",
+  "gates": [
+    {
+      "id": "P5_STARTUP_ROUNDTRIP",
+      "description": "Enable-disable-enable a disposable startup item on real Windows.",
+      "status": "pending",
+      "verifiedAt": null,
+      "evidence": null
+    },
+    {
+      "id": "P6_USER_FILE_OPERATIONS",
+      "description": "Verify representative Apps, Duplicates and Storage behavior on a disposable Windows test fixture.",
+      "status": "pending",
+      "verifiedAt": null,
+      "evidence": null
+    },
+    {
+      "id": "P7_IDLE_OVERHEAD",
+      "description": "Measure foreground/idle monitor overhead and unavailable sensors on Windows.",
+      "status": "pending",
+      "verifiedAt": null,
+      "evidence": null
+    },
+    {
+      "id": "P8_SIGNED_GATEWAY_HANDSHAKE",
+      "description": "Verify production HTTPS gateway and signed challenge on a real provisioned Windows device.",
+      "status": "pending",
+      "verifiedAt": null,
+      "evidence": null
+    },
+    {
+      "id": "P9_SIGNED_CLEAN_INSTALL",
+      "description": "Install the signed NSIS package on a clean Windows device.",
+      "status": "pending",
+      "verifiedAt": null,
+      "evidence": null
+    },
+    {
+      "id": "P9_SIGNED_UPGRADE_PRESERVATION",
+      "description": "Verify signed upgrade retains local state, operation history and Windows CNG device identity.",
+      "status": "pending",
+      "verifiedAt": null,
+      "evidence": null
+    },
+    {
+      "id": "P10_WINGET_INTERACTIVE_UPDATE",
+      "description": "Verify representative trusted WinGet update launch and results.",
+      "status": "pending",
+      "verifiedAt": null,
+      "evidence": null
+    },
+    {
+      "id": "P11_DRIVER_OPTIONAL_UPDATES",
+      "description": "Verify installed-driver inventory and Windows Optional Updates handoff.",
+      "status": "pending",
+      "verifiedAt": null,
+      "evidence": null
+    },
+    {
+      "id": "P12_PERFORMANCE_EVIDENCE",
+      "description": "Verify high-load evidence is surfaced and idle Windows does not create false warnings.",
+      "status": "pending",
+      "verifiedAt": null,
+      "evidence": null
+    }
+  ]
+}
