@@ -5,6 +5,7 @@
  * --require-ready fails closed before ANY signed production packaging.
  */
 import { readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 
 export const REQUIRED_GATES = Object.freeze([
   "P5_STARTUP_ROUNDTRIP",
@@ -59,10 +60,10 @@ export function evaluateReleaseAcceptance(document) {
       const evidence = gate.evidence;
       if (
         typeof verifiedAt !== "string" ||
-        !/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}/.test(verifiedAt) ||
+        !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(verifiedAt) ||
         !Number.isFinite(Date.parse(verifiedAt)) ||
         typeof evidence !== "string" ||
-        !/^https:\\/\\//.test(evidence)
+        !evidence.startsWith("https://")
       ) {
         errors.push(`Accepted gate requires ISO verification time and HTTPS evidence: ${gate.id}`);
       }
@@ -112,6 +113,6 @@ function main() {
   console.log(`[release-acceptance] ${mode === "--validate" ? "SCHEMA PASS" : "ALL GATES ACCEPTED"}; pending=${result.pending.length}`);
 }
 
-if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main();
 }
