@@ -16,11 +16,20 @@ pub const MAX_REQUEST_ID_LEN: usize = 64;
 pub struct ServiceRequest {
     pub protocol_version: u16,
     pub request_id: String,
-    pub command: ServiceCommand,
+    pub command: ServiceCommandFrame,
+}
+
+/// Require an exact object with a single typed command discriminator.
+/// A tagged unit enum alone can silently ignore unexpected nested fields.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ServiceCommandFrame {
+    #[serde(rename = "type")]
+    pub command_type: ServiceCommand,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
-#[serde(tag = "type", rename_all = "SCREAMING_SNAKE_CASE", deny_unknown_fields)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ServiceCommand {
     GetServiceVersion,
     GetCapabilities,
@@ -99,7 +108,7 @@ pub fn parse_request(frame: &[u8]) -> Result<ServiceRequest, ProtocolError> {
 /// process, service-control, elevation, or remote-authority side effects.
 pub fn handle_read_only_request(frame: &[u8]) -> Result<ServiceReply, ProtocolError> {
     let request = parse_request(frame)?;
-    let result = match request.command {
+    let result = match request.command.command_type {
         ServiceCommand::GetServiceVersion => ServiceResult::ServiceVersion {
             version: PROTOCOL_VERSION,
         },
@@ -199,6 +208,18 @@ mod tests {
             parse_request(command_args),
             Err(ProtocolError::MalformedRequest)
         );
+    }
+
+    #[test]
+    fn command_must_be_an_exact_object_with_only_a_known_type() {
+        for bad in [
+            br#"{"protocol_version":1,"request_id":"req","command":"GET_CAPABILITIES"}"#.as_slice(),
+            br#"{"protocol_version":1,"request_id":"req","command":null}"#.as_slice(),
+            br#"{"protocol_version":1,"request_id":"req","command":{"type":"GET_SERVICE_VERSION","args":{}}}"#.as_slice(),
+            br#"{"protocol_version":1,"request_id":"req","command":{"type":"GET_CAPABILITIES","type":"GET_SERVICE_VERSION"}}"#.as_slice(),
+        ] {
+            assert_eq!(parse_request(bad), Err(ProtocolError::MalformedRequest));
+        }
     }
 
     #[test]
