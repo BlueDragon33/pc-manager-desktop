@@ -4,7 +4,7 @@ use serde::Deserialize;
 #[cfg(target_os = "windows")]
 use std::process::Command;
 
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", test))]
 const PERFORMANCE_SERVICE_SCRIPT: &str = r#"
 $ErrorActionPreference = 'Stop'
 $rows = [System.Collections.Generic.List[object]]::new()
