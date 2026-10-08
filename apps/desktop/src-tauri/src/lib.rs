@@ -3,15 +3,14 @@ use app_manager_client::{
     RemoteCommand,
 };
 use pc_core::{
-    evaluate_health, AppInfo, AppsError, CleanupError, CleanupOperationRecord, CleanupPlanStore,
-    CleanupScanOptions, CleanupScanSummary, DriverCenterError, DriverCenterSnapshot,
-    DriverSettingsLaunchResult, DuplicateDeleteRequest, DuplicateDeleteResult,
-    DuplicateScanOptions, DuplicateScanPlanStore, DuplicateScanSummary, FilesystemError,
-    HealthReport, InstalledAppEntry, InventoryError, PerformanceOptimizerError,
+    evaluate_health, evaluate_performance_optimizer, AppInfo, AppsError, CleanupError,
+    CleanupOperationRecord, CleanupPlanStore, CleanupScanOptions, CleanupScanSummary,
+    DriverCenterError, DriverCenterSnapshot, DriverSettingsLaunchResult, DuplicateDeleteRequest,
+    DuplicateDeleteResult, DuplicateScanOptions, DuplicateScanPlanStore, DuplicateScanSummary,
+    FilesystemError, HealthReport, InstalledAppEntry, InventoryError, PerformanceOptimizerError,
     PerformanceOptimizerReport, PerformanceProcessSample, PerformanceSample, ScanRootSelection,
     StartupChangeRequest, StartupEntry, StartupError, StartupOperationRecord, StorageScanOptions,
     StorageScanSummary, SystemInventory, UninstallLaunchResult, UninstallRequest,
-    evaluate_performance_optimizer,
 };
 use pc_monitor::{MonitorError, MonitorSnapshot};
 use pc_updater::{
@@ -322,8 +321,8 @@ fn optimizer_sample_from_monitor(snapshot: MonitorSnapshot) -> PerformanceSample
 }
 
 #[tauri::command]
-async fn run_performance_optimizer(
-) -> Result<PerformanceOptimizerReport, PerformanceOptimizerError> {
+async fn run_performance_optimizer() -> Result<PerformanceOptimizerReport, PerformanceOptimizerError>
+{
     tauri::async_runtime::spawn_blocking(|| {
         let startup_entries = pc_windows::list_startup_entries().map_err(|error| {
             PerformanceOptimizerError::new(
@@ -343,7 +342,10 @@ async fn run_performance_optimizer(
             let snapshot = pc_monitor::sample_monitor().map_err(|error| {
                 PerformanceOptimizerError::new(
                     "performance_monitor_sample_failed",
-                    format!("Performance evidence could not be sampled: {}", error.message),
+                    format!(
+                        "Performance evidence could not be sampled: {}",
+                        error.message
+                    ),
                     error.recoverable,
                 )
             })?;
@@ -353,8 +355,7 @@ async fn run_performance_optimizer(
             }
         }
 
-        let mut report =
-            evaluate_performance_optimizer(&samples, &startup_entries, &services);
+        let mut report = evaluate_performance_optimizer(&samples, &startup_entries, &services);
         if let Some(warning) = service_warning {
             report.limitations.push(format!(
                 "Service correlation was unavailable for this scan: {warning}"
