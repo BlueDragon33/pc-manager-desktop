@@ -50,7 +50,8 @@ const healthCategories = [
   },
   {
     name: "Updates",
-    text: "Health Check does not yet include trusted update evidence; use Software Updater.",
+    text:
+      "Health Check does not yet include trusted update evidence; use Software Updater.",
   },
   {
     name: "Privacy",
