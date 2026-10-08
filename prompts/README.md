@@ -13,6 +13,6 @@ Rules:
 
 Current prompt:
 
-- `P12_ADVANCED_PERFORMANCE_OPTIMIZER.md` — correlate repeated resource evidence with startup, task, and service state without broad system mutations.
+- `P13_RELEASE_ACCEPTANCE_PREFLIGHT.md` — require evidence-backed real-Windows acceptance before any signed production release; track remaining product gaps honestly.
 
 Previous phase prompts remain in this directory as implementation history.

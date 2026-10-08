@@ -50,6 +50,9 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
+      - name: Block production until Windows acceptance evidence is complete
+        run: node scripts/check-release-acceptance.mjs --require-ready
+
       - name: Setup Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:

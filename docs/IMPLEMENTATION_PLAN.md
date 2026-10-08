@@ -447,6 +447,29 @@ Avoid "disable everything" optimization.
 
 ---
 
+## P13 — Product release-readiness evidence preflight
+
+Implementation may proceed without fabricating completion of P5–P12 manual gates. The user authorized continuation on 2026-10-08; this exception does **not** authorize a production release.
+
+- [x] maintain nine mandatory real-Windows acceptance gates in `docs/release-acceptance.json`, all initially pending;
+- [x] fail-closed schema validator for missing, duplicated, invalid, or unproven gates;
+- [x] automated negative tests for pending and forged acceptance;
+- [x] routine CI validates the manifest without falsely requiring outstanding manual checks to pass;
+- [x] production release workflow requires `--require-ready` before packaging;
+- [ ] investigate and resolve critical npm advisory alerts before production;
+- [ ] design/version/authenticate the currently skeletal privileged Windows Service IPC before adding elevated operations;
+- [ ] implement and test safe SQLite migrations for durable local state where warranted;
+- [ ] obtain authentic signed-install, upgrade, gateway, device and efficacy evidence for every mandatory gate.
+
+P13 V1 acceptance:
+
+- [ ] CI and unsigned Windows preview are green on the final P13 commit;
+- [ ] `--validate` succeeds for honest pending gates;
+- [ ] `--require-ready` refuses a manifest with pending/forged evidence;
+- [ ] production signing credentials, exact dispatch confirmation, protected environment and checksums remain mandatory.
+
+---
+
 ## Working cadence
 
 For each phase:
@@ -461,4 +484,4 @@ For each phase:
 8. create preview artifact where relevant;
 9. proceed only after the acceptance gate passes.
 
-P12 is the current implementation phase. The next phase must be explicitly planned after the P12 real-Windows acceptance gate and remaining deferred manual gates are reviewed.
+P12 implementation is present, but its manual Windows acceptance remains pending. P13 is the release-readiness hardening phase; no production release is authorized until all evidence and signing gates are satisfied.
