@@ -120,8 +120,10 @@ pub fn handle_read_only_request(frame: &[u8]) -> Result<ServiceReply, ProtocolEr
 mod tests {
     use super::*;
 
-    const VERSION: &[u8] = br#"{"protocol_version":1,"request_id":"req_1","command":{"type":"GET_SERVICE_VERSION"}}"#;
-    const CAPABILITIES: &[u8] = br#"{"protocol_version":1,"request_id":"req-2","command":{"type":"GET_CAPABILITIES"}}"#;
+    const VERSION: &[u8] =
+        br#"{"protocol_version":1,"request_id":"req_1","command":{"type":"GET_SERVICE_VERSION"}}"#;
+    const CAPABILITIES: &[u8] =
+        br#"{"protocol_version":1,"request_id":"req-2","command":{"type":"GET_CAPABILITIES"}}"#;
 
     #[test]
     fn version_and_capabilities_are_read_only() {
@@ -149,7 +151,12 @@ mod tests {
 
     #[test]
     fn unsupported_mutating_and_remote_commands_fail_closed() {
-        for name in ["EXECUTE_SHELL", "RUN_POWERSHELL", "EXECUTE_CLEANUP_PLAN", "SET_STARTUP_ENTRY"] {
+        for name in [
+            "EXECUTE_SHELL",
+            "RUN_POWERSHELL",
+            "EXECUTE_CLEANUP_PLAN",
+            "SET_STARTUP_ENTRY",
+        ] {
             let frame = format!(
                 r#"{{"protocol_version":1,"request_id":"req","command":{{"type":"{name}"}}}}"#
             );
@@ -162,7 +169,8 @@ mod tests {
 
     #[test]
     fn mismatched_version_is_rejected() {
-        let frame = br#"{"protocol_version":2,"request_id":"req","command":{"type":"GET_CAPABILITIES"}}"#;
+        let frame =
+            br#"{"protocol_version":2,"request_id":"req","command":{"type":"GET_CAPABILITIES"}}"#;
         assert_eq!(parse_request(frame), Err(ProtocolError::UnsupportedVersion));
     }
 
