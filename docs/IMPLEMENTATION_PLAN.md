@@ -456,7 +456,7 @@ Implementation may proceed without fabricating completion of P5–P12 manual gat
 - [x] automated negative tests for pending and forged acceptance;
 - [x] routine CI validates the manifest without falsely requiring outstanding manual checks to pass;
 - [x] production release workflow requires `--require-ready` before packaging;
-- [ ] investigate and resolve critical npm advisory alerts before production;
+- [x] investigate and resolve the two Critical and one Moderate npm advisories reported on 2026-10-08: upgrade the Vitest development toolchain to `^5.0.3` and regenerate the lockfile; npm audit reported zero vulnerabilities after the targeted update. CI now enforces `npm audit --audit-level=critical`;
 - [ ] design/version/authenticate the currently skeletal privileged Windows Service IPC before adding elevated operations;
 - [ ] implement and test safe SQLite migrations for durable local state where warranted;
 - [ ] obtain authentic signed-install, upgrade, gateway, device and efficacy evidence for every mandatory gate.
@@ -467,6 +467,21 @@ P13 V1 acceptance:
 - [ ] `--validate` succeeds for honest pending gates;
 - [ ] `--require-ready` refuses a manifest with pending/forged evidence;
 - [ ] production signing credentials, exact dispatch confirmation, protected environment and checksums remain mandatory.
+
+---
+
+## P14 — Dependency security baseline
+
+Scope: remove known npm security vulnerabilities without a broad refactor or weakening release gates.
+
+- [x] classify the CI npm audit warnings: `tinypool` (two Critical advisories) and `@vitest/mocker` (one Moderate advisory), reached via the Vitest development/test toolchain;
+- [x] upgrade only Vitest and its required resolved dependencies (`vitest: ^5.0.3`) using npm's lockfile resolver, without `npm audit fix --force`;
+- [x] observe `npm audit` return **0 vulnerabilities** on the regenerated dependency lockfile in the remediation CI job;
+- [x] add a blocking critical-severity npm audit to normal frontend CI;
+- [x] remove the one-time CI lockfile-write job and its extra `contents: write` permissions;
+- [ ] confirm final frontend tests, Rust/Windows builds and unsigned preview on the final branch head before merge.
+
+No elevated Windows mutation, new remote command, telemetry, production release or change to the nine P13 manual acceptance gates is authorized by this phase.
 
 ---
 
