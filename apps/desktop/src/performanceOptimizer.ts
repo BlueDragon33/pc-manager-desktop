@@ -1,10 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 
 export type PerformanceFindingKind =
-  | "persistentProcess"
-  | "startupImpact"
-  | "scheduledTask"
-  | "service";
+  "persistentProcess" | "startupImpact" | "scheduledTask" | "service";
 
 export type PerformanceAction =
   | "reviewStartup"
