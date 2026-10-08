@@ -69,3 +69,11 @@ not a normal update decision.
 P9 produces signed packages and trustworthy metadata. P10 may consume that metadata to implement
 software update checks. P10 must verify channel policy, signature requirements and SHA-256 before
 handoff to an installer.
+
+## P13 real-Windows acceptance preflight
+
+A green CI or unsigned preview does **not** authorize publishing a signed production package. The production workflow checks `node scripts/check-release-acceptance.mjs --require-ready` before packaging. The nine P5–P12 acceptance gates are recorded in `docs/release-acceptance.json`, initially `pending`.
+
+Use `node scripts/check-release-acceptance.mjs --validate` for schema validation (pending is permitted during feature development). Only a verified real-Windows result recorded by an authorized human reviewer can change a gate to `accepted`; include a full ISO timestamp and HTTPS evidence link. Never mark a gate accepted because its automated unit tests or a mocked fixture passed.
+
+The existing production confirmation `DEPLOY_PRODUCTION`, protected GitHub environment, Authenticode signing secrets, SHA-256 checksums, channel policy and duplicate-tag protection remain mandatory. Until manual acceptance and signing material exist, distribute CI packages only as unsigned previews.
