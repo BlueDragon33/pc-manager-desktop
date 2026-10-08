@@ -72,7 +72,9 @@ export function PerformanceOptimizerPage({
           onClick={() => void runAnalysis()}
           type="button"
         >
-          {state.status === "loading" ? "Analyzing…" : "Run performance analysis"}
+          {state.status === "loading"
+            ? "Analyzing…"
+            : "Run performance analysis"}
         </button>
       </section>
 
@@ -89,7 +91,8 @@ export function PerformanceOptimizerPage({
         <section className="empty-health-state">
           <strong>No performance analysis has run in this session.</strong>
           <span>
-            The scan is foreground-only and uses a small number of short samples.
+            The scan is foreground-only and uses a small number of short
+            samples.
           </span>
         </section>
       )}
@@ -111,7 +114,10 @@ export function PerformanceOptimizerPage({
         <section className="info-callout health-error" aria-live="polite">
           <strong>Performance analysis unavailable</strong>
           <span>{state.message}</span>
-          <button className="secondary-action" onClick={() => void runAnalysis()}>
+          <button
+            className="secondary-action"
+            onClick={() => void runAnalysis()}
+          >
             Retry
           </button>
         </section>
@@ -134,7 +140,9 @@ export function PerformanceOptimizerPage({
             <dl>
               <div>
                 <dt>Average CPU</dt>
-                <dd>{formatOptimizerPercent(state.report.averageCpuPercent)}</dd>
+                <dd>
+                  {formatOptimizerPercent(state.report.averageCpuPercent)}
+                </dd>
               </div>
               <div>
                 <dt>Average RAM</dt>
@@ -168,7 +176,9 @@ export function PerformanceOptimizerPage({
 
             {findings.length === 0 ? (
               <div className="empty-health-state">
-                <strong>No repeated resource-heavy candidate was proven.</strong>
+                <strong>
+                  No repeated resource-heavy candidate was proven.
+                </strong>
                 <span>
                   PC Manager will not manufacture an optimization just to show a
                   warning.
