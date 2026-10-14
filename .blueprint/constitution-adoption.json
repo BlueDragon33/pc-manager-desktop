@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "policyId": "blueprint-os:universal-century-grade",
-  "policyVersion": "1.2.0",
+  "policyVersion": "1.3.0",
   "projectId": "project:pc-manager-desktop",
   "blueprintLevel": "B4",
   "enforcementMode": "enforced",
