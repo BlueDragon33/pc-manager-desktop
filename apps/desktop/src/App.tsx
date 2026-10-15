@@ -203,7 +203,7 @@ function OverviewPage({
           </div>
           <div>
             <dt>Product phase</dt>
-            <dd>{appInfo?.phase ?? "P11"}</dd>
+            <dd>{appInfo?.phase ?? "Unavailable"}</dd>
           </div>
         </dl>
       </section>
@@ -530,7 +530,6 @@ export default function App() {
             <h1>{activeItem.label}</h1>
           </div>
           <div className="topbar-actions">
-            <span className="phase-chip">P12</span>
             <button
               className="icon-button"
               onClick={() =>
