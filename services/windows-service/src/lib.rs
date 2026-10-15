@@ -5,6 +5,8 @@
 //! No privileged operation may be added without authenticated local-caller IPC,
 //! service-side policy enforcement, audit and rollback tests.
 
+pub mod admission;
+
 use serde::{Deserialize, Serialize};
 
 pub const PROTOCOL_VERSION: u16 = 1;
