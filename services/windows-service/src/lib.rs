@@ -6,6 +6,8 @@
 //! service-side policy enforcement, audit and rollback tests.
 
 pub mod admission;
+#[cfg(windows)]
+pub mod token_identity;
 
 use serde::{Deserialize, Serialize};
 
