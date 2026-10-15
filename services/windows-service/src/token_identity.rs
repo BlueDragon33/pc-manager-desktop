@@ -128,9 +128,7 @@ pub fn current_thread_impersonation_sid() -> Result<String, TokenIdentityError> 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use windows_sys::Win32::Security::{
-        ImpersonateSelf, RevertToSelf, SecurityImpersonation,
-    };
+    use windows_sys::Win32::Security::{ImpersonateSelf, RevertToSelf, SecurityImpersonation};
 
     struct RevertGuard;
     impl Drop for RevertGuard {
@@ -159,7 +157,10 @@ mod tests {
     #[test]
     fn obtains_canonical_sid_from_real_windows_impersonation_token() {
         let impersonated = unsafe { ImpersonateSelf(SecurityImpersonation) };
-        assert_ne!(impersonated, 0, "Windows test fixture must impersonate self");
+        assert_ne!(
+            impersonated, 0,
+            "Windows test fixture must impersonate self"
+        );
         let _guard = RevertGuard;
         let sid = current_thread_impersonation_sid().expect("read impersonated token SID");
         assert!(valid_canonical_sid(&sid));
