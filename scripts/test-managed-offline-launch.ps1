@@ -19,7 +19,11 @@ try {
     & $helper -ExecutablePath $first
     $actual = (Get-Item -LiteralPath (Join-Path $reg 'shell\open\command')).GetValue('')
     $expected = '"{0}" "%1"' -f $first
-    if ($actual -ne $expected) { throw 'Protocol command did not round-trip.' }
+    if ($actual -ne $expected) {
+        Write-Output ('Expected command: ' + $expected)
+        Write-Output ('Stored command: ' + $actual)
+        throw 'Protocol command did not round-trip.'
+    }
 
     & $helper -ExecutablePath $first
     $actual = (Get-Item -LiteralPath (Join-Path $reg 'shell\open\command')).GetValue('')
