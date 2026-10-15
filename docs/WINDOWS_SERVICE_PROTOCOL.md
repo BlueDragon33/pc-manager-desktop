@@ -26,3 +26,28 @@ Status: **contract/test foundation only**. This is not a registered Windows Serv
 ## Local checks
 
 Run `cargo test -p pc-manager-windows-service --locked`, `cargo fmt --check`, and full workspace CI. The P13 nine manual production gates remain independent and pending.
+
+## P15B1 — Read-only admission policy (no active IPC)
+
+This is an incremental, isolated foundation, **not** P15B Windows Service acceptance.
+The new `admission.rs` provides:
+
+- caller-SID ownership policy applicable **only after** a real server-side Windows token check;
+- local-session refusal, cross-user refusal and canonical SID validation;
+- 4 KiB strongly typed requests inherited from P15A and 4 KiB reply bounds;
+- 256-record replay budget with a 60-second monotonic replay window;
+- unit tests for approved caller, forged/other caller, remote session, replay,
+  capacity exhaustion/recovery and malformed command behavior;
+- a `VerifiedCaller` with private fields and **no production constructor**.
+
+**Not implemented or accepted:** local-only named-pipe transport; server-side
+Windows token/SID lookup; Windows impersonation verification; DACL and remote
+pipe rejection; concurrent-session caps; timeouts and disconnect handling;
+Windows crash/cross-user integration tests; SCM registration or any elevated
+operation. The service executable remains an inactive non-privileged skeleton.
+No claim of authenticated IPC can be made from these unit tests.
+
+Before adding a constructor for `VerifiedCaller`, implement a server-side
+Windows token verifier and prove rejection of claimed SID/PID fields,
+unauthorized cross-session peers and remote clients on a real Windows fixture.
+Never expose a public constructor accepting caller-provided identity strings.
