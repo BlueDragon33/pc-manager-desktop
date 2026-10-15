@@ -51,3 +51,23 @@ Before adding a constructor for `VerifiedCaller`, implement a server-side
 Windows token verifier and prove rejection of claimed SID/PID fields,
 unauthorized cross-session peers and remote clients on a real Windows fixture.
 Never expose a public constructor accepting caller-provided identity strings.
+
+## P15B2 — Genuine Windows thread-token SID extraction (transport still inactive)
+
+The Windows-only `token_identity.rs` helper reads `TokenUser` from the current
+thread impersonation token using native Windows security APIs. It does **not**
+fall back to the process token, trust caller-supplied PID/SID strings, or make
+any system mutation. The token handle and Windows-allocated SID are released.
+Windows CI now runs real token tests, including a missing-impersonation denial
+and a Windows `ImpersonateSelf` fixture.
+
+This helper is a prerequisite, **not a complete authentication boundary**.
+No named pipe, security descriptor, remote-session verification, real client
+impersonation, session-binding or timeout is implemented by P15B2. It does not
+construct `VerifiedCaller` and does not enable the service executable.
+Before P15B acceptance, prove restrictive pipe DACL, remote-client rejection,
+`ImpersonateNamedPipeClient` / `RevertToSelf` in all paths, trusted owner SID,
+and client session isolation on actual disposable Windows machines.
+
+CI proves the isolated token helper; it does not replace any of the nine
+separately tracked P13 manual production acceptance gates.
