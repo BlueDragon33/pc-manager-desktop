@@ -18,7 +18,7 @@ try {
 
     & $helper -ExecutablePath $first
     $actual = (Get-Item -LiteralPath (Join-Path $reg 'shell\open\command')).GetValue('')
-    $expected = '"{0}" "%1"' -f $first
+    $expected = '"{0}" "%1"' -f ([System.IO.Path]::GetFullPath($first))
     if ($actual -ne $expected) {
         Write-Output ('Expected command: ' + $expected)
         Write-Output ('Stored command: ' + $actual)
@@ -43,7 +43,7 @@ try {
     # In case of test failure, only undo a registration pointing at our fixture.
     if (Test-Path -LiteralPath (Join-Path $reg 'shell\open\command')) {
         $owned = (Get-Item -LiteralPath (Join-Path $reg 'shell\open\command')).GetValue('')
-        if ($owned -eq ('"{0}" "%1"' -f $first)) {
+        if ($owned -eq ('"{0}" "%1"' -f ([System.IO.Path]::GetFullPath($first)))) {
             Remove-Item -LiteralPath $reg -Recurse -Force
         }
     }
