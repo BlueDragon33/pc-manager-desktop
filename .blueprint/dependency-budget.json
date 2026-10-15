@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "policyId": "blueprint-os:universal-century-grade",
-  "policyVersion": "1.2.0",
+  "policyVersion": "1.3.0",
   "projectId": "project:pc-manager-desktop",
   "posture": "LOCAL_CORE",
   "canonicalAuthority": {
@@ -57,5 +57,5 @@
     "cloud-owned-cleanup-or-restore-authority",
     "plaintext-sensitive-system-data-in-drive-or-sheets"
   ],
-  "releaseGate": "Constitution 1.2 local-authority validator plus existing frontend/Rust/Windows CI must pass. Production remains separately authorized."
+  "releaseGate": "Current canonical Constitution adoption plus the local-authority validator and frontend/Rust/Windows CI must pass. Production remains separately authorized."
 }
