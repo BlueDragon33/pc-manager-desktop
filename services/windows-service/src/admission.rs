@@ -57,9 +57,7 @@ fn valid_canonical_sid(sid: &str) -> bool {
     let components: Vec<_> = sid.split('-').collect();
     components.len() >= 4
         && components[2..].iter().all(|part| {
-            !part.is_empty()
-                && part.len() <= 20
-                && part.bytes().all(|ch| ch.is_ascii_digit())
+            !part.is_empty() && part.len() <= 20 && part.bytes().all(|ch| ch.is_ascii_digit())
         })
 }
 
@@ -114,8 +112,7 @@ impl ReadOnlyAdmissionGate {
         }
 
         let reply = handle_read_only_request(frame)?;
-        let encoded =
-            serde_json::to_vec(&reply).map_err(|_| AdmissionError::ReplyTooLarge)?;
+        let encoded = serde_json::to_vec(&reply).map_err(|_| AdmissionError::ReplyTooLarge)?;
         if encoded.len() > MAX_REPLY_BYTES {
             return Err(AdmissionError::ReplyTooLarge);
         }
@@ -215,7 +212,8 @@ mod tests {
     fn invalid_versions_commands_and_frames_fail_without_consuming_budget() {
         let mut gate = ReadOnlyAdmissionGate::new(OWNER.into()).unwrap();
         let caller = trusted_test_caller(OWNER, true);
-        let unsupported = br#"{"protocol_version":1,"request_id":"ok","command":{"type":"RUN_POWERSHELL"}}"#;
+        let unsupported =
+            br#"{"protocol_version":1,"request_id":"ok","command":{"type":"RUN_POWERSHELL"}}"#;
         assert_eq!(
             gate.handle_read_only(&caller, unsupported),
             Err(AdmissionError::Protocol(ProtocolError::MalformedRequest))
@@ -229,7 +227,14 @@ mod tests {
 
     #[test]
     fn owner_and_peer_sids_are_strictly_canonical() {
-        for bad in ["", "SYSTEM", "s-1-5-18", "S-1-5-evil", "S-1-", "S-1-5-18 extra"] {
+        for bad in [
+            "",
+            "SYSTEM",
+            "s-1-5-18",
+            "S-1-5-evil",
+            "S-1-",
+            "S-1-5-18 extra",
+        ] {
             assert!(matches!(
                 ReadOnlyAdmissionGate::new(bad.into()),
                 Err(AdmissionError::InvalidOwner)
