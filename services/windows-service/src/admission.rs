@@ -50,7 +50,7 @@ pub struct ReadOnlyAdmissionGate {
     recently_seen: HashMap<String, Instant>,
 }
 
-fn valid_canonical_sid(sid: &str) -> bool {
+pub(crate) fn valid_canonical_sid(sid: &str) -> bool {
     if sid.len() > 184 || !sid.starts_with("S-1-") {
         return false;
     }
