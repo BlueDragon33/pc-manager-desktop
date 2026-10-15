@@ -12,10 +12,11 @@ PC Manager Desktop targets Windows 10/11 x64 and uses:
 - a separate Windows Service boundary planned for future elevated operations
 - SQLite planned as the durable local state store; existing features use documented phase-specific local storage
 - App Manager integration for device registration, heartbeat, release channels, licensing, and update coordination
+- Offline WebView2 interface; optional per-user `pcmanager://open` launcher from Application Management (see `docs/MANAGED_OFFLINE_LAUNCH.md`)
 
 ## Governance baseline
 
-- Universal Constitution: **blueprint-os:universal-century-grade@1.2.0**
+- Universal Constitution: **blueprint-os:universal-century-grade@1.3.0**
 - Blueprint level: **B4**
 - Runtime posture: **LOCAL_CORE**
 - Canonical dependency budget: `.blueprint/dependency-budget.json`
