@@ -43,8 +43,10 @@ jobs:
           node scripts/check-release-acceptance.mjs --validate
           node --test scripts/check-release-acceptance.test.mjs
 
-      - name: Constitution 1.2 governance
-        run: npm run constitution:check
+      - name: Constitution local-authority governance
+        run: |
+          npm run constitution:check
+          node --test scripts/check-constitution.test.mjs
 
       - name: Lint
         run: npm run lint
