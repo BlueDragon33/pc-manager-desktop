@@ -119,9 +119,16 @@ jobs:
       - name: Test Windows Service real token identity
         run: cargo test -p pc-manager-windows-service --locked
 
-      - name: Verify offline local-launch protocol (disposable runner)
-        shell: pwsh
-        run: ./scripts/test-managed-offline-launch.ps1
-
       - name: Build native application
         run: npm run build
+
+  offline-launch-smoke:
+    name: Offline Windows protocol smoke
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify safe per-user protocol registration
+        shell: pwsh
+        run: ./scripts/test-managed-offline-launch.ps1
