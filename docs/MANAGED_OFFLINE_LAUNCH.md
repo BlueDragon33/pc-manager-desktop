@@ -24,14 +24,17 @@ The only approved local launch action is `pcmanager://open`:
 4. The browser asks Windows to open the installed local Tauri app. It does not
    navigate to a public website or expose a local HTTP API.
 
-The installed application currently ignores command-line URL parameters. It
-opens its standard interface and does **not** interpret URLs as commands.
+The Windows protocol registration deliberately **does not forward the browser
+URL as a command-line argument**. It starts the installed executable with no
+URL parameters, so an external page cannot inject arguments or deep-link
+commands into the native application. The app opens its standard interface.
 The integration is a launch-only pilot, not a verified installed-app handshake.
 
 To unregister the URL scheme for the same executable:
 `./scripts/register-managed-offline-launch.ps1 -ExecutablePath '<absolute installed path>/PC Manager Desktop.exe' -Unregister`
 
-The registration helper refuses to replace another handler. It writes only
+The registration helper refuses to replace another handler **or an existing
+handler-less protocol key**. It writes only
 `HKCU:\Software\Classes\pcmanager` after explicit local invocation, never
 `HKLM`, and is not an endpoint for App Manager remote commands.
 
