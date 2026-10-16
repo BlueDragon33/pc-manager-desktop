@@ -78,3 +78,25 @@ runner. Preview CI also runs `scripts/test-offline-nsis-install.ps1` against
 an actual unsigned NSIS package, checking the executable, argument-free
 handler and owned uninstall. This is not signed Production acceptance or
 proof of real browser-to-installed-application handoff.
+
+## Managed-mode control (offline-first policy)
+
+The desktop Settings screen provides **Central management OFF / ON**.
+Fresh installations and invalid/inaccessible local preference storage
+default to OFF. The React client does not issue
+`get_app_manager_status` or `sync_app_manager` while OFF; local
+Health Check, Smart Clean, Startup, Storage and Restore are unaffected.
+The opt-in preference is stored in the app's local WebView2 storage;
+failure to save the new value must prevent the toggle from taking effect.
+
+ON permits the existing optional outbound-only P8 signed gateway
+heartbeat and bounded retries when an approved origin is configured.
+Turning OFF stops future UI-scheduled gateway calls, but cannot revoke
+a request that was already in flight. The native command surface and
+remote service remain separately subject to their existing trust rules.
+
+**Evidence level:** code/CI changes do not prove a disconnected Windows
+runtime, complete network silence, state preservation on signed upgrade,
+or real browser launch. Those gates remain explicitly pending. Canonical
+ecosystem operating-policy ownership stays with
+`BlueDragon33/Software-Blueprint-Hub` `main`.

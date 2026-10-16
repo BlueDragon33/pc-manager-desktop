@@ -21,10 +21,12 @@ import { StoragePage } from "./StoragePage";
 import { SoftwareUpdaterPage } from "./SoftwareUpdaterPage";
 import { NAV_ITEMS, getNavItem, type PageId } from "./navigation";
 import {
+  readManagedModeEnabled,
   readSidebarCollapsed,
   readThemePreference,
   resolveTheme,
   type ThemePreference,
+  writeManagedModeEnabled,
   writeSidebarCollapsed,
   writeThemePreference,
 } from "./preferences";
@@ -76,7 +78,16 @@ function BridgeBadge({ state }: { state: BridgeState }) {
   return <span className="status-badge good">Native bridge connected</span>;
 }
 
-function AppManagerBadge({ state }: { state: AppManagerRuntimeStatus | null }) {
+function AppManagerBadge({
+  state,
+  managedEnabled,
+}: {
+  state: AppManagerRuntimeStatus | null;
+  managedEnabled: boolean;
+}) {
+  if (!managedEnabled) {
+    return <span className="status-badge neutral">Standalone · Offline</span>;
+  }
   if (!state) {
     return <span className="status-badge neutral">App Manager checking…</span>;
   }
@@ -260,12 +271,18 @@ function SettingsPage({
   sidebarCollapsed,
   onSidebarChange,
   appManagerState,
+  managedEnabled,
+  onManagedModeChange,
+  managedModeError,
 }: {
   theme: ThemePreference;
   onThemeChange: (theme: ThemePreference) => void;
   sidebarCollapsed: boolean;
   onSidebarChange: (collapsed: boolean) => void;
   appManagerState: AppManagerRuntimeStatus | null;
+  managedEnabled: boolean;
+  onManagedModeChange: (enabled: boolean) => void;
+  managedModeError: string | null;
 }) {
   return (
     <div className="page-stack">
@@ -318,11 +335,40 @@ function SettingsPage({
           <p className="eyebrow">Central management — P8</p>
           <h2 id="app-manager-heading">App Manager</h2>
           <p className="muted">
-            PC Manager connects outbound only. It does not open an inbound port,
-            and remote actions are restricted to a typed allow-list.
+            Local maintenance works without an account or Internet connection.
+            Turn on managed mode only when you want optional outbound App
+            Manager coordination. No inbound port or remote shell is added.
           </p>
         </div>
-        <AppManagerBadge state={appManagerState} />
+        <div className="setting-row">
+          <div>
+            <strong>Central management</strong>
+            <span>
+              {managedEnabled
+                ? "On: optional signed gateway sync is enabled."
+                : "Off: standalone mode; no automatic gateway sync."}
+            </span>
+          </div>
+          <button
+            aria-label="Enable central management"
+            aria-pressed={managedEnabled}
+            className="toggle-button"
+            onClick={() => onManagedModeChange(!managedEnabled)}
+            type="button"
+          >
+            {managedEnabled ? "On" : "Off"}
+          </button>
+        </div>
+        {managedModeError && (
+          <div className="info-callout health-error" role="alert">
+            <strong>Could not save central management setting</strong>
+            <span>{managedModeError}</span>
+          </div>
+        )}
+        <AppManagerBadge
+          managedEnabled={managedEnabled}
+          state={appManagerState}
+        />
         <dl>
           <div>
             <dt>Device</dt>
@@ -343,7 +389,7 @@ function SettingsPage({
             <dd>{appManagerState?.device?.releaseChannel ?? "Unavailable"}</dd>
           </div>
         </dl>
-        {!appManagerState?.configured && (
+        {managedEnabled && !appManagerState?.configured && (
           <div className="info-callout">
             <strong>Gateway not configured.</strong>
             <span>
@@ -353,7 +399,7 @@ function SettingsPage({
             </span>
           </div>
         )}
-        {appManagerState?.lastError && (
+        {managedEnabled && appManagerState?.lastError && (
           <div className="info-callout health-error">
             <strong>Last App Manager connection issue</strong>
             <span>{appManagerState.lastError}</span>
@@ -377,6 +423,10 @@ export default function App() {
   );
   const [appManagerState, setAppManagerState] =
     useState<AppManagerRuntimeStatus | null>(null);
+  const [managedEnabled, setManagedEnabled] = useState(() =>
+    readManagedModeEnabled(),
+  );
+  const [managedModeError, setManagedModeError] = useState<string | null>(null);
   const [prefersDark, setPrefersDark] = useState(
     () => window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
@@ -413,6 +463,12 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!managedEnabled) {
+      // No status polling or remote sync in standalone mode.
+      setAppManagerState(null);
+      return;
+    }
+
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
 
@@ -448,7 +504,7 @@ export default function App() {
       active = false;
       if (timer !== undefined) clearTimeout(timer);
     };
-  }, []);
+  }, [managedEnabled]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = resolvedTheme;
@@ -471,6 +527,18 @@ export default function App() {
   const updateSidebar = (collapsed: boolean) => {
     setSidebarCollapsed(collapsed);
     writeSidebarCollapsed(collapsed);
+  };
+
+  const updateManagedMode = (enabled: boolean) => {
+    if (!writeManagedModeEnabled(enabled)) {
+      setManagedModeError(
+        "Local preference storage is unavailable. Managed mode was not changed.",
+      );
+      return;
+    }
+    setManagedModeError(null);
+    setAppManagerState(null);
+    setManagedEnabled(enabled);
   };
 
   const activeItem = getNavItem(page);
@@ -519,7 +587,10 @@ export default function App() {
 
         <div className="sidebar-footer">
           <BridgeBadge state={bridgeState} />
-          <AppManagerBadge state={appManagerState} />
+          <AppManagerBadge
+            managedEnabled={managedEnabled}
+            state={appManagerState}
+          />
         </div>
       </aside>
 
@@ -575,6 +646,9 @@ export default function App() {
               onSidebarChange={updateSidebar}
               onThemeChange={updateTheme}
               appManagerState={appManagerState}
+              managedEnabled={managedEnabled}
+              onManagedModeChange={updateManagedMode}
+              managedModeError={managedModeError}
               sidebarCollapsed={sidebarCollapsed}
               theme={theme}
             />
