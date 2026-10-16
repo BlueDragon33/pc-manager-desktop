@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   readManagedModeEnabled,
+  readSidebarCollapsed,
+  readThemePreference,
   resolveTheme,
   writeManagedModeEnabled,
 } from "./preferences";
@@ -61,5 +63,7 @@ describe("optional App Manager mode (offline first)", () => {
     });
     expect(readManagedModeEnabled()).toBe(false);
     expect(writeManagedModeEnabled(true)).toBe(false);
+    expect(readThemePreference()).toBe("system");
+    expect(readSidebarCollapsed()).toBe(false);
   });
 });

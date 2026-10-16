@@ -5,10 +5,14 @@ const SIDEBAR_KEY = "pc-manager.sidebar-collapsed";
 const MANAGED_MODE_KEY = "pc-manager.managed-enabled";
 
 export function readThemePreference(): ThemePreference {
-  const value = window.localStorage.getItem(THEME_KEY);
-  return value === "dark" || value === "light" || value === "system"
-    ? value
-    : "system";
+  try {
+    const value = window.localStorage.getItem(THEME_KEY);
+    return value === "dark" || value === "light" || value === "system"
+      ? value
+      : "system";
+  } catch {
+    return "system";
+  }
 }
 
 export function writeThemePreference(value: ThemePreference): void {
@@ -16,7 +20,11 @@ export function writeThemePreference(value: ThemePreference): void {
 }
 
 export function readSidebarCollapsed(): boolean {
-  return window.localStorage.getItem(SIDEBAR_KEY) === "true";
+  try {
+    return window.localStorage.getItem(SIDEBAR_KEY) === "true";
+  } catch {
+    return false;
+  }
 }
 
 export function writeSidebarCollapsed(value: boolean): void {
