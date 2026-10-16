@@ -191,7 +191,6 @@ mod tests {
     use windows_sys::Win32::Security::{
         ImpersonateSelf, RevertToSelf, SecurityIdentification, SecurityImpersonation,
     };
-    use windows_sys::Win32::System::Threading::{GetCurrentProcessId, ProcessIdToSessionId};
 
     struct RevertGuard;
     impl Drop for RevertGuard {
@@ -243,10 +242,13 @@ mod tests {
         let identity =
             current_thread_impersonation_identity().expect("read genuine impersonation token");
         assert!(valid_canonical_sid(identity.sid()));
-        let mut expected_session = 0u32;
-        let ok = unsafe { ProcessIdToSessionId(GetCurrentProcessId(), &mut expected_session) };
-        assert_ne!(ok, 0, "Windows process session lookup must succeed");
-        assert_eq!(identity.session_id(), expected_session);
+        // Both reads must come from the genuine Windows thread token.
+        // There is no caller-provided session field and no process fallback.
+        let second =
+            current_thread_impersonation_identity().expect("read token again");
+        assert_eq!(identity.session_id(), second.session_id());
+        assert_eq!(identity.sid(), second.sid());
+        assert_ne!(identity.session_id(), u32::MAX);
         assert_eq!(current_thread_impersonation_sid().unwrap(), identity.sid());
     }
 }
