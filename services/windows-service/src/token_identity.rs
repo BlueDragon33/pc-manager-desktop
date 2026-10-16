@@ -13,8 +13,8 @@ use windows_sys::Win32::Foundation::{
 };
 use windows_sys::Win32::Security::Authorization::ConvertSidToStringSidW;
 use windows_sys::Win32::Security::{
-    GetTokenInformation, SecurityImpersonation, TokenImpersonationLevel, TokenSessionId,
-    TokenUser, TOKEN_QUERY, TOKEN_USER,
+    GetTokenInformation, SecurityImpersonation, TokenImpersonationLevel, TokenSessionId, TokenUser,
+    TOKEN_QUERY, TOKEN_USER,
 };
 use windows_sys::Win32::System::Threading::{GetCurrentThread, OpenThreadToken};
 
@@ -247,9 +247,6 @@ mod tests {
         let ok = unsafe { ProcessIdToSessionId(GetCurrentProcessId(), &mut expected_session) };
         assert_ne!(ok, 0, "Windows process session lookup must succeed");
         assert_eq!(identity.session_id(), expected_session);
-        assert_eq!(
-            current_thread_impersonation_sid().unwrap(),
-            identity.sid()
-        );
+        assert_eq!(current_thread_impersonation_sid().unwrap(), identity.sid());
     }
 }
