@@ -11,7 +11,7 @@
   Push $R1
   Push $R2
 
-  StrCpy $R0 '"$INSTDIR\PC Manager Desktop.exe" "%1"'
+  StrCpy $R0 '"$INSTDIR\pc-manager-desktop.exe" "%1"'
   ReadRegStr $R1 HKCU "Software\Classes\pcmanager\shell\open\command" ""
 
   ; Existing handler with different command is owned by someone else.
@@ -40,7 +40,7 @@ pcmgr_install_done:
 !macro NSIS_HOOK_PREUNINSTALL
   Push $R0
   Push $R1
-  StrCpy $R0 '"$INSTDIR\PC Manager Desktop.exe" "%1"'
+  StrCpy $R0 '"$INSTDIR\pc-manager-desktop.exe" "%1"'
   ReadRegStr $R1 HKCU "Software\Classes\pcmanager\shell\open\command" ""
 
   ; Uninstaller must never remove a scheme owned by a different executable.
