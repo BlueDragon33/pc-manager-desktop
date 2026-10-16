@@ -18,7 +18,7 @@ try {
 
     & $helper -ExecutablePath $first
     $actual = (Get-Item -LiteralPath (Join-Path $reg 'shell\open\command')).GetValue('')
-    $expected = '"{0}" "%1"' -f ([System.IO.Path]::GetFullPath($first))
+    $expected = '"{0}"' -f ([System.IO.Path]::GetFullPath($first))
     if ($actual -ne $expected) {
         Write-Output ('Expected command: ' + $expected)
         Write-Output ('Stored command: ' + $actual)
@@ -38,12 +38,19 @@ try {
     & $helper -ExecutablePath $first -Unregister
     if (Test-Path -LiteralPath $reg) { throw 'Unregister left protocol key behind.' }
 
-    Write-Output 'PASS pcmanager:// current-user register/idempotence/conflict/unregister'
+    # A bare foreign key must not be overwritten just because it lacks a command.
+    New-Item -Path $reg -Force | Out-Null
+    $rejected = $false
+    try { & $helper -ExecutablePath $first } catch { $rejected = $true }
+    if (-not $rejected) { throw 'A preexisting handler-less registry key must not be claimed.' }
+    Remove-Item -LiteralPath $reg -Recurse -Force
+
+    Write-Output 'PASS pcmanager:// current-user register/idempotence/conflict/unregister and bare-key refusal'
 } finally {
     # In case of test failure, only undo a registration pointing at our fixture.
     if (Test-Path -LiteralPath (Join-Path $reg 'shell\open\command')) {
         $owned = (Get-Item -LiteralPath (Join-Path $reg 'shell\open\command')).GetValue('')
-        if ($owned -eq ('"{0}" "%1"' -f ([System.IO.Path]::GetFullPath($first)))) {
+        if ($owned -eq ('"{0}"' -f ([System.IO.Path]::GetFullPath($first)))) {
             Remove-Item -LiteralPath $reg -Recurse -Force
         }
     }
