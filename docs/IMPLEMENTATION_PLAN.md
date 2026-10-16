@@ -457,7 +457,7 @@ Implementation may proceed without fabricating completion of P5–P12 manual gat
 - [x] routine CI validates the manifest without falsely requiring outstanding manual checks to pass;
 - [x] production release workflow requires `--require-ready` before packaging;
 - [x] investigate and resolve the two Critical and one Moderate npm advisories reported on 2026-10-08: upgrade the Vitest development toolchain to `^5.0.3` and regenerate the lockfile; npm audit reported zero vulnerabilities after the targeted update. CI now enforces `npm audit --audit-level=critical`;
-- [ ] design/version/authenticate the currently skeletal privileged Windows Service IPC before adding elevated operations;
+- [ ] design/version/authenticate the currently skeletal privileged Windows Service IPC before adding elevated operations — P15B1 read-only admission, P15B2 SID extraction, and P15B3 token impersonation-level/session evidence are foundations only; transport still inactive;
 - [ ] implement and test safe SQLite migrations for durable local state where warranted;
 - [ ] obtain authentic signed-install, upgrade, gateway, device and efficacy evidence for every mandatory gate.
 

@@ -71,3 +71,22 @@ and client session isolation on actual disposable Windows machines.
 
 CI proves the isolated token helper; it does not replace any of the nine
 separately tracked P13 manual production acceptance gates.
+
+## P15B3 — Verified thread-token impersonation level and session evidence (no IPC)
+
+- The read-only token helper now reads `TokenUser`, `TokenImpersonationLevel`
+  and `TokenSessionId` from the **same opened thread token**. It requires exact
+  `SecurityImpersonation`, rejecting identification/anonymous or delegation
+  levels. It refuses an invalid session marker; the resulting identity has
+  private fields and is not a `VerifiedCaller` constructor.
+- Actual disposable-Windows CI tests verify genuine `ImpersonateSelf`
+  SID/session evidence, reject identification-only impersonation and refuse
+  process-token fallback. Tests cannot demonstrate named-pipe peer identity.
+- Still **not implemented**: pipe creation, DACL, remote-client rejection,
+  `ImpersonateNamedPipeClient`/`RevertToSelf` connection lifetime, session
+  binding to a pipe's claimed endpoint, timeout, or cross-user integration.
+  Future service code must bind this token evidence to the specific
+  authenticated local pipe client before constructing `VerifiedCaller`.
+- No Service Control Manager registration, listener, elevated operation,
+  filesystem mutation, App Manager command, or Production privilege is enabled.
+  All nine P13 real-Windows release-acceptance gates remain pending.
