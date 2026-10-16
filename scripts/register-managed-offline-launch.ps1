@@ -20,10 +20,17 @@ if ([System.IO.Path]::GetFileName($exe) -ne 'PC Manager Desktop.exe') {
     throw 'Only the installed PC Manager Desktop.exe may own pcmanager://.'
 }
 
-$expectedCommand = '"{0}" "%1"' -f $exe
+# Launch-only: never forward browser-controlled URL text as an argument.
+$expectedCommand = '"{0}"' -f $exe
 $previousCommand = $null
 if (Test-Path -LiteralPath $commandKey) {
     $previousCommand = (Get-Item -LiteralPath $commandKey).GetValue('')
+}
+
+# A pre-existing protocol key without an open command may still belong to
+# another application. Do not silently claim it on registration.
+if ((Test-Path -LiteralPath $schemeKey) -and -not $previousCommand) {
+    throw 'pcmanager:// registry key exists without a matching handler. Refusing to replace it.'
 }
 
 if ($previousCommand -and
