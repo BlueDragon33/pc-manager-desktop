@@ -16,13 +16,15 @@
   StrCmp $R1 "" pcmgr_check_missing pcmgr_install_skip
 
 pcmgr_check_missing:
-  ; Do not claim an existing bare/partial protocol from another installer.
-  ; RegOpenKeyExW returns 0 for any existing key even with no default value.
-  System::Call 'advapi32::RegOpenKeyExW(p 0x80000001, w "Software\Classes\pcmanager", i 0, i 0x20019, *p .r2) i.r1'
-  IntCmp $R1 0 pcmgr_existing_key pcmgr_register_owned pcmgr_register_owned
-pcmgr_existing_key:
-  System::Call 'advapi32::RegCloseKey(p r2)'
-  Goto pcmgr_install_skip
+  ; Preserve any partial foreign scheme carrying a default name or URL Protocol.
+  ; A missing key yields errors for both checks and may be registered.
+  ClearErrors
+  ReadRegStr $R2 HKCU "Software\Classes\pcmanager" ""
+  IfErrors pcmgr_check_protocol pcmgr_install_skip
+pcmgr_check_protocol:
+  ClearErrors
+  ReadRegStr $R2 HKCU "Software\Classes\pcmanager" "URL Protocol"
+  IfErrors pcmgr_register_owned pcmgr_install_skip
 
 pcmgr_register_owned:
   WriteRegStr HKCU "Software\Classes\pcmanager" "" "URL:PC Manager Offline App"
