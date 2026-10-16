@@ -65,7 +65,10 @@ fn enter_named(mutex_name: &str, event_name: &str) -> io::Result<LaunchState> {
         }
         return Ok(LaunchState::Secondary);
     }
-    Ok(LaunchState::Primary(PrimaryInstance { _mutex: mutex, event }))
+    Ok(LaunchState::Primary(PrimaryInstance {
+        _mutex: mutex,
+        event,
+    }))
 }
 
 impl PrimaryInstance {
