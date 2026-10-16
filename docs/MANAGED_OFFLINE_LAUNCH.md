@@ -15,14 +15,17 @@ own files, registry changes or cleanup execution on the PC.
 
 The only approved local launch action is `pcmanager://open`:
 
-1. Install PC Manager Desktop on a Windows machine (signed stable release
-   after acceptance, or explicitly identified unsigned preview for testing).
-2. Explicitly register a **per-user** protocol on that machine using:
-   `./scripts/register-managed-offline-launch.ps1 -ExecutablePath '<absolute installed path>/PC Manager Desktop.exe'`
-3. Open Application Management and click the **PC Manager** app icon or
-   the **Mở PC Manager cục bộ** link in its management workspace.
-4. The browser asks Windows to open the installed local Tauri app. It does not
-   navigate to a public website or expose a local HTTP API.
+1. Install PC Manager Desktop using its Windows NSIS installer (signed Stable
+   only after acceptance; unsigned Preview for disposable Windows testing).
+   The current-user installer registers `pcmanager://` automatically in HKCU.
+2. Open Application Management on the **same Windows user account** and click
+   the PC Manager icon or **Mở PC Manager cục bộ**.
+3. Approve the browser's external-application prompt, if displayed. Windows
+   opens the packaged offline React/Tauri interface without a localhost server.
+
+The manual registration script is a recovery/portable-build fallback, not a
+normal post-install requirement. It accepts only the installed
+`pc-manager-desktop.exe` executable and must be run explicitly.
 
 The Windows protocol registration deliberately **does not forward the browser
 URL as a command-line argument**. It starts the installed executable with no
@@ -31,7 +34,7 @@ commands into the native application. The app opens its standard interface.
 The integration is a launch-only pilot, not a verified installed-app handshake.
 
 To unregister the URL scheme for the same executable:
-`./scripts/register-managed-offline-launch.ps1 -ExecutablePath '<absolute installed path>/PC Manager Desktop.exe' -Unregister`
+`./scripts/register-managed-offline-launch.ps1 -ExecutablePath '<absolute installed path>/pc-manager-desktop.exe' -Unregister`
 
 The registration helper refuses to replace another handler **or an existing
 handler-less protocol key**. It writes only
@@ -51,8 +54,13 @@ handler-less protocol key**. It writes only
   unless a separately designed and authenticated local service exists, which
   this pilot explicitly does not create.
 - Each browser click may spawn a new app instance. Single-instance handling,
-  installer-time protocol registration/unregistration, a signed installer and
-  an end-to-end launch/install/upgrade test remain separate release gates.
+  a signed installer, production install/upgrade and a browser handoff on a
+  real user's Windows machine remain separate release gates.
+- The installer registers only a missing scheme or one owned by the same
+  executable path; legacy `"%1"` entries for that exact executable are
+  migrated to the argument-free handler. Any existing foreign or incomplete
+  scheme is preserved. Uninstall removes only its own exact handler.
+- NSIS `installMode` is `currentUser`; do not silently switch to HKLM.
 - On Linux, macOS and mobile devices, PC Manager's Windows runtime is
   unavailable. Do not substitute an online or remote system-admin URL.
 - The nine real-Windows acceptance gates in `docs/release-acceptance.json`
@@ -60,7 +68,9 @@ handler-less protocol key**. It writes only
 
 ## CI proof
 
-`scripts/test-managed-offline-launch.ps1` tests registration, idempotence,
-non-overwrite of an existing different owner, and owned unregister using a
-disposable Windows runner. Browser protocol handoff still needs manual human
-verification after an actual Windows install.
+`scripts/test-managed-offline-launch.ps1` tests manual registration,
+ownership conflicts, legacy migration and unregister on a disposable Windows
+runner. Preview CI also runs `scripts/test-offline-nsis-install.ps1` against
+an actual unsigned NSIS package, checking the executable, argument-free
+handler and owned uninstall. This is not signed Production acceptance or
+proof of real browser-to-installed-application handoff.
