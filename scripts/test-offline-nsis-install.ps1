@@ -32,7 +32,7 @@ try {
     throw 'NSIS install did not create the offline launch protocol.'
   }
   $stored = [string](Get-Item -LiteralPath $commandKey).GetValue('')
-  if ($stored -notmatch '^"([^"]+\\PC Manager Desktop\.exe)" "%1"$') {
+  if ($stored -notmatch '^"([^"]+\\pc-manager-desktop\.exe)" "%1"$') {
     throw ('Unexpected pcmanager handler after NSIS install: ' + $stored)
   }
   $exePath = $Matches[1]
