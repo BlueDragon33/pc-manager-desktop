@@ -22,6 +22,9 @@ if ([System.IO.Path]::GetFileName($exe) -ne 'PC Manager Desktop.exe') {
 
 # Launch-only: never forward browser-controlled URL text as an argument.
 $expectedCommand = '"{0}"' -f $exe
+# Preserve ownership for installations registered by the earlier pilot.
+# Only the exact same executable path is eligible for this safe migration.
+$legacyCommand = '"{0}" "%1"' -f $exe
 $previousCommand = $null
 if (Test-Path -LiteralPath $commandKey) {
     $previousCommand = (Get-Item -LiteralPath $commandKey).GetValue('')
@@ -34,7 +37,8 @@ if ((Test-Path -LiteralPath $schemeKey) -and -not $previousCommand) {
 }
 
 if ($previousCommand -and
-    -not [string]::Equals($previousCommand, $expectedCommand, [StringComparison]::OrdinalIgnoreCase)) {
+    -not [string]::Equals($previousCommand, $expectedCommand, [StringComparison]::OrdinalIgnoreCase) -and
+    -not [string]::Equals($previousCommand, $legacyCommand, [StringComparison]::OrdinalIgnoreCase)) {
     throw 'pcmanager:// already belongs to a different executable. Refusing to overwrite it.'
 }
 
