@@ -531,7 +531,9 @@ export default function App() {
 
   const updateManagedMode = (enabled: boolean) => {
     if (!writeManagedModeEnabled(enabled)) {
-      setManagedModeError("Local preference storage is unavailable. Managed mode was not changed.");
+      setManagedModeError(
+        "Local preference storage is unavailable. Managed mode was not changed.",
+      );
       return;
     }
     setManagedModeError(null);
@@ -585,7 +587,10 @@ export default function App() {
 
         <div className="sidebar-footer">
           <BridgeBadge state={bridgeState} />
-          <AppManagerBadge state={appManagerState} />
+          <AppManagerBadge
+            managedEnabled={managedEnabled}
+            state={appManagerState}
+          />
         </div>
       </aside>
 
