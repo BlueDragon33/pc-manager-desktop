@@ -740,9 +740,29 @@ fn validate_request_id(request_id: &str) -> Result<(), FilesystemError> {
     }
 }
 
+#[cfg(windows)]
+mod single_instance;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    #[cfg(windows)]
+    let primary = match single_instance::enter() {
+        Ok(single_instance::LaunchState::Primary(primary)) => primary,
+        Ok(single_instance::LaunchState::Secondary) => return,
+        Err(error) => {
+            eprintln!("PC Manager cannot establish local single-instance ownership: {error}");
+            return;
+        }
+    };
+
+    let builder = tauri::Builder::default();
+    #[cfg(windows)]
+    let builder = builder.setup(move |app| {
+        primary.start_listener(app.handle().clone())?;
+        Ok(())
+    });
+
+    builder
         .manage(AppManagerRuntime::new())
         .manage(Mutex::new(CleanupPlanStore::default()))
         .manage(Mutex::new(DuplicateScanPlanStore::default()))
