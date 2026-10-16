@@ -485,6 +485,19 @@ No elevated Windows mutation, new remote command, telemetry, production release 
 
 ---
 
+## Managed offline launcher — post-P13 safety hardening
+
+- [x] APP Manager's icon uses `pcmanager://open` without a privileged browser API.
+- [x] NSIS Preview registers an owned, argument-free per-user protocol (PR #43).
+- [~] Windows single-instance mutex + activation event to reuse the visible offline Tauri window; requires exact-head Windows CI before completion.
+- [ ] Chrome/Edge → installed PC Manager repeat-click and minimize/restore behavior verified on a real user Windows machine.
+- [ ] Signed Stable, nine original P5–P12 acceptance gates and Production authorization remain pending.
+
+Uses existing Windows kernel primitives under the `windows-host` dependency
+budget, no new network provider or privileged surface.
+
+---
+
 ## Working cadence
 
 For each phase:

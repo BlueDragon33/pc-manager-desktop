@@ -20,3 +20,6 @@ pc-windows = { path = "../../../crates/pc-windows" }
 serde.workspace = true
 serde_json = "1"
 tauri = { version = "2", features = [] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_Security", "Win32_System_Threading"] }

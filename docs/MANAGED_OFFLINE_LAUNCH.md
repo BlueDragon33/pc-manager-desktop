@@ -53,9 +53,13 @@ handler-less protocol key**. It writes only
   Rehosting the frontend on `http://127.0.0.1` would disable native operations
   unless a separately designed and authenticated local service exists, which
   this pilot explicitly does not create.
-- Each browser click may spawn a new app instance. Single-instance handling,
-  a signed installer, production install/upgrade and a browser handoff on a
-  real user's Windows machine remain separate release gates.
+- Repeat clicks on Windows use a local session mutex and activation event:
+  the second process exits after signalling the first process to show,
+  unminimize and focus its window. No browser URL or command is forwarded.
+  Windows can still restrict foreground focus.
+- Signed installation, production upgrades and the actual Chrome/Edge
+  handoff on the user's Windows machine remain separate unverified gates.
+  Mutex/event unit tests are not real browser or production acceptance.
 - The installer registers only a missing scheme or one owned by the same
   executable path; legacy `"%1"` entries for that exact executable are
   migrated to the argument-free handler. Any existing foreign or incomplete
