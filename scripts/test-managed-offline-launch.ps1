@@ -35,6 +35,13 @@ try {
     $actual = (Get-Item -LiteralPath (Join-Path $reg 'shell\open\command')).GetValue('')
     if ($actual -ne $expected) { throw 'Registration was overwritten by competitor.' }
 
+    # Migrate only the exact legacy handler owned by this executable.
+    $legacy = '"{0}" "%1"' -f ([System.IO.Path]::GetFullPath($first))
+    Set-Item -LiteralPath (Join-Path $reg 'shell\open\command') -Value $legacy
+    & $helper -ExecutablePath $first
+    $actual = (Get-Item -LiteralPath (Join-Path $reg 'shell\open\command')).GetValue('')
+    if ($actual -ne $expected) { throw 'Legacy handler did not migrate safely.' }
+
     & $helper -ExecutablePath $first -Unregister
     if (Test-Path -LiteralPath $reg) { throw 'Unregister left protocol key behind.' }
 
