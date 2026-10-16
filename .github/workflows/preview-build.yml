@@ -55,6 +55,13 @@ jobs:
           Get-ChildItem target/release/bundle/nsis/*.exe | Copy-Item -Destination artifacts
           "UNSIGNED PREVIEW BUILD - DO NOT DISTRIBUTE AS PRODUCTION" | Set-Content artifacts/UNSIGNED_PREVIEW.txt
 
+      - name: Verify offline protocol registration on disposable Windows
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem target/release/bundle/nsis/*.exe | Select-Object -First 1
+          if (-not $installer) { throw 'Unsigned NSIS installer missing.' }
+          ./scripts/test-offline-nsis-install.ps1 -InstallerPath $installer.FullName
+
       - name: Generate preview metadata and checksums
         shell: pwsh
         run: |
