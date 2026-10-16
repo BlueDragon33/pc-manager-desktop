@@ -16,8 +16,8 @@ $schemeKey = 'HKCU:\Software\Classes\pcmanager'
 $commandKey = Join-Path $schemeKey 'shell\open\command'
 $exe = [System.IO.Path]::GetFullPath($ExecutablePath)
 
-if ([System.IO.Path]::GetFileName($exe) -ne 'PC Manager Desktop.exe') {
-    throw 'Only the installed PC Manager Desktop.exe may own pcmanager://.'
+if ([System.IO.Path]::GetFileName($exe) -ne 'pc-manager-desktop.exe') {
+    throw 'Only the installed pc-manager-desktop.exe may own pcmanager://.'
 }
 
 $expectedCommand = '"{0}" "%1"' -f $exe
@@ -42,7 +42,7 @@ if ($Unregister) {
 }
 
 if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) {
-    throw 'PC Manager Desktop.exe not found; install the Windows application first.'
+    throw 'pc-manager-desktop.exe not found; install the Windows application first.'
 }
 
 # No global HKLM registration; this is intentionally current-user scoped.
