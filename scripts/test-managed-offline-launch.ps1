@@ -2,8 +2,8 @@
 $ErrorActionPreference = 'Stop'
 $helper = Join-Path $PSScriptRoot 'register-managed-offline-launch.ps1'
 $root = Join-Path $env:TEMP ("pc-manager-launch-" + [guid]::NewGuid().ToString('N'))
-$first = Join-Path $root 'a\PC Manager Desktop.exe'
-$second = Join-Path $root 'b\PC Manager Desktop.exe'
+$first = Join-Path $root 'a\pc-manager-desktop.exe'
+$second = Join-Path $root 'b\pc-manager-desktop.exe'
 $reg = 'HKCU:\Software\Classes\pcmanager'
 try {
     New-Item (Split-Path $first) -ItemType Directory -Force | Out-Null
