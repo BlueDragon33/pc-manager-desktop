@@ -244,8 +244,7 @@ mod tests {
         assert!(valid_canonical_sid(identity.sid()));
         // Both reads must come from the genuine Windows thread token.
         // There is no caller-provided session field and no process fallback.
-        let second =
-            current_thread_impersonation_identity().expect("read token again");
+        let second = current_thread_impersonation_identity().expect("read token again");
         assert_eq!(identity.session_id(), second.session_id());
         assert_eq!(identity.sid(), second.sid());
         assert_ne!(identity.session_id(), u32::MAX);
