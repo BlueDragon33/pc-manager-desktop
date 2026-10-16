@@ -27,6 +27,12 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"]
+    "targets": ["nsis"],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "installerHooks": "./windows/offline-launch-hooks.nsh"
+      }
+    }
   }
 }
