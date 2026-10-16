@@ -31,14 +31,14 @@ installed PC Manager executable.
 
 The manual per-user script remains available for development, portable builds
 and explicit repair; it is no longer required after a normal NSIS install:
-`./scripts/register-managed-offline-launch.ps1 -ExecutablePath '<absolute installed path>/PC Manager Desktop.exe'`.
+`./scripts/register-managed-offline-launch.ps1 -ExecutablePath '<absolute installed path>/pc-manager-desktop.exe'`.
 
 The installed application currently ignores command-line URL parameters. It
 opens its standard interface and does **not** interpret URLs as commands.
 The integration is a launch-only pilot, not a verified installed-app handshake.
 
 To unregister the URL scheme for the same executable:
-`./scripts/register-managed-offline-launch.ps1 -ExecutablePath '<absolute installed path>/PC Manager Desktop.exe' -Unregister`
+`./scripts/register-managed-offline-launch.ps1 -ExecutablePath '<absolute installed path>/pc-manager-desktop.exe' -Unregister`
 
 The registration helper refuses to replace another handler. It writes only
 `HKCU:\Software\Classes\pcmanager` after explicit local invocation, never
