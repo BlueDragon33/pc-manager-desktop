@@ -489,7 +489,7 @@ No elevated Windows mutation, new remote command, telemetry, production release 
 
 - [x] APP Manager's icon uses `pcmanager://open` without a privileged browser API.
 - [x] NSIS Preview registers an owned, argument-free per-user protocol (PR #43).
-- [~] Windows single-instance mutex + activation event to reuse the visible offline Tauri window; requires exact-head Windows CI before completion.
+- [x] Windows single-instance mutex + activation event is implemented and passed exact-HEAD Windows CI and unsigned Preview in merged PR #44; real-browser user acceptance remains pending.
 - [ ] Chrome/Edge → installed PC Manager repeat-click and minimize/restore behavior verified on a real user Windows machine.
 - [ ] Signed Stable, nine original P5–P12 acceptance gates and Production authorization remain pending.
 
@@ -513,3 +513,31 @@ For each phase:
 9. proceed only after the acceptance gate passes.
 
 P12 implementation is present, but its manual Windows acceptance remains pending. P13 is the release-readiness hardening phase; no production release is authorized until all evidence and signing gates are satisfied.
+
+## Offline-first managed-mode vertical slice — governance-aligned product work
+
+Source: active Hub `control/development-runtime-policy.v1.json` under
+Constitution 1.3.0; Hub PR #141/#147 remain candidates and are not adopted.
+
+Goal: a Windows user runs PC Manager locally with no gateway account, network,
+approval or cloud runtime; the user may **explicitly opt in** to outbound
+App Manager synchronization later.
+
+- [~] Settings offers Central management OFF (default) / ON using local
+  persisted preference; OFF stops new UI-scheduled synchronization.
+- [~] Typed native local capabilities remain reachable regardless of mode.
+- [~] Frontend unit tests cover fresh install, explicit ON/OFF persistence,
+  and storage-denied fail-closed behavior; exact-HEAD CI required.
+- [ ] Real installed Windows device: disconnect Internet; open Overview,
+  run Health Check and Smart Clean scan preview; restart and verify
+  theme/sidebar/managed-mode preference persistence and error recovery.
+- [ ] With managed OFF, independently observe no App Manager outbound
+  traffic. Toggle ON with a configured safe test gateway, verify status,
+  toggle OFF and confirm no subsequent scheduled sync. In-flight calls
+  may complete before OFF; never claim instantaneous network cancellation.
+- [ ] Browser `pcmanager://open` handoff, signed installer/state upgrade
+  and nine mandatory production gates remain separately UNVERIFIED.
+
+Completion predicate: actual offline-local user journeys and persistence
+evidence (exact build + expected/actual + tester), not source/UI or CI alone.
+No new hub policy, remote runtime, package dependency or Product PASS.

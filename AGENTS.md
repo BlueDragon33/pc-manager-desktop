@@ -243,9 +243,12 @@ Stop implementation and report clearly when:
 Do not bypass these constraints merely to make a demo appear successful.
 
 
-## 13. Constitution 1.2 dependency sovereignty
+## 13. Constitution 1.3.0 dependency sovereignty
 
-This repository adopts `blueprint-os:universal-century-grade@1.2.0` at B4.
+This repository adopts `blueprint-os:universal-century-grade@1.3.0` at B4
+(`STRUCTURED`). The effective source is the published Constitution on
+`BlueDragon33/Software-Blueprint-Hub` `main` and the adoption manifest,
+not candidate PRs.
 
 The mandatory operational-sovereignty rule is:
 
@@ -262,3 +265,28 @@ Non-negotiable consequences:
 7. Any new external dependency must update `.blueprint/dependency-budget.json` with purpose, data boundary, degraded behavior and exit path.
 
 Every AI coding task must preserve `.blueprint/constitution-adoption.json` and the dependency budget. Do not weaken the validator merely to make CI green.
+
+## 14. Operational mode — offline-first development (effective owner policy)
+
+Source of authority: the **Hub's** `control/development-runtime-policy.v1.json`
+and `docs/DEVELOPMENT_RELEASE_POLICY.md`. Do not duplicate their
+normative schema or import unratified candidate contracts into this app.
+
+- PC Manager's accepted product goal is useful, safe local Windows
+  maintenance, accessible through its native offline WebView2/Tauri
+  interface. APP Manager is optional coordination, not a prerequisite.
+- Default central-management mode is **OFF**. Only explicit locally
+  persisted ON enables optional synchronization. OFF never blocks local
+  health/clean/startup/restore/monitor features.
+- `main`, a PR merge, green CI and an unsigned NSIS Preview are **not**
+  deployment or end-user acceptance. All nine signed/real-Windows
+  production gates remain pending until authenticated evidence exists.
+- Use a single product-goal-critical work package; prefer executable
+  offline flows, restored state and error recovery over repeated PR/status
+  checking or new governance dashboards.
+- For every slice, record exact HEAD, implementation/CI evidence, what
+  remains unverified and one next user-valued action. R15–R27 already
+  govern this; PR #141/#147 proposals are **not** active Constitution.
+- A release or Windows destructive/privileged escalation still requires
+  its existing separate authority. Never build a second registry, a
+  generic privileged pipe, or a cloud dependency for core work.
