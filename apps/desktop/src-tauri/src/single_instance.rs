@@ -10,8 +10,8 @@ use windows_sys::Win32::System::Threading::{
     CreateEventW, CreateMutexW, SetEvent, WaitForSingleObject, INFINITE,
 };
 
-const MUTEX: &str = "Local\BlueDragon33.PCManagerDesktop.Singleton.v1";
-const EVENT: &str = "Local\BlueDragon33.PCManagerDesktop.Activate.v1";
+const MUTEX: &str = r"Local\BlueDragon33.PCManagerDesktop.Singleton.v1";
+const EVENT: &str = r"Local\BlueDragon33.PCManagerDesktop.Activate.v1";
 
 struct OwnedHandle(HANDLE);
 // A Win32 kernel handle may be waited on and closed from another thread.
@@ -102,8 +102,8 @@ mod tests {
     fn duplicate_launch_signals_the_primary_without_another_instance() {
         let id = NEXT.fetch_add(1, Ordering::Relaxed);
         let suffix = format!("{}.{}", std::process::id(), id);
-        let mutex = format!("Local\PCManager.Test.Singleton.{suffix}");
-        let event = format!("Local\PCManager.Test.Activate.{suffix}");
+        let mutex = format!(r"Local\PCManager.Test.Singleton.{suffix}");
+        let event = format!(r"Local\PCManager.Test.Activate.{suffix}");
         let first = enter_named(&mutex, &event).expect("first instance");
         let LaunchState::Primary(primary) = first else {
             panic!("first process must own its named mutex");

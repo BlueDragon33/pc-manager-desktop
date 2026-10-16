@@ -2161,7 +2161,6 @@ dependencies = [
 name = "pc-manager-desktop"
 version = "0.1.0"
 dependencies = [
- "windows-sys 0.61.2",
  "app-manager-client",
  "pc-core",
  "pc-monitor",
@@ -2171,6 +2170,7 @@ dependencies = [
  "serde_json",
  "tauri",
  "tauri-build",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
