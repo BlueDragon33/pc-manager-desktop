@@ -1,4 +1,4 @@
-//! P15B2: server-side Windows thread-token identity primitive.
+//! P15B3: Windows thread-token SID, impersonation-level and session evidence.
 //!
 //! Reads ONLY a genuine thread impersonation token. There is no process-token
 //! fallback and no API accepting a caller-supplied SID/PID. A later named-pipe
@@ -12,7 +12,10 @@ use windows_sys::Win32::Foundation::{
     CloseHandle, GetLastError, LocalFree, ERROR_NO_TOKEN, HANDLE,
 };
 use windows_sys::Win32::Security::Authorization::ConvertSidToStringSidW;
-use windows_sys::Win32::Security::{GetTokenInformation, TokenUser, TOKEN_QUERY, TOKEN_USER};
+use windows_sys::Win32::Security::{
+    GetTokenInformation, SecurityImpersonation, TokenImpersonationLevel, TokenSessionId,
+    TokenUser, TOKEN_QUERY, TOKEN_USER,
+};
 use windows_sys::Win32::System::Threading::{GetCurrentThread, OpenThreadToken};
 
 use crate::admission::valid_canonical_sid;
@@ -20,11 +23,29 @@ use crate::admission::valid_canonical_sid;
 const MAX_TOKEN_INFORMATION_BYTES: usize = 8_192;
 const MAX_SID_UTF16_UNITS: usize = 184;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ThreadTokenIdentity {
+    sid: String,
+    session_id: u32,
+}
+
+impl ThreadTokenIdentity {
+    pub fn sid(&self) -> &str {
+        &self.sid
+    }
+
+    pub fn session_id(&self) -> u32 {
+        self.session_id
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TokenIdentityError {
     NoImpersonation,
     TokenUnavailable,
     InvalidTokenInformation,
+    InsufficientImpersonationLevel,
+    InvalidSession,
     InvalidSid,
 }
 
@@ -38,12 +59,30 @@ impl Drop for TokenHandle {
     }
 }
 
-/// Obtains the SID represented by the *current thread's impersonation token*.
-///
-/// This is not yet proof that a named-pipe client has been authenticated:
-/// the transport must first safely impersonate that exact connected client,
-/// reject remote access and revalidate server-side session/ownership policy.
-pub fn current_thread_impersonation_sid() -> Result<String, TokenIdentityError> {
+/// Reads a 32-bit token property from the current Windows token, not from
+/// caller-provided JSON fields. Reject missing and unexpectedly sized values.
+fn read_token_dword(token: HANDLE, information_class: i32) -> Result<u32, TokenIdentityError> {
+    let mut value: u32 = 0;
+    let mut returned: u32 = 0;
+    let ok = unsafe {
+        GetTokenInformation(
+            token,
+            information_class,
+            (&mut value as *mut u32).cast(),
+            size_of::<u32>() as u32,
+            &mut returned,
+        )
+    };
+    if ok == 0 || returned != size_of::<u32>() as u32 {
+        return Err(TokenIdentityError::InvalidTokenInformation);
+    }
+    Ok(value)
+}
+
+/// The SID, token session ID and impersonation level all come from the SAME
+/// current thread impersonation token. SecurityIdentification and delegation
+/// tokens cannot be promoted into local service authorization.
+pub fn current_thread_impersonation_identity() -> Result<ThreadTokenIdentity, TokenIdentityError> {
     let mut raw_token: HANDLE = ptr::null_mut();
     // SAFETY: GetCurrentThread returns a valid pseudohandle; token access is
     // read-only and the resulting real handle is closed by TokenHandle.
@@ -59,6 +98,18 @@ pub fn current_thread_impersonation_sid() -> Result<String, TokenIdentityError> 
         return Err(TokenIdentityError::TokenUnavailable);
     }
     let token = TokenHandle(raw_token);
+
+    // SecurityIdentification tokens can report a SID but are not sufficient
+    // for a future local IPC impersonation authorization decision.
+    // SecurityDelegation is unnecessary for a machine-local service.
+    let level = read_token_dword(token.0, TokenImpersonationLevel)?;
+    if level != SecurityImpersonation as u32 {
+        return Err(TokenIdentityError::InsufficientImpersonationLevel);
+    }
+    let session_id = read_token_dword(token.0, TokenSessionId)?;
+    if session_id == u32::MAX {
+        return Err(TokenIdentityError::InvalidSession);
+    }
 
     let mut required: u32 = 0;
     unsafe {
@@ -122,13 +173,25 @@ pub fn current_thread_impersonation_sid() -> Result<String, TokenIdentityError> 
     if !valid_canonical_sid(&result) {
         return Err(TokenIdentityError::InvalidSid);
     }
-    Ok(result)
+    Ok(ThreadTokenIdentity {
+        sid: result,
+        session_id,
+    })
+}
+
+/// Compatibility helper that retains the strict level and session validation.
+/// The returned SID alone still cannot authorize a named-pipe client.
+pub fn current_thread_impersonation_sid() -> Result<String, TokenIdentityError> {
+    current_thread_impersonation_identity().map(|identity| identity.sid)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use windows_sys::Win32::Security::{ImpersonateSelf, RevertToSelf, SecurityImpersonation};
+    use windows_sys::Win32::Security::{
+        ImpersonateSelf, RevertToSelf, SecurityIdentification, SecurityImpersonation,
+    };
+    use windows_sys::Win32::System::Threading::{GetCurrentProcessId, ProcessIdToSessionId};
 
     struct RevertGuard;
     impl Drop for RevertGuard {
@@ -155,6 +218,21 @@ mod tests {
     }
 
     #[test]
+    fn identification_level_cannot_be_used_for_local_service_identity() {
+        std::thread::spawn(|| {
+            let ok = unsafe { ImpersonateSelf(SecurityIdentification) };
+            assert_ne!(ok, 0, "fixture requires identification-only token");
+            let _guard = RevertGuard;
+            assert_eq!(
+                current_thread_impersonation_identity(),
+                Err(TokenIdentityError::InsufficientImpersonationLevel)
+            );
+        })
+        .join()
+        .expect("Windows identification-level token negative test");
+    }
+
+    #[test]
     fn obtains_canonical_sid_from_real_windows_impersonation_token() {
         let impersonated = unsafe { ImpersonateSelf(SecurityImpersonation) };
         assert_ne!(
@@ -162,7 +240,16 @@ mod tests {
             "Windows test fixture must impersonate self"
         );
         let _guard = RevertGuard;
-        let sid = current_thread_impersonation_sid().expect("read impersonated token SID");
-        assert!(valid_canonical_sid(&sid));
+        let identity =
+            current_thread_impersonation_identity().expect("read genuine impersonation token");
+        assert!(valid_canonical_sid(identity.sid()));
+        let mut expected_session = 0u32;
+        let ok = unsafe { ProcessIdToSessionId(GetCurrentProcessId(), &mut expected_session) };
+        assert_ne!(ok, 0, "Windows process session lookup must succeed");
+        assert_eq!(identity.session_id(), expected_session);
+        assert_eq!(
+            current_thread_impersonation_sid().unwrap(),
+            identity.sid()
+        );
     }
 }
