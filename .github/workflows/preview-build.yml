@@ -55,13 +55,27 @@ jobs:
           Get-ChildItem target/release/bundle/nsis/*.exe | Copy-Item -Destination artifacts
           "UNSIGNED PREVIEW BUILD - DO NOT DISTRIBUTE AS PRODUCTION" | Set-Content artifacts/UNSIGNED_PREVIEW.txt
 
+      - name: Build disposable higher-version unsigned NSIS package (P19 pilot)
+        shell: pwsh
+        run: |
+          $baseVersion = [version](Get-Content apps/desktop/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          $nextVersion = "$($baseVersion.Major).$($baseVersion.Minor).$($baseVersion.Build + 1)"
+          $configPath = Join-Path $env:RUNNER_TEMP 'pc-manager-p19-version-only.json'
+          @{version=$nextVersion} | ConvertTo-Json -Compress | Set-Content -LiteralPath $configPath -Encoding utf8NoBOM
+          npm --workspace @pc-manager/desktop run tauri -- build --bundles nsis --config $configPath
+          if ($LASTEXITCODE -ne 0) { throw 'P19 version-override build failed.' }
+          $candidate = Get-ChildItem target/release/bundle/nsis/*.exe | Where-Object { $_.Name -match "_$([regex]::Escape($nextVersion))_x64-setup\\.exe$" } | Select-Object -First 1
+          if (-not $candidate) { throw "P19 unsigned candidate package not found for version $nextVersion." }
+          Copy-Item -LiteralPath $candidate.FullName -Destination (Join-Path $env:RUNNER_TEMP 'pc-manager-p19-unsigned-upgrade.exe')
+          # The candidate lives only in RUNNER_TEMP, never in distributable Preview artifacts.
+
       - name: Verify real NSIS install and offline protocol lifecycle on disposable Windows
         shell: pwsh
         run: |
           $installer = Get-ChildItem target/release/bundle/nsis/*.exe | Select-Object -First 1
           if (-not $installer) { throw 'Unsigned preview installer missing.' }
           $revision = if ("${{ github.event_name }}" -eq "pull_request") { "${{ github.event.pull_request.head.sha }}" } else { "${{ github.sha }}" }
-          ./scripts/test-offline-nsis-install.ps1 -InstallerPath $installer.FullName -RuntimeEvidencePath artifacts/offline-runtime-evidence.json -RepairEvidencePath artifacts/offline-repair-runtime-evidence.json -SourceRevision $revision
+          ./scripts/test-offline-nsis-install.ps1 -InstallerPath $installer.FullName -RuntimeEvidencePath artifacts/offline-runtime-evidence.json -RepairEvidencePath artifacts/offline-repair-runtime-evidence.json -UpgradeInstallerPath (Join-Path $env:RUNNER_TEMP 'pc-manager-p19-unsigned-upgrade.exe') -UpgradeEvidencePath artifacts/offline-version-transition-evidence.json -SourceRevision $revision
 
       - name: Generate preview metadata and checksums
         shell: pwsh
@@ -85,5 +99,6 @@ jobs:
           path: |
             artifacts/offline-runtime-evidence.json
             artifacts/offline-repair-runtime-evidence.json
+            artifacts/offline-version-transition-evidence.json
           if-no-files-found: warn
           retention-days: 14

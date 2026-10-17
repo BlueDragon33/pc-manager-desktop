@@ -605,3 +605,26 @@ Incremental, non-destructive test-only critical path after P17:
 - [ ] This is *not* a version-to-version upgrade, signed installer migration,
   CNG identity migration or user-device acceptance. The nine P5–P12 manual
   release gates are unaffected. No data deletion or privileged IPC.
+
+## P19 — disposable unsigned version-transition pilot
+
+Work package: evidence of state retention across **different NSIS bundle version
+labels** on the same disposable Windows runner. Baseline is the actual Preview
+version; candidate is built from the **same checked-out source** with a temporary
+Tauri CLI `--config` override bumping the patch version. The candidate never
+enters distributable Preview artifacts and the repository version is unchanged.
+
+- [x] Enforce distinct, increasing semantic bundle version labels and distinct
+  installer SHA256 checksums before replacing the installed package.
+- [x] Build the version-only candidate in CI; after P18 same-version repair,
+  invoke the higher-version installer with the app closed. Verify the owned
+  argument-free HKCU handler and executable still exist, then launch REAL UIA
+  to read managed OFF, dark theme, compact sidebar and persisted Health report.
+- [x] Emit SHA-bound independent version-transition evidence with the version
+  pair, both installer hashes, verification mode and explicit signed/rollback
+  disclaimers; do not distribute the synthetic candidate.
+- [ ] Exact-HEAD CI and Windows Preview evidence must PASS before merge.
+- [ ] A real earlier source release upgraded to a newer source release, signed
+  installation/upgrade and signer trust, installer failure mid-transaction,
+  automatic rollback, personal Windows airgap and P5–P12 release gates remain
+  UNVERIFIED. No user files are cleaned and no privileged IPC is enabled.
