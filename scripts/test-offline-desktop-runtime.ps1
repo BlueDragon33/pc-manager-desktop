@@ -22,7 +22,7 @@ function Find-UI($root,[string]$name,[int]$seconds=25){
   if($null -ne $e){return $e}
   Start-Sleep -Milliseconds 500
  }while([datetime]::UtcNow -lt $deadline)
- if($name -eq 'Preview total'){
+ if($name -eq 'Exactly where the preview came from'){
   $markers=@()
   foreach($signal in @('Scanning explicit temp and cache roots…','Smart Clean preview could not complete','Cancel scan','Scan cleanup candidates','Exactly where the preview came from')){
    try{
@@ -106,9 +106,12 @@ try{
  Record 'health' 'PASS' 'Actual Windows read-only scan completed.'
  Click-UI $ui 'Smart Clean'
  Click-UI $ui 'Scan cleanup candidates'
- $null=Find-UI $ui 'Preview total' 120
- $null=Find-UI $ui 'Exactly where the preview came from'
- Record 'clean' 'PASS' 'Provider preview completed; no Delete invoked.'
+ # UI Automation may coalesce the non-interactive eyebrow "Preview total"
+ # into its parent. Both following controls are rendered only when the actual
+ # native scan has returned a completed CleanupScanSummary (not during scan).
+ $null=Find-UI $ui 'Exactly where the preview came from' 120
+ $null=Find-UI $ui 'Scan again' 15
+ Record 'clean' 'PASS' 'Native scan returned a complete provider preview; no Delete invoked.'
  Click-UI $ui 'Settings'
  $null=Find-UI $ui 'Off: standalone mode; no automatic gateway sync.'
  Click-UI $ui 'Enable central management'
