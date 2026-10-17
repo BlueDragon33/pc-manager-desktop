@@ -589,3 +589,19 @@ restart readback. Builds on verified P16; no privilege or remote runtime.
 - [ ] Signed upgrade, whole-PC Internet disconnected acceptance, verified
   real gateway traffic, personal Windows acceptance and original nine
   P5-P12 gates stay separate and pending. P17 cannot mark these PASS.
+
+## P18 — unsigned NSIS same-version repair persistence pilot
+
+Incremental, non-destructive test-only critical path after P17:
+- [x] After a true unsigned NSIS install, run the P17 native UIA test under
+  scoped outbound deny and close the process.
+- [x] Invoke the **same** unsigned NSIS installer silently a second time on
+  the same disposable Windows runner; verify executable and owned HKCU
+  argument-free protocol handler are still correct.
+- [x] Reopen the actual native Tauri/WebView2 app with outbound deny and
+  require retained local theme, sidebar, managed OFF and saved Health report.
+  Generate a separate exact-revision PASS/FAIL JSON artifact.
+- [ ] Exact-HEAD Preview and all CI gates must pass before merge.
+- [ ] This is *not* a version-to-version upgrade, signed installer migration,
+  CNG identity migration or user-device acceptance. The nine P5–P12 manual
+  release gates are unaffected. No data deletion or privileged IPC.

@@ -2,7 +2,8 @@
 param(
  [Parameter(Mandatory=$true)][string]$ExecutablePath,
  [Parameter(Mandatory=$true)][string]$EvidencePath,
- [Parameter(Mandatory=$true)][string]$SourceRevision
+ [Parameter(Mandatory=$true)][string]$SourceRevision,
+ [switch]$VerifyStoredStateOnly
 )
 $ErrorActionPreference='Stop'
 $checks=[System.Collections.Generic.List[object]]::new()
@@ -123,6 +124,19 @@ try{
  }
  $scope='APP_AND_WEBVIEW2_OUTBOUND_BLOCKED'
  Record 'network' 'PASS' "Outbound denied for $($paths.Count) binaries, not whole-machine airgap."
+ if($VerifyStoredStateOnly){
+  # This is a second *real* installed launch after same-version NSIS repair.
+  # Require state created in the earlier native smoke; no browser mock.
+  $ui=Open-App
+  if($null -eq $ui){throw 'No UI Automation root after repair reinstall.'}
+  Click-UI $ui 'Settings'
+  $null=Find-UI $ui 'Off: standalone mode; no automatic gateway sync.'
+  $null=Find-UI $ui 'Dark theme selected'
+  $null=Find-UI $ui 'Compact sidebar on'
+  Click-UI $ui 'Health Check'
+  $null=Find-UI $ui 'Latest completed scan' 30
+  Record 'repair-state' 'PASS' 'Same-version unsigned NSIS repair retained managed OFF, appearance and Health report in real WebView2.'
+ }else{
  $ui=Open-App
  if($null -eq $ui){throw 'No UI Automation root.'}
  $null=Find-UI $ui 'Health Check V1 is ready' 30
@@ -173,6 +187,7 @@ try{
  $null=Find-UI $ui 'Dark theme selected'
  $null=Find-UI $ui 'Compact sidebar on'
  Record 'restart-off' 'PASS' 'Explicit OFF and local appearance persisted after second process restart.'
+ }
  $success=$true
 }catch{
  Record 'runtime' 'FAIL' $_.Exception.Message
@@ -187,6 +202,7 @@ try{
   sourceRevision=$SourceRevision
   checkoutRevision=(git rev-parse HEAD)
   kind='native-ui-automation-not-human-acceptance'
+  verificationMode=$(if($VerifyStoredStateOnly){'unsigned-same-version-repair'}else{'native-offline-smoke'})
   networkScope=$scope
   productionSigned=$false
   userWindowsAccepted=$false
