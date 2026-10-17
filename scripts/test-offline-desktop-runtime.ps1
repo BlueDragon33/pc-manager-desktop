@@ -166,7 +166,8 @@ try{
  $null=Find-UI $ui 'Off: standalone mode; no automatic gateway sync.'
  Close-App
  $ui=Open-App
- $null=Find-UI $ui 'Standalone · Offline' 30
+ # Compact sidebar hides its badge from the UIA tree. Verify the persisted
+ # OFF value through the visible Settings view rather than the hidden badge.
  Click-UI $ui 'Settings'
  $null=Find-UI $ui 'Off: standalone mode; no automatic gateway sync.'
  $null=Find-UI $ui 'Dark theme selected'
