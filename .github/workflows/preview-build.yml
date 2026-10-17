@@ -112,6 +112,13 @@ jobs:
           if (-not $oldInstaller) { throw 'Pinned old NSIS installer not found.' }
           $oldExe = Join-Path $env:CARGO_TARGET_DIR 'release/pc-manager-desktop.exe'
           if (-not (Test-Path -LiteralPath $oldExe -PathType Leaf)) { throw 'Older-source executable not built.' }
+          $oldJsAssets = @(Get-ChildItem (Join-Path $baselineWorktree 'apps/desktop/dist/assets') -File -Filter '*.js')
+          if ($oldJsAssets.Count -eq 0) { throw 'Baseline compiled frontend assets unavailable.' }
+          foreach ($asset in $oldJsAssets) {
+            if (Select-String -LiteralPath $asset.FullName -SimpleMatch -Quiet -Pattern 'Offline-first state on this device') {
+              throw 'Historical baseline unexpectedly embeds the candidate Settings marker.'
+            }
+          }
           $stageDir = Join-Path $env:RUNNER_TEMP 'pc-manager-p22-baseline'
           New-Item -ItemType Directory -Force -Path $stageDir | Out-Null
           Copy-Item -LiteralPath $oldInstaller.FullName -Destination (Join-Path $stageDir $oldInstaller.Name)
@@ -138,6 +145,17 @@ jobs:
           if (-not $candidate) { throw 'P22 newer-source NSIS candidate not found.' }
           $candidateExe = 'target/release/pc-manager-desktop.exe'
           if (-not (Test-Path -LiteralPath $candidateExe -PathType Leaf)) { throw 'Candidate native exe not found.' }
+          $candidateJsAssets = @(Get-ChildItem 'apps/desktop/dist/assets' -File -Filter '*.js')
+          if ($candidateJsAssets.Count -eq 0) { throw 'Candidate compiled frontend assets unavailable.' }
+          $candidateUiMarkerEmbedded = $false
+          foreach ($asset in $candidateJsAssets) {
+            if (Select-String -LiteralPath $asset.FullName -SimpleMatch -Quiet -Pattern 'Offline-first state on this device') {
+              $candidateUiMarkerEmbedded = $true
+            }
+          }
+          if (-not $candidateUiMarkerEmbedded) {
+            throw 'New-source Settings marker did not reach the candidate frontend bundle.'
+          }
           $stageDir = Join-Path $env:RUNNER_TEMP 'pc-manager-p22-candidate'
           New-Item -ItemType Directory -Path $stageDir -Force | Out-Null
           Copy-Item -LiteralPath $candidate.FullName -Destination (Join-Path $stageDir $candidate.Name)
@@ -164,6 +182,8 @@ jobs:
             candidateExecutableSha256 = $candidateExeSha
             sameSourceCode = $false
             sourceChanged = $true
+            baselineFrontendMarkerAbsent = $true
+            candidateFrontendMarkerEmbedded = $candidateUiMarkerEmbedded
             signedTrustVerified = $false
             realUserWindowsAccepted = $false
             success = $true
