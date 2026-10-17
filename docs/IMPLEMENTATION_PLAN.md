@@ -570,3 +570,22 @@ Firewall rules are per binary and restored; no cleanup action is executed.
   error, idle, preview), without leaking raw filenames.
 - [ ] Confirm exact-HEAD Windows live UI behavior and all CI; keep blocked
   if the scan remains too slow. Do NOT treat code restructuring as acceptance.
+
+## P17 — offline preference durability and explicit recovery
+
+Work package: native local WebView2 preference failure handling and observed
+restart readback. Builds on verified P16; no privilege or remote runtime.
+
+- [x] Fail visibly and keep the current appearance in memory if localStorage
+  cannot write or read back the selected theme or sidebar value.
+- [x] Require readback equality for opt-in managed ON/OFF, retaining OFF by
+  default on missing/invalid/inaccessible storage.
+- [x] Give appearance controls stable accessibility names reflecting their
+  selected state, without changing behavior or network privileges.
+- [ ] On the exact PR head, Windows unsigned NSIS native UIA must observe:
+  Health + non-destructive Smart Clean preview, dark theme, compact sidebar,
+  managed ON surviving a process restart; managed OFF surviving another
+  restart, all under scoped outbound-deny firewall rules.
+- [ ] Signed upgrade, whole-PC Internet disconnected acceptance, verified
+  real gateway traffic, personal Windows acceptance and original nine
+  P5-P12 gates stay separate and pending. P17 cannot mark these PASS.

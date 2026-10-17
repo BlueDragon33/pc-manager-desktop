@@ -42,9 +42,10 @@ function Click-UI($root,[string]$name){
   ([System.Windows.Automation.InvokePattern]$pattern).Invoke()
   return
  }
- # WebView2 exposes some ARIA pressed buttons as TogglePattern rather than
- # InvokePattern. Only the exact opt-in toggle is eligible for this fallback.
- if($name -ne 'Enable central management' -or
+ # ARIA-pressed buttons can expose TogglePattern instead of InvokePattern.
+ # Permit only the exact, non-destructive preference controls.
+ $preferenceNames=@('Enable central management','Dark theme not selected','Compact sidebar off')
+ if($name -notin $preferenceNames -or
     $element.Current.ControlType -ne [System.Windows.Automation.ControlType]::Button){
   throw "Unsupported UIA InvokePattern for '$name' (control type: $($element.Current.ControlType.ProgrammaticName))."
  }
@@ -57,14 +58,14 @@ function Click-UI($root,[string]$name){
  # activation of this focused button. Fail closed unless UIA confirms that
  # the exact target button, not a neighboring control, holds keyboard focus.
  if(-not $element.Current.IsKeyboardFocusable){
-  throw "Managed toggle has no UIA Invoke/TogglePattern and cannot receive keyboard focus."
+  throw "Preference control has no UIA Invoke/TogglePattern and cannot receive keyboard focus."
  }
  $element.SetFocus()
  $focused=[System.Windows.Automation.AutomationElement]::FocusedElement
  if($null -eq $focused -or $focused.Current.Name -ne $name -or
     $focused.Current.ControlType -ne [System.Windows.Automation.ControlType]::Button -or
     ([string]::Join('.', $focused.GetRuntimeId())) -ne ([string]::Join('.', $element.GetRuntimeId()))){
-  throw "Managed toggle focus could not be verified; refusing blind keyboard input."
+  throw "Preference control focus could not be verified; refusing blind keyboard input."
  }
  Add-Type -AssemblyName System.Windows.Forms
  [System.Windows.Forms.SendKeys]::SendWait('{SPACE}')
@@ -143,19 +144,34 @@ try{
  Record 'clean' 'PASS' 'Native scan returned a complete provider preview; no Delete invoked.'
  Click-UI $ui 'Settings'
  $null=Find-UI $ui 'Off: standalone mode; no automatic gateway sync.'
+ Click-UI $ui 'Dark theme not selected'
+ $null=Find-UI $ui 'Dark theme selected'
+ Click-UI $ui 'Compact sidebar off'
+ $null=Find-UI $ui 'Compact sidebar on'
+ Record 'appearance' 'PASS' 'Dark theme and compact sidebar changed using real UI controls.'
  Click-UI $ui 'Enable central management'
  $null=Find-UI $ui 'On: optional signed gateway sync is enabled.'
+ Record 'managed-on' 'PASS' 'Explicit managed ON observed with outbound rules still active.'
+ Close-App
+ $ui=Open-App
+ Click-UI $ui 'Settings'
+ $null=Find-UI $ui 'Dark theme selected'
+ $null=Find-UI $ui 'Compact sidebar on'
+ $null=Find-UI $ui 'On: optional signed gateway sync is enabled.'
+ Click-UI $ui 'Health Check'
+ $null=Find-UI $ui 'Latest completed scan' 30
+ Record 'restart-on' 'PASS' 'Actual WebView2 restart restored ON, theme, sidebar and Health report.'
+ Click-UI $ui 'Settings'
  Click-UI $ui 'Enable central management'
  $null=Find-UI $ui 'Off: standalone mode; no automatic gateway sync.'
- Record 'managed' 'PASS' 'OFF-ON-OFF UI transitions observed.'
  Close-App
  $ui=Open-App
  $null=Find-UI $ui 'Standalone · Offline' 30
  Click-UI $ui 'Settings'
  $null=Find-UI $ui 'Off: standalone mode; no automatic gateway sync.'
- Click-UI $ui 'Health Check'
- $null=Find-UI $ui 'Latest completed scan' 30
- Record 'restart' 'PASS' 'Managed mode and Health report persisted after process restart.'
+ $null=Find-UI $ui 'Dark theme selected'
+ $null=Find-UI $ui 'Compact sidebar on'
+ Record 'restart-off' 'PASS' 'Explicit OFF and local appearance persisted after second process restart.'
  $success=$true
 }catch{
  Record 'runtime' 'FAIL' $_.Exception.Message

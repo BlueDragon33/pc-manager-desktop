@@ -15,8 +15,14 @@ export function readThemePreference(): ThemePreference {
   }
 }
 
-export function writeThemePreference(value: ThemePreference): void {
-  window.localStorage.setItem(THEME_KEY, value);
+/** Report storage denial instead of showing a non-persistent preference. */
+export function writeThemePreference(value: ThemePreference): boolean {
+  try {
+    window.localStorage.setItem(THEME_KEY, value);
+    return window.localStorage.getItem(THEME_KEY) === value;
+  } catch {
+    return false;
+  }
 }
 
 export function readSidebarCollapsed(): boolean {
@@ -27,8 +33,14 @@ export function readSidebarCollapsed(): boolean {
   }
 }
 
-export function writeSidebarCollapsed(value: boolean): void {
-  window.localStorage.setItem(SIDEBAR_KEY, String(value));
+/** Fail safely if the setting cannot be read back after writing. */
+export function writeSidebarCollapsed(value: boolean): boolean {
+  try {
+    window.localStorage.setItem(SIDEBAR_KEY, String(value));
+    return window.localStorage.getItem(SIDEBAR_KEY) === String(value);
+  } catch {
+    return false;
+  }
 }
 
 export function resolveTheme(
@@ -58,7 +70,7 @@ export function readManagedModeEnabled(): boolean {
 export function writeManagedModeEnabled(enabled: boolean): boolean {
   try {
     window.localStorage.setItem(MANAGED_MODE_KEY, String(enabled));
-    return true;
+    return window.localStorage.getItem(MANAGED_MODE_KEY) === String(enabled);
   } catch {
     return false;
   }

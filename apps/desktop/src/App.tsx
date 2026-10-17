@@ -270,6 +270,7 @@ function SettingsPage({
   onThemeChange,
   sidebarCollapsed,
   onSidebarChange,
+  appearanceError,
   appManagerState,
   managedEnabled,
   onManagedModeChange,
@@ -279,6 +280,7 @@ function SettingsPage({
   onThemeChange: (theme: ThemePreference) => void;
   sidebarCollapsed: boolean;
   onSidebarChange: (collapsed: boolean) => void;
+  appearanceError: string | null;
   appManagerState: AppManagerRuntimeStatus | null;
   managedEnabled: boolean;
   onManagedModeChange: (enabled: boolean) => void;
@@ -299,6 +301,7 @@ function SettingsPage({
           <div className="segmented-control">
             {(["system", "dark", "light"] as const).map((option) => (
               <button
+                aria-label={`${option[0].toUpperCase() + option.slice(1)} theme ${theme === option ? "selected" : "not selected"}`}
                 aria-pressed={theme === option}
                 className={theme === option ? "selected" : ""}
                 key={option}
@@ -317,6 +320,7 @@ function SettingsPage({
             <span>Keep navigation narrow and show labels on hover/title.</span>
           </div>
           <button
+            aria-label={`Compact sidebar ${sidebarCollapsed ? "on" : "off"}`}
             aria-pressed={sidebarCollapsed}
             className="toggle-button"
             onClick={() => onSidebarChange(!sidebarCollapsed)}
@@ -325,6 +329,12 @@ function SettingsPage({
             {sidebarCollapsed ? "On" : "Off"}
           </button>
         </div>
+        {appearanceError && (
+          <div className="info-callout health-error" role="alert">
+            <strong>Could not save appearance setting</strong>
+            <span>{appearanceError}</span>
+          </div>
+        )}
       </section>
 
       <section
@@ -427,6 +437,7 @@ export default function App() {
     readManagedModeEnabled(),
   );
   const [managedModeError, setManagedModeError] = useState<string | null>(null);
+  const [appearanceError, setAppearanceError] = useState<string | null>(null);
   const [prefersDark, setPrefersDark] = useState(
     () => window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
@@ -520,13 +531,21 @@ export default function App() {
   }, []);
 
   const updateTheme = (nextTheme: ThemePreference) => {
+    if (!writeThemePreference(nextTheme)) {
+      setAppearanceError("Local storage is unavailable. Theme was not changed.");
+      return;
+    }
+    setAppearanceError(null);
     setTheme(nextTheme);
-    writeThemePreference(nextTheme);
   };
 
   const updateSidebar = (collapsed: boolean) => {
+    if (!writeSidebarCollapsed(collapsed)) {
+      setAppearanceError("Local storage is unavailable. Sidebar was not changed.");
+      return;
+    }
+    setAppearanceError(null);
     setSidebarCollapsed(collapsed);
-    writeSidebarCollapsed(collapsed);
   };
 
   const updateManagedMode = (enabled: boolean) => {
@@ -643,6 +662,7 @@ export default function App() {
             <RestorePage />
           ) : page === "settings" ? (
             <SettingsPage
+              appearanceError={appearanceError}
               onSidebarChange={updateSidebar}
               onThemeChange={updateTheme}
               appManagerState={appManagerState}
