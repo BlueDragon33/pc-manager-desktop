@@ -681,3 +681,41 @@ preflight and the NSIS launch boundary, without granting updater authority.
 
 Do not alter privileged IPC, cleanup execution, App Manager authority,
 Production status or the nine mandatory pending P5–P12 release gates.
+
+
+## P22 — genuine two-source unsigned NSIS upgrade on disposable Windows
+
+Product goal: move from a real earlier compiled application's local state to
+a **different application source revision**, not merely a version-label bump
+of the same tree (P19–P21). Preserve offline-first, zero Production authority.
+
+- [x] Pin the older-source baseline to real main
+  `83645a56987666144020dbdc85b3eec12815d003`, fetch it into a distinct
+  detached worktree, verify Git HEAD, and compile its actual 0.1.0 Windows NSIS
+  with the normal Tauri workflow. Keep its installer in runner TEMP only.
+- [x] Require nonempty changed app source paths on the candidate HEAD, with a
+  small, meaningful Settings clarification about local user-profile ownership.
+  Build the candidate from **exact PR HEAD**, not the synthesized PR merge ref.
+- [x] Use a temporary **unsigned development-only** 0.1.1 Tauri version
+  override for the newer source while the repo declares 0.1.0; artifact
+  labels explain this distinction. This is not a Production version bump.
+- [x] Pin and compare the built baseline/candidate executable SHA256 values;
+  ensure the installed baseline and installed upgraded candidate match their
+  respective compiled bytes, and are different from each other.
+- [x] Require the newer source's Settings marker in actual post-upgrade WebView2
+  UIA. Preserve local Health report, managed OFF, dark theme and compact
+  sidebar under app/WebView2-scoped outbound deny. Retain P20 rejection cases,
+  P21 locked candidate handoff and HKCU exact handler validation.
+- [x] Emit SHA-bound `offline-two-source-build-evidence.json` and separate
+  native upgrade/readback JSON in the **unsigned Preview CI** artifacts.
+- [ ] Before merge: Constitution 1.3.0, frontend/Rust/Windows native checks,
+  PowerShell parser, NSIS installer lifecycle, real native UIA, SHA and binary
+  provenance evidence must all PASS for the exact candidate SHA. Review gate
+  and GitHub main readback are required.
+
+**Limitations:** no signed Authenticode trust, signer continuity, actual
+mid-install failure/rollback, production two-release migration contract, full
+device airgap, user Windows acceptance or P5–P12 release-gate promotion.
+The baseline is immutable historical source and the candidate is an unsigned
+CI development artifact; not an approved user update. No elevated service,
+remote shell, privileged IPC or destructive maintenance is introduced.
