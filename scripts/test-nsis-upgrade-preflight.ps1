@@ -76,8 +76,30 @@ try {
   Expect-Rejection 'wrong-checksum' 'CHECKSUM_MISMATCH' $CandidateInstallerPath $candidateVersion ('0' * 64)
   Expect-Rejection 'missing-checksum' 'BAD_HASH_FORMAT' $CandidateInstallerPath $candidateVersion ''
   Expect-Rejection 'identical-payload' 'IDENTICAL_PAYLOAD' $samePayloadCandidate $candidateVersion $baselineHash
+  # P21: an actively writable candidate must be denied before any NSIS call.
+  # This is a disposable copy, never the positive staged candidate.
+  $writableDir = Join-Path $tempRoot 'writer-open'
+  New-Item -ItemType Directory -Path $writableDir -Force | Out-Null
+  $writableCandidate = Join-Path $writableDir ([IO.Path]::GetFileName($CandidateInstallerPath))
+  Copy-Item -LiteralPath $CandidateInstallerPath -Destination $writableCandidate
+  $writer = [IO.File]::Open($writableCandidate, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::ReadWrite)
+  $observedHandoff = $null
+  try {
+    try {
+      $null = & "$PSScriptRoot/invoke-pinned-nsis-candidate.ps1" -BaselineInstallerPath $BaselineInstallerPath -CandidateInstallerPath $writableCandidate -ExpectedCandidateVersion $candidateVersion -ExpectedCandidateSha256 $ExpectedCandidateSha256
+    } catch {
+      $observedHandoff = $_.Exception.Message
+    }
+  } finally {
+    $writer.Dispose()
+  }
+  if ($null -eq $observedHandoff -or -not $observedHandoff.Contains('P21_REJECT:CANDIDATE_NOT_LOCKABLE')) {
+    throw "P21 open-writer handoff was not denied as expected: $observedHandoff"
+  }
   Check-Installed-Identity
-  Evidence 'post-rejection-identity' 'PASS' 'Installed executable SHA and owned HKCU handler unchanged after all seven denied candidates.'
+  Evidence 'open-writer-handoff' 'PASS' 'Active writable handle rejected by pinned handoff before NSIS; installed state unchanged.'
+  Check-Installed-Identity
+  Evidence 'post-rejection-identity' 'PASS' 'Installed executable SHA and owned HKCU handler unchanged after all eight denied candidates.'
   & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $ExecutablePath -EvidencePath ($EvidencePath + '.uia.json') -SourceRevision $SourceRevision -VerifyStoredStateOnly -StoredStateContext rejected-upgrade-preflight
   $uiProof = Get-Content -LiteralPath ($EvidencePath + '.uia.json') -Raw | ConvertFrom-Json
   if (-not $uiProof.success -or $uiProof.verificationMode -ne 'rejected-upgrade-preflight') { throw 'Real WebView2 post-rejection state readback failed or misclassified.' }
