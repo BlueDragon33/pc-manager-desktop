@@ -138,3 +138,17 @@ An independently uploaded JSON artifact marks this as a
 `unsigned-same-version-repair` check. This does **not** prove signed
 version upgrades, retention of provisioned CNG credentials, a full airgap,
 or real user acceptance; all separate gates remain pending.
+
+## P19: synthetic different-version unsigned bundle transition
+
+Windows Preview CI builds a temporary higher-patch-version NSIS package from
+the **same source SHA**, using Tauri CLI's JSON config override. It validates
+strictly increasing version labels, different installer hashes, and retained
+current-user protocol handler after upgrade. The real native UIA runner then
+checks retained managed OFF, dark theme, compact sidebar and Health report under
+per-binary outbound deny. Independent evidence records `sameSourceCode: true`,
+`signedUpgrade: false` and `automaticRollbackVerified: false`. The synthetic
+candidate is stored only in the disposable runner TEMP directory, never in
+distributable Preview artifacts. It is not proof of changes between source
+versions, a failed-install rollback, Production signer continuity or end-user
+Windows acceptance. All nine P5–P12 gates remain pending.
