@@ -4,7 +4,9 @@ param(
  [Parameter(Mandatory=$true)][string]$EvidencePath,
  [Parameter(Mandatory=$true)][string]$SourceRevision,
  [switch]$VerifyStoredStateOnly,
- [ValidateSet('same-version-repair','rejected-upgrade-preflight')][string]$StoredStateContext='same-version-repair'
+ [ValidateSet('same-version-repair','rejected-upgrade-preflight')][string]$StoredStateContext='same-version-repair',
+ [string]$ExpectedUpgradeMarker,
+ [string]$ForbiddenUpgradeMarker
 )
 $ErrorActionPreference='Stop'
 $checks=[System.Collections.Generic.List[object]]::new()
@@ -134,6 +136,17 @@ try{
   $null=Find-UI $ui 'Off: standalone mode; no automatic gateway sync.'
   $null=Find-UI $ui 'Dark theme selected'
   $null=Find-UI $ui 'Compact sidebar on'
+  if($ForbiddenUpgradeMarker){
+   $forbiddenCondition=[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,$ForbiddenUpgradeMarker)
+   if($null -ne $ui.FindFirst([System.Windows.Automation.TreeScope]::Descendants,$forbiddenCondition)){
+    throw 'P22 historical baseline unexpectedly displays the newer-source Settings marker.'
+   }
+   Record 'p22-old-source-marker-absent' 'PASS' 'Older installed source correctly lacks the candidate Settings improvement.'
+  }
+  if($ExpectedUpgradeMarker){
+   $null=Find-UI $ui $ExpectedUpgradeMarker 30
+   Record 'p22-candidate-marker' 'PASS' 'Newer source Settings content observed through native Windows UIA after actual NSIS upgrade.'
+  }
   Click-UI $ui 'Health Check'
   $null=Find-UI $ui 'Latest completed scan' 30
   if($StoredStateContext -eq 'rejected-upgrade-preflight'){
