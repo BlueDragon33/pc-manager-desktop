@@ -74,7 +74,7 @@ try{
  $i=0
  foreach($path in $paths){
   $ruleName="PCManagerCI_Offline_$($PID)_$i"
-  $null=New-NetFirewallRule -Name $ruleName -Direction Outbound -Action Block -Program $path -Profile Any -Enabled True -ErrorAction Stop
+  $null=New-NetFirewallRule -Name $ruleName -DisplayName $ruleName -Direction Outbound -Action Block -Program $path -Profile Any -Enabled True -ErrorAction Stop
   $rules.Add($ruleName)
   $rule=Get-NetFirewallRule -Name $ruleName -ErrorAction Stop
   $filter=$rule | Get-NetFirewallApplicationFilter
