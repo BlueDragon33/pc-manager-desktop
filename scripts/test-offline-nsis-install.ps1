@@ -104,16 +104,20 @@ try {
     # the only higher-version installer call below.
     & "$PSScriptRoot/test-nsis-upgrade-preflight.ps1" -BaselineInstallerPath $InstallerPath -CandidateInstallerPath $UpgradeInstallerPath -ExpectedCandidateSha256 $ExpectedUpgradeSha256 -ExecutablePath $exe -ExpectedOwnedHandler $actual -EvidencePath $PreflightEvidencePath -SourceRevision $SourceRevision
     $preflightProof = Get-Content -LiteralPath $PreflightEvidencePath -Raw | ConvertFrom-Json
-    if (-not $preflightProof.success -or $preflightProof.checks.Count -ne 10) {
-      throw 'P20 negative and positive preflight evidence missing or incomplete.'
+    if (-not $preflightProof.success -or $preflightProof.checks.Count -ne 11) {
+      throw 'P20/P21 negative and positive preflight evidence missing or incomplete.'
     }
-    # Repeat the pinned validation immediately before invoking NSIS, not
-    # only when the candidate was first staged in CI.
-    $positive = & "$PSScriptRoot/assert-nsis-upgrade-preflight.ps1" -BaselineInstallerPath $InstallerPath -CandidateInstallerPath $UpgradeInstallerPath -ExpectedCandidateVersion $candidateVersion.ToString() -ExpectedCandidateSha256 $ExpectedUpgradeSha256
-    if ($positive.candidateSha256 -cne $ExpectedUpgradeSha256.ToLowerInvariant()) { throw 'P20 positive preflight hash mismatch.' }
-    # P19 is a same-source/unsigned VERSION-LABEL test, not rollback evidence.
+    # P21: hold a write-denying read handle for final P20 validation,
+    # rehash and the complete child process lifetime. Never bypass this
+    # with a bare Start-Process when the handoff cannot be locked.
+    # P19 remains a same-source, unsigned VERSION-LABEL pilot, not rollback.
     $beforeExeHash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
-    Invoke-Installer -path $UpgradeInstallerPath -operation 'NSIS higher-version development upgrade'
+    $handoff = & "$PSScriptRoot/invoke-pinned-nsis-candidate.ps1" -BaselineInstallerPath $InstallerPath -CandidateInstallerPath $UpgradeInstallerPath -ExpectedCandidateVersion $candidateVersion.ToString() -ExpectedCandidateSha256 $ExpectedUpgradeSha256
+    if (-not $handoff.writeDenyHandleHeldThroughExit -or
+        $handoff.candidateSha256 -cne $ExpectedUpgradeSha256.ToLowerInvariant() -or
+        $handoff.signerVerified -ne $false -or $handoff.productionAuthorized -ne $false) {
+      throw 'P21 locked NSIS handoff evidence invalid.'
+    }
     if (-not (Test-Path -LiteralPath $exe -PathType Leaf) -or
         -not (Test-Path -LiteralPath $commandKey) -or
         ([string](Get-Item -LiteralPath $commandKey).GetValue('')) -ne $actual) {

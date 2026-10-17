@@ -25,7 +25,7 @@ jobs:
       - name: Parse PowerShell Windows acceptance scripts before expensive builds
         shell: pwsh
         run: |
-          foreach ($script in @('scripts/test-offline-nsis-install.ps1', 'scripts/test-offline-desktop-runtime.ps1', 'scripts/assert-nsis-upgrade-preflight.ps1', 'scripts/test-nsis-upgrade-preflight.ps1')) {
+          foreach ($script in @('scripts/test-offline-nsis-install.ps1', 'scripts/test-offline-desktop-runtime.ps1', 'scripts/assert-nsis-upgrade-preflight.ps1', 'scripts/test-nsis-upgrade-preflight.ps1', 'scripts/invoke-pinned-nsis-candidate.ps1')) {
             $tokens = $null
             $parseErrors = $null
             $null = [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path -LiteralPath $script).Path, [ref]$tokens, [ref]$parseErrors)
