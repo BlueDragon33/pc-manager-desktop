@@ -628,3 +628,29 @@ enters distributable Preview artifacts and the repository version is unchanged.
   installation/upgrade and signer trust, installer failure mid-transaction,
   automatic rollback, personal Windows airgap and P5–P12 release gates remain
   UNVERIFIED. No user files are cleaned and no privileged IPC is enabled.
+
+## P20 — fail-closed pre-install candidate validation, disposable Windows
+
+Following real native P16–P19 Preview acceptance on unchanged HEAD, P20 hardens
+the **CI upgrade pilot** before it is allowed to invoke the unsigned candidate
+installer. No Production update manager or signature trust is introduced.
+
+- [x] Add a read-only, explicit `assert-nsis-upgrade-preflight.ps1` that
+  rejects missing files, malformed bundle names, version mismatch, non-increasing
+  versions, missing/wrong pinned SHA256, and byte-identical packages. Positive
+  case must use the stage-pinned exact candidate SHA256.
+- [x] In the disposable Windows runner, execute seven genuine negative cases
+  while the old version remains installed; after each, compare installed
+  executable SHA256 and exact owned HKCU URI handler to the original. After all
+  rejections, reopen the *real* Tauri/WebView2 app under scoped outbound block
+  and require managed OFF, dark theme, compact sidebar and saved Health report.
+- [x] Run preflight again immediately before the one permitted candidate install.
+  Export independent SHA-bound failure/success evidence even if the check fails.
+- [x] Include both PowerShell scripts in the early parser gate.
+- [ ] Exact-HEAD CI, Constitution, and Windows NSIS runtime evidence must all
+  succeed before merge; no extrapolation from synthetic version changes.
+- [ ] Scope limitations: tests invoke **no installer for rejected candidates**;
+  this is not an actual failed-installer rollback, Authenticode signature
+  verification, tamper-proof distribution, TOCTOU elimination, two-source-version
+  upgrade, human airgap acceptance or signed Production readiness. P5–P12
+  release-acceptance statuses remain pending. No privileged IPC or cleanup.

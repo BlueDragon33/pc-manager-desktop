@@ -25,7 +25,7 @@ jobs:
       - name: Parse PowerShell Windows acceptance scripts before expensive builds
         shell: pwsh
         run: |
-          foreach ($script in @('scripts/test-offline-nsis-install.ps1', 'scripts/test-offline-desktop-runtime.ps1')) {
+          foreach ($script in @('scripts/test-offline-nsis-install.ps1', 'scripts/test-offline-desktop-runtime.ps1', 'scripts/assert-nsis-upgrade-preflight.ps1', 'scripts/test-nsis-upgrade-preflight.ps1')) {
             $tokens = $null
             $parseErrors = $null
             $null = [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path -LiteralPath $script).Path, [ref]$tokens, [ref]$parseErrors)
@@ -93,7 +93,8 @@ jobs:
           $revision = if ("${{ github.event_name }}" -eq "pull_request") { "${{ github.event.pull_request.head.sha }}" } else { "${{ github.sha }}" }
           $upgrade = Get-ChildItem -LiteralPath (Join-Path $env:RUNNER_TEMP 'pc-manager-p19-candidate') -File -Filter '*_x64-setup.exe' | Select-Object -First 1
           if (-not $upgrade) { throw 'P19 candidate was not staged for testing.' }
-          ./scripts/test-offline-nsis-install.ps1 -InstallerPath $installer.FullName -RuntimeEvidencePath artifacts/offline-runtime-evidence.json -RepairEvidencePath artifacts/offline-repair-runtime-evidence.json -UpgradeInstallerPath $upgrade.FullName -UpgradeEvidencePath artifacts/offline-version-transition-evidence.json -SourceRevision $revision
+          $upgradeHash = (Get-FileHash -LiteralPath $upgrade.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          ./scripts/test-offline-nsis-install.ps1 -InstallerPath $installer.FullName -RuntimeEvidencePath artifacts/offline-runtime-evidence.json -RepairEvidencePath artifacts/offline-repair-runtime-evidence.json -UpgradeInstallerPath $upgrade.FullName -UpgradeEvidencePath artifacts/offline-version-transition-evidence.json -ExpectedUpgradeSha256 $upgradeHash -PreflightEvidencePath artifacts/offline-preflight-evidence.json -SourceRevision $revision
 
       - name: Generate preview metadata and checksums
         shell: pwsh
@@ -118,5 +119,7 @@ jobs:
             artifacts/offline-runtime-evidence.json
             artifacts/offline-repair-runtime-evidence.json
             artifacts/offline-version-transition-evidence.json
+            artifacts/offline-preflight-evidence.json
+            artifacts/offline-preflight-evidence.json.uia.json
           if-no-files-found: warn
           retention-days: 14

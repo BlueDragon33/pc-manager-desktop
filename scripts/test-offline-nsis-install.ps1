@@ -7,6 +7,8 @@ param(
   [string]$RepairEvidencePath,
   [string]$UpgradeInstallerPath,
   [string]$UpgradeEvidencePath,
+  [string]$PreflightEvidencePath,
+  [string]$ExpectedUpgradeSha256,
   [string]$SourceRevision
 )
 $ErrorActionPreference = 'Stop'
@@ -42,6 +44,9 @@ if ([bool]$UpgradeInstallerPath -ne [bool]$UpgradeEvidencePath) {
 }
 if ($UpgradeInstallerPath -and (-not $RepairEvidencePath -or -not $SourceRevision)) {
   throw 'Cross-version pilot requires successful same-version repair and exact revision.'
+}
+if ($UpgradeInstallerPath -and ((-not $PreflightEvidencePath) -or (-not $ExpectedUpgradeSha256))) {
+  throw 'P20 requires pinned expected candidate SHA256 and separate preflight evidence.'
 }
 if ($UpgradeInstallerPath) {
   if (-not (Test-Path -LiteralPath $UpgradeInstallerPath -PathType Leaf)) {
@@ -94,6 +99,18 @@ try {
     & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $exe -EvidencePath $RepairEvidencePath -SourceRevision $SourceRevision -VerifyStoredStateOnly
   }
   if ($UpgradeInstallerPath) {
+    # P20 DENY tests run with the installed old version and persisted state.
+    # They invoke no NSIS executable. A positive preflight is required before
+    # the only higher-version installer call below.
+    & "$PSScriptRoot/test-nsis-upgrade-preflight.ps1" -BaselineInstallerPath $InstallerPath -CandidateInstallerPath $UpgradeInstallerPath -ExpectedCandidateSha256 $ExpectedUpgradeSha256 -ExecutablePath $exe -ExpectedOwnedHandler $actual -EvidencePath $PreflightEvidencePath -SourceRevision $SourceRevision
+    $preflightProof = Get-Content -LiteralPath $PreflightEvidencePath -Raw | ConvertFrom-Json
+    if (-not $preflightProof.success -or $preflightProof.checks.Count -ne 10) {
+      throw 'P20 negative and positive preflight evidence missing or incomplete.'
+    }
+    # Repeat the pinned validation immediately before invoking NSIS, not
+    # only when the candidate was first staged in CI.
+    $positive = & "$PSScriptRoot/assert-nsis-upgrade-preflight.ps1" -BaselineInstallerPath $InstallerPath -CandidateInstallerPath $UpgradeInstallerPath -ExpectedCandidateVersion $candidateVersion.ToString() -ExpectedCandidateSha256 $ExpectedUpgradeSha256
+    if ($positive.candidateSha256 -cne $ExpectedUpgradeSha256.ToLowerInvariant()) { throw 'P20 positive preflight hash mismatch.' }
     # P19 is a same-source/unsigned VERSION-LABEL test, not rollback evidence.
     $beforeExeHash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
     Invoke-Installer -path $UpgradeInstallerPath -operation 'NSIS higher-version development upgrade'

@@ -152,3 +152,18 @@ candidate is stored only in the disposable runner TEMP directory, never in
 distributable Preview artifacts. It is not proof of changes between source
 versions, a failed-install rollback, Production signer continuity or end-user
 Windows acceptance. All nine P5–P12 gates remain pending.
+
+## P20 unsigned development preflight — rejected candidates do not install
+
+Before running the synthetic 0.1.0→0.1.1 NSIS Preview pilot, CI performs seven
+negative cases: absent installer, malformed filename, same/non-increasing
+version, version expectation mismatch, wrong checksum, absent checksum and
+byte-identical installer disguised as a higher version. Each must fail with a
+specific `P20_REJECT` reason **without invoking NSIS** and preserve the actual
+installed executable SHA256 and exact owned HKCU protocol handler. A real
+native WebView2 UIA readback then verifies saved local state after all rejected
+candidates. Only the positively checked, SHA-pinned unsigned development
+candidate can proceed to the P19 install. A separate SHA-bound evidence JSON
+records explicit unsigned / not-a-rollback / not-human-acceptance scope.
+The tool neither performs Authenticode verification nor implements a trusted
+Production updater; preflight and install remain distinct operations.
