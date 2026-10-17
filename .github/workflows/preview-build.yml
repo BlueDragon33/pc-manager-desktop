@@ -22,6 +22,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Parse PowerShell Windows acceptance scripts before expensive builds
+        shell: pwsh
+        run: |
+          foreach ($script in @('scripts/test-offline-nsis-install.ps1', 'scripts/test-offline-desktop-runtime.ps1')) {
+            $tokens = $null
+            $parseErrors = $null
+            $null = [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path -LiteralPath $script).Path, [ref]$tokens, [ref]$parseErrors)
+            if ($parseErrors.Count -ne 0) {
+              $parseErrors | ForEach-Object { Write-Host "PARSER ERROR $script : $($_.Message)" }
+              throw "PowerShell parse gate failed: $script"
+            }
+            Write-Host "PASS PowerShell parse : $script"
+          }
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
