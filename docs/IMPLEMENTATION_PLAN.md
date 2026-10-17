@@ -541,3 +541,18 @@ App Manager synchronization later.
 Completion predicate: actual offline-local user journeys and persistence
 evidence (exact build + expected/actual + tester), not source/UI or CI alone.
 No new hub policy, remote runtime, package dependency or Product PASS.
+
+## P16 — native offline Windows acceptance automation (pilot)
+
+- [~] Install an unsigned NSIS build on disposable Windows, block outbound
+  traffic for installed Tauri + WebView2 executables, then invoke REAL UI
+  Automation for native launch, Health Check, Smart Clean preview, managed
+  OFF/ON/OFF and local report/mode state across a process restart.
+- [~] Produce exact-revision machine-readable evidence even on failures.
+  Missing firewall, UI Automation or WebView2 is a FAIL, not a fake PASS.
+- [ ] Complete exact-HEAD CI and preview verification.
+- [ ] True full-network-disconnected end-user Windows acceptance, signed
+  install/upgrade, browser handoff, verified gateway traffic and nine
+  original real-Windows release gates remain pending.
+
+Firewall rules are per binary and restored; no cleanup action is executed.

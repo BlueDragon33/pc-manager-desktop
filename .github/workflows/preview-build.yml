@@ -60,7 +60,8 @@ jobs:
         run: |
           $installer = Get-ChildItem target/release/bundle/nsis/*.exe | Select-Object -First 1
           if (-not $installer) { throw 'Unsigned preview installer missing.' }
-          ./scripts/test-offline-nsis-install.ps1 -InstallerPath $installer.FullName
+          $revision = if ("${{ github.event_name }}" -eq "pull_request") { "${{ github.event.pull_request.head.sha }}" } else { "${{ github.sha }}" }
+          ./scripts/test-offline-nsis-install.ps1 -InstallerPath $installer.FullName -RuntimeEvidencePath artifacts/offline-runtime-evidence.json -SourceRevision $revision
 
       - name: Generate preview metadata and checksums
         shell: pwsh
@@ -74,4 +75,13 @@ jobs:
           name: pc-manager-windows-unsigned-preview
           path: artifacts/
           if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload offline runtime evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pc-manager-offline-runtime-evidence
+          path: artifacts/offline-runtime-evidence.json
+          if-no-files-found: warn
           retention-days: 14

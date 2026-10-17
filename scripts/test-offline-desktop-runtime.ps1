@@ -1,0 +1,138 @@
+# Disposable Windows CI. Real installed Tauri app; NOT signed/user acceptance.
+param(
+ [Parameter(Mandatory=$true)][string]$ExecutablePath,
+ [Parameter(Mandatory=$true)][string]$EvidencePath,
+ [Parameter(Mandatory=$true)][string]$SourceRevision
+)
+$ErrorActionPreference='Stop'
+$checks=[System.Collections.Generic.List[object]]::new()
+$rules=[System.Collections.Generic.List[string]]::new()
+$app=$null
+$success=$false
+$scope='NOT_VERIFIED'
+function Record($key,$status,$note){
+ $checks.Add([pscustomobject]@{check=$key;status=$status;detail=$note})
+ Write-Host "$status $key : $note"
+}
+function Find-UI($root,[string]$name,[int]$seconds=25){
+ $condition=New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty,$name)
+ $deadline=[datetime]::UtcNow.AddSeconds($seconds)
+ do{
+  $e=$root.FindFirst([System.Windows.Automation.TreeScope]::Descendants,$condition)
+  if($null -ne $e){return $e}
+  Start-Sleep -Milliseconds 500
+ }while([datetime]::UtcNow -lt $deadline)
+ throw "Missing actual UIA element: $name"
+}
+function Click-UI($root,[string]$name){
+ $element=Find-UI $root $name
+ $pattern=$element.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
+ if($null -eq $pattern){throw "No native InvokePattern: $name"}
+ $pattern.Invoke()
+}
+function Open-App{
+ $script:app=Start-Process -FilePath $ExecutablePath -PassThru
+ $deadline=[datetime]::UtcNow.AddSeconds(40)
+ do{
+  $p=Get-Process -Id $script:app.Id -ErrorAction SilentlyContinue
+  if($null -eq $p){throw 'Native application exited early.'}
+  $p.Refresh()
+  if($p.MainWindowHandle -ne [intptr]::Zero){
+   return [System.Windows.Automation.AutomationElement]::FromHandle($p.MainWindowHandle)
+  }
+  Start-Sleep -Milliseconds 500
+ }while([datetime]::UtcNow -lt $deadline)
+ throw 'Native main window not exposed in runner desktop session.'
+}
+function Close-App{
+ if($null -eq $script:app){return}
+ $p=Get-Process -Id $script:app.Id -ErrorAction SilentlyContinue
+ if($null -ne $p){
+  if(-not $p.CloseMainWindow()){$p.Kill()}
+  elseif(-not $p.WaitForExit(10000)){$p.Kill()}
+ }
+ $script:app=$null
+}
+try{
+ if(-not(Test-Path -LiteralPath $ExecutablePath -PathType Leaf)){throw 'Installed executable missing.'}
+ Add-Type -AssemblyName UIAutomationClient
+ Add-Type -AssemblyName UIAutomationTypes
+ Record 'package' 'PASS' 'Installed native executable exists.'
+ $paths=[System.Collections.Generic.List[string]]::new()
+ $paths.Add((Resolve-Path -LiteralPath $ExecutablePath).Path)
+ $roots=@()
+ $pf86=[Environment]::GetFolderPath('ProgramFilesX86')
+ if($pf86){$roots+=Join-Path $pf86 'Microsoft\EdgeWebView\Application'}
+ if($env:LOCALAPPDATA){$roots+=Join-Path $env:LOCALAPPDATA 'Microsoft\EdgeWebView\Application'}
+ foreach($root in $roots){
+  if(Test-Path -LiteralPath $root){
+   Get-ChildItem -LiteralPath $root -Recurse -File -Filter msedgewebview2.exe -ErrorAction Stop |
+    ForEach-Object {if(-not $paths.Contains($_.FullName)){$paths.Add($_.FullName)}}
+  }
+ }
+ if($paths.Count -lt 2){throw 'WebView2 binary unavailable for scoped network block.'}
+ $i=0
+ foreach($path in $paths){
+  $ruleName="PCManagerCI_Offline_$($PID)_$i"
+  $null=New-NetFirewallRule -Name $ruleName -Direction Outbound -Action Block -Program $path -Profile Any -Enabled True -ErrorAction Stop
+  $rules.Add($ruleName)
+  $rule=Get-NetFirewallRule -Name $ruleName -ErrorAction Stop
+  $filter=$rule | Get-NetFirewallApplicationFilter
+  if($rule.Action -ne 'Block' -or $rule.Enabled -ne 'True' -or $filter.Program -ne $path){throw 'Firewall rule readback mismatch.'}
+  $i++
+ }
+ $scope='APP_AND_WEBVIEW2_OUTBOUND_BLOCKED'
+ Record 'network' 'PASS' "Outbound denied for $($paths.Count) binaries, not whole-machine airgap."
+ $ui=Open-App
+ if($null -eq $ui){throw 'No UI Automation root.'}
+ $null=Find-UI $ui 'Health Check V1 is ready' 30
+ $null=Find-UI $ui 'Native bridge connected' 30
+ $null=Find-UI $ui 'Standalone · Offline' 15
+ Record 'startup' 'PASS' 'Native UI and bridge available with managed OFF.'
+ Click-UI $ui 'Open Health Check'
+ Click-UI $ui 'Scan now'
+ $null=Find-UI $ui 'Latest completed scan' 90
+ $null=Find-UI $ui 'Evidence by category'
+ Record 'health' 'PASS' 'Actual Windows read-only scan completed.'
+ Click-UI $ui 'Smart Clean'
+ Click-UI $ui 'Scan cleanup candidates'
+ $null=Find-UI $ui 'Preview total' 120
+ $null=Find-UI $ui 'Exactly where the preview came from'
+ Record 'clean' 'PASS' 'Provider preview completed; no Delete invoked.'
+ Click-UI $ui 'Settings'
+ $null=Find-UI $ui 'Off: standalone mode; no automatic gateway sync.'
+ Click-UI $ui 'Enable central management'
+ $null=Find-UI $ui 'On: optional signed gateway sync is enabled.'
+ Click-UI $ui 'Enable central management'
+ $null=Find-UI $ui 'Off: standalone mode; no automatic gateway sync.'
+ Record 'managed' 'PASS' 'OFF-ON-OFF UI transitions observed.'
+ Close-App
+ $ui=Open-App
+ $null=Find-UI $ui 'Standalone · Offline' 30
+ Click-UI $ui 'Settings'
+ $null=Find-UI $ui 'Off: standalone mode; no automatic gateway sync.'
+ Click-UI $ui 'Health Check'
+ $null=Find-UI $ui 'Latest completed scan' 30
+ Record 'restart' 'PASS' 'Managed mode and Health report persisted after process restart.'
+ $success=$true
+}catch{
+ Record 'runtime' 'FAIL' $_.Exception.Message
+ throw
+}finally{
+ Close-App
+ foreach($ruleName in $rules){Remove-NetFirewallRule -Name $ruleName -ErrorAction SilentlyContinue}
+ $parent=Split-Path -Parent $EvidencePath
+ if($parent){New-Item -ItemType Directory -Force -Path $parent | Out-Null}
+ [pscustomobject]@{
+  schema='pc-manager.offline-runtime-evidence/v1'
+  sourceRevision=$SourceRevision
+  checkoutRevision=(git rev-parse HEAD)
+  kind='native-ui-automation-not-human-acceptance'
+  networkScope=$scope
+  productionSigned=$false
+  userWindowsAccepted=$false
+  success=$success
+  checks=@($checks.ToArray())
+  completedAtUtc=[datetime]::UtcNow.ToString('o')
+ } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $EvidencePath -Encoding utf8
+}

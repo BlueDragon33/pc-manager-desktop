@@ -2,7 +2,9 @@
 [CmdletBinding()]
 param(
   [Parameter(Mandatory = $true)]
-  [string]$InstallerPath
+  [string]$InstallerPath,
+  [string]$RuntimeEvidencePath,
+  [string]$SourceRevision
 )
 $ErrorActionPreference = 'Stop'
 $scheme = 'HKCU:\Software\Classes\pcmanager'
@@ -40,6 +42,10 @@ try {
   $uninstaller = Join-Path (Split-Path -Parent $exe) 'uninstall.exe'
   if (-not (Test-Path -LiteralPath $uninstaller -PathType Leaf)) {
     throw 'Uninstaller was not packaged.'
+  }
+  if ($RuntimeEvidencePath) {
+    if (-not $SourceRevision) { throw 'Exact source revision missing.' }
+    & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $exe -EvidencePath $RuntimeEvidencePath -SourceRevision $SourceRevision
   }
   Invoke-Installer -path $uninstaller -operation 'NSIS uninstall'
   $installed = $false
