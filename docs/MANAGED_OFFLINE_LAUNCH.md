@@ -113,3 +113,16 @@ Evidence JSON separately identifies PR HEAD and checkout revision.
 Scoped per-program firewall denial does NOT prove a full airgap and CI does
 NOT replace a human signed-install/Windows acceptance gate. Missing access
 fails closed. Firewall rules are removed in finally; never execute cleanup.
+
+## P17: local preference readback, availability and restart
+
+Theme, sidebar and managed preference writes are checked by re-reading local
+WebView2 storage before the UI adopts a change. Unavailable/denied writes
+produce a visible Settings error instead of a non-persistent on-screen change.
+Central management remains OFF unless the opt-in value reads back exactly.
+
+Windows Preview CI also exercises theme/compact-sidebar/managed ON across a
+full process restart, then explicit OFF across another restart. These are
+automated disposable-runner checks with per-executable outbound firewall
+rules; they do not prove a completely disconnected computer, signed
+installer/upgrade state preservation or human Product acceptance.

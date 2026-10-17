@@ -6,6 +6,8 @@ import {
   readThemePreference,
   resolveTheme,
   writeManagedModeEnabled,
+  writeSidebarCollapsed,
+  writeThemePreference,
 } from "./preferences";
 
 describe("theme resolution", () => {
@@ -65,5 +67,57 @@ describe("optional App Manager mode (offline first)", () => {
     expect(writeManagedModeEnabled(true)).toBe(false);
     expect(readThemePreference()).toBe("system");
     expect(readSidebarCollapsed()).toBe(false);
+  });
+});
+
+describe("offline appearance preference persistence", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("round-trips theme and compact sidebar choices", () => {
+    const values = new Map<string, string>();
+    vi.stubGlobal("window", {
+      localStorage: {
+        getItem: (key: string) => values.get(key) ?? null,
+        setItem: (key: string, value: string) => values.set(key, value),
+      },
+    });
+    expect(writeThemePreference("dark")).toBe(true);
+    expect(writeSidebarCollapsed(true)).toBe(true);
+    expect(readThemePreference()).toBe("dark");
+    expect(readSidebarCollapsed()).toBe(true);
+    expect(writeThemePreference("light")).toBe(true);
+    expect(writeSidebarCollapsed(false)).toBe(true);
+    expect(readThemePreference()).toBe("light");
+    expect(readSidebarCollapsed()).toBe(false);
+  });
+
+  it("does not claim persistence when storage denies writes", () => {
+    const values = new Map<string, string>();
+    vi.stubGlobal("window", {
+      localStorage: {
+        getItem: (key: string) => values.get(key) ?? null,
+        setItem: () => {
+          throw new Error("quota exceeded");
+        },
+      },
+    });
+    expect(writeThemePreference("dark")).toBe(false);
+    expect(writeSidebarCollapsed(true)).toBe(false);
+    expect(writeManagedModeEnabled(true)).toBe(false);
+    expect(readThemePreference()).toBe("system");
+    expect(readSidebarCollapsed()).toBe(false);
+    expect(readManagedModeEnabled()).toBe(false);
+  });
+
+  it("does not trust silent storage writes without matching readback", () => {
+    vi.stubGlobal("window", {
+      localStorage: {
+        getItem: () => null,
+        setItem: () => undefined,
+      },
+    });
+    expect(writeThemePreference("dark")).toBe(false);
+    expect(writeSidebarCollapsed(true)).toBe(false);
+    expect(writeManagedModeEnabled(true)).toBe(false);
   });
 });
