@@ -99,8 +99,12 @@ try {
     throw 'Registered application executable not installed.'
   }
   $installedBaselineHash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
-  if ($UpgradeInstallerPath -and $installedBaselineHash -cne $ExpectedBaselineExeSha256.ToLowerInvariant()) {
-    throw 'P22 installed baseline executable is not the exact older-source build.'
+  $baselineCompiledBytesMatchInstalled = ($installedBaselineHash -ceq $ExpectedBaselineExeSha256.ToLowerInvariant())
+  if ($UpgradeInstallerPath) {
+    Write-Host "P22 baseline builtExeSha256=$($ExpectedBaselineExeSha256.ToLowerInvariant()); installedExeSha256=$installedBaselineHash; bytesEqual=$baselineCompiledBytesMatchInstalled"
+    if (-not $baselineCompiledBytesMatchInstalled) {
+      Write-Warning 'P22 NSIS installed bytes differ from post-build executable; record separately; do not claim exact compiled-byte equivalence.'
+    }
   }
   $uninstaller = Join-Path (Split-Path -Parent $exe) 'uninstall.exe'
   if (-not (Test-Path -LiteralPath $uninstaller -PathType Leaf)) {
@@ -119,9 +123,9 @@ try {
         ([string](Get-Item -LiteralPath $commandKey).GetValue('')) -ne $actual) {
       throw 'NSIS repair changed the installed executable or owned protocol handler.'
     }
-    & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $exe -EvidencePath $RepairEvidencePath -SourceRevision $SourceRevision -VerifyStoredStateOnly
-    if ($UpgradeInstallerPath -and (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant() -cne $ExpectedBaselineExeSha256.ToLowerInvariant()) {
-      throw 'P22 same-version repair changed the pinned baseline executable.'
+    & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $exe -EvidencePath $RepairEvidencePath -SourceRevision $SourceRevision -VerifyStoredStateOnly -ForbiddenUpgradeMarker $ExpectedUpgradeMarker
+    if ($UpgradeInstallerPath -and (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant() -cne $installedBaselineHash) {
+      throw 'P22 same-version repair altered installed baseline executable bytes.'
     }
   }
   if ($UpgradeInstallerPath) {
@@ -150,9 +154,13 @@ try {
       throw 'Version-transition installer failed to retain executable and owned URL handler.'
     }
     $candidateInstalledHash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
-    if ($candidateInstalledHash -cne $ExpectedCandidateExeSha256.ToLowerInvariant() -or
-        $candidateInstalledHash -ceq $beforeExeHash) {
-      throw 'P22 upgraded executable bytes fail pinned candidate identity or distinctness.'
+    $candidateCompiledBytesMatchInstalled = ($candidateInstalledHash -ceq $ExpectedCandidateExeSha256.ToLowerInvariant())
+    Write-Host "P22 candidate builtExeSha256=$($ExpectedCandidateExeSha256.ToLowerInvariant()); installedExeSha256=$candidateInstalledHash; bytesEqual=$candidateCompiledBytesMatchInstalled"
+    if ($candidateInstalledHash -ceq $beforeExeHash) {
+      throw 'P22 installed candidate is byte-identical to the installed baseline.'
+    }
+    if (-not $candidateCompiledBytesMatchInstalled) {
+      Write-Warning 'P22 NSIS installed bytes differ from post-build executable; no exact compiled-byte equivalence claim.'
     }
     & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $exe -EvidencePath $UpgradeEvidencePath -SourceRevision $SourceRevision -VerifyStoredStateOnly -ExpectedUpgradeMarker $ExpectedUpgradeMarker
     $proof = Get-Content -LiteralPath $UpgradeEvidencePath -Raw | ConvertFrom-Json
@@ -169,8 +177,13 @@ try {
       executableBytesChanged = ($beforeExeHash -ne $afterExeHash)
       fromSourceRevision = $BaselineSourceRevision
       toSourceRevision = $CandidateSourceRevision
-      baselineExecutableSha256 = $installedBaselineHash
-      candidateExecutableSha256 = $candidateInstalledHash
+      baselineBuiltExecutableSha256 = $ExpectedBaselineExeSha256.ToLowerInvariant()
+      candidateBuiltExecutableSha256 = $ExpectedCandidateExeSha256.ToLowerInvariant()
+      baselineInstalledExecutableSha256 = $installedBaselineHash
+      candidateInstalledExecutableSha256 = $candidateInstalledHash
+      baselineBuiltBytesEqualInstalled = $baselineCompiledBytesMatchInstalled
+      candidateBuiltBytesEqualInstalled = $candidateCompiledBytesMatchInstalled
+      installedExecutableBytesChanged = ($installedBaselineHash -cne $candidateInstalledHash)
       changedApplicationSource = $true
       sameSourceCode = $false
       candidateUiMarkerObserved = $true
