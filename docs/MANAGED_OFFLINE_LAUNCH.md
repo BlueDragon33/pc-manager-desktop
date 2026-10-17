@@ -100,3 +100,16 @@ runtime, complete network silence, state preservation on signed upgrade,
 or real browser launch. Those gates remain explicitly pending. Canonical
 ecosystem operating-policy ownership stays with
 `BlueDragon33/Software-Blueprint-Hub` `main`.
+
+## P16 Windows runner native smoke evidence
+
+The Preview workflow runs `test-offline-desktop-runtime.ps1` between NSIS
+installation and uninstall. It temporarily denies outbound traffic for the
+installed app and discovered WebView2 executables. Windows UI Automation
+uses the actual native app, not a mock, for read-only Health Check,
+Smart Clean preview, managed OFF/ON/OFF and restart/persistence.
+
+Evidence JSON separately identifies PR HEAD and checkout revision.
+Scoped per-program firewall denial does NOT prove a full airgap and CI does
+NOT replace a human signed-install/Windows acceptance gate. Missing access
+fails closed. Firewall rules are removed in finally; never execute cleanup.
