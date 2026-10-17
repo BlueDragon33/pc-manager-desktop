@@ -265,7 +265,10 @@ function PlaceholderPage({
   );
 }
 
-function themeAccessibilityLabel(option: ThemePreference, selected: boolean): string {
+function themeAccessibilityLabel(
+  option: ThemePreference,
+  selected: boolean,
+): string {
   const name = option[0].toUpperCase() + option.slice(1);
   const state = selected ? "selected" : "not selected";
   return `${name} theme ${state}`;
