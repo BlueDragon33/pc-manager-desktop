@@ -380,11 +380,23 @@ fn run_health_check() -> Result<HealthReport, InventoryError> {
 }
 
 #[tauri::command]
-fn scan_cleanup_candidates(
+async fn scan_cleanup_candidates(
     options: CleanupScanOptions,
     cleanup_plans: State<'_, Mutex<CleanupPlanStore>>,
 ) -> Result<CleanupScanSummary, CleanupError> {
-    let (plan, summary) = pc_windows::scan_cleanup_candidates(options)?;
+    // Filesystem enumeration can take substantial time on real Windows user
+    // profiles. Never block Tauri's UI/event thread with the preview scan.
+    // Keep the native plan ID and all existing deletion gates unchanged.
+    let (plan, summary) =
+        tauri::async_runtime::spawn_blocking(move || pc_windows::scan_cleanup_candidates(options))
+            .await
+            .map_err(|error| {
+                CleanupError::new(
+                    "cleanup_scan_task_failed",
+                    format!("The native Smart Clean preview scan task failed: {error}"),
+                    true,
+                )
+            })??;
     let mut stored_plans = cleanup_plans.lock().map_err(|_| {
         CleanupError::new(
             "cleanup_plan_store_unavailable",

@@ -556,3 +556,17 @@ No new hub policy, remote runtime, package dependency or Product PASS.
   original real-Windows release gates remain pending.
 
 Firewall rules are per binary and restored; no cleanup action is executed.
+
+### Smart Clean freeze-risk correction (in PR #47)
+
+- Actual Windows NSIS UIA run #38989639836: native launch PASS, blocked
+  outbound app+WebView2 PASS, Health Check PASS; Smart Clean preview NOT
+  OBSERVED after 120s. Root cause has **not** been proven from UIA alone.
+- Native `scan_cleanup_candidates` was a synchronous Tauri command calling
+  potentially long recursive filesystem enumeration. The command is now
+  async with `spawn_blocking` for enumeration; cleanup-plan state is locked
+  only after the preview finishes. No deletion path or scan roots changed.
+- UIA timeouts now record allow-listed Smart Clean state markers (scanning,
+  error, idle, preview), without leaking raw filenames.
+- [ ] Confirm exact-HEAD Windows live UI behavior and all CI; keep blocked
+  if the scan remains too slow. Do NOT treat code restructuring as acceptance.

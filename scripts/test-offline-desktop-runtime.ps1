@@ -22,6 +22,16 @@ function Find-UI($root,[string]$name,[int]$seconds=25){
   if($null -ne $e){return $e}
   Start-Sleep -Milliseconds 500
  }while([datetime]::UtcNow -lt $deadline)
+ if($name -eq 'Preview total'){
+  $markers=@()
+  foreach($signal in @('Scanning explicit temp and cache roots…','Smart Clean preview could not complete','Cancel scan','Scan cleanup candidates','Exactly where the preview came from')){
+   try{
+    $c=[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,$signal)
+    if($null -ne $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants,$c)){$markers+=$signal}
+   }catch{$markers+='UIA diagnostic unavailable'}
+  }
+  throw "Preview total not observed in $seconds seconds; UI markers: $($markers -join '; ')"
+ }
  throw "Missing actual UIA element: $name"
 }
 function Click-UI($root,[string]$name){
