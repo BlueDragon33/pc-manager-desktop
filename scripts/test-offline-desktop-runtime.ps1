@@ -15,7 +15,7 @@ function Record($key,$status,$note){
  Write-Host "$status $key : $note"
 }
 function Find-UI($root,[string]$name,[int]$seconds=25){
- $condition=New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty,$name)
+ $condition=[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,$name)
  $deadline=[datetime]::UtcNow.AddSeconds($seconds)
  do{
   $e=$root.FindFirst([System.Windows.Automation.TreeScope]::Descendants,$condition)
