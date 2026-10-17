@@ -707,9 +707,11 @@ of the same tree (P19–P21). Preserve offline-first, zero Production authority.
   build executable SHA and executable extracted during NSIS installation;
   Tauri's bundle-type patch is a possible contributing step, not proven root
   cause. Do not claim exact build-to-installed byte identity while unresolved.
-- [x] Require the newer source's Settings marker in actual post-upgrade WebView2
-  UIA. Preserve local Health report, managed OFF, dark theme and compact
-  sidebar under app/WebView2-scoped outbound deny. Retain P20 rejection cases,
+- [x] Require the newer source's accessible Settings group marker in actual
+  post-upgrade WebView2 UIA, plus proof that baseline built JS excludes it and
+  candidate built JS contains it. Preserve local Health report, managed OFF,
+  dark theme and compact sidebar under app/WebView2-scoped outbound deny.
+  Retain P20 rejection cases,
   P21 locked candidate handoff and HKCU exact handler validation.
 - [x] Emit SHA-bound `offline-two-source-build-evidence.json` and separate
   native upgrade/readback JSON in the **unsigned Preview CI** artifacts.
