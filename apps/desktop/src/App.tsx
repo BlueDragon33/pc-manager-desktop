@@ -304,6 +304,11 @@ function SettingsPage({
           PC Manager stores only harmless local interface preferences here. No
           Windows system settings are changed from this screen.
         </p>
+        <p className="muted">
+          <strong>Offline-first state on this device</strong>
+          : Your theme, sidebar layout and central-management choice stay in
+          this Windows user profile. No account is required.
+        </p>
 
         <fieldset className="setting-group">
           <legend>Theme</legend>
