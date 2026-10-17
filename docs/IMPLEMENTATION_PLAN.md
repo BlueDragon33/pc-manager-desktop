@@ -699,9 +699,14 @@ of the same tree (P19–P21). Preserve offline-first, zero Production authority.
 - [x] Use a temporary **unsigned development-only** 0.1.1 Tauri version
   override for the newer source while the repo declares 0.1.0; artifact
   labels explain this distinction. This is not a Production version bump.
-- [x] Pin and compare the built baseline/candidate executable SHA256 values;
-  ensure the installed baseline and installed upgraded candidate match their
-  respective compiled bytes, and are different from each other.
+- [x] Pin and compare both built executable SHA256 values, then separately
+  measure hashes of the *actually installed* baseline and upgraded executable.
+  Require different installed binaries and the newer source's real UI marker.
+  Record, but do not infer, build-file versus installed-file byte equality.
+- [ ] Explain and independently verify any differences between the post-bundle
+  build executable SHA and executable extracted during NSIS installation;
+  Tauri's bundle-type patch is a possible contributing step, not proven root
+  cause. Do not claim exact build-to-installed byte identity while unresolved.
 - [x] Require the newer source's Settings marker in actual post-upgrade WebView2
   UIA. Preserve local Health report, managed OFF, dark theme and compact
   sidebar under app/WebView2-scoped outbound deny. Retain P20 rejection cases,
