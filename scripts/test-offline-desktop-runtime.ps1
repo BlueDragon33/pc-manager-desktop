@@ -36,9 +36,38 @@ function Find-UI($root,[string]$name,[int]$seconds=25){
 }
 function Click-UI($root,[string]$name){
  $element=Find-UI $root $name
- $pattern=$element.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
- if($null -eq $pattern){throw "No native InvokePattern: $name"}
- $pattern.Invoke()
+ if(-not $element.Current.IsEnabled){throw "UIA control is disabled: $name"}
+ $pattern=$null
+ if($element.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern,[ref]$pattern)){
+  ([System.Windows.Automation.InvokePattern]$pattern).Invoke()
+  return
+ }
+ # WebView2 exposes some ARIA pressed buttons as TogglePattern rather than
+ # InvokePattern. Only the exact opt-in toggle is eligible for this fallback.
+ if($name -ne 'Enable central management' -or
+    $element.Current.ControlType -ne [System.Windows.Automation.ControlType]::Button){
+  throw "Unsupported UIA InvokePattern for '$name' (control type: $($element.Current.ControlType.ProgrammaticName))."
+ }
+ $pattern=$null
+ if($element.TryGetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern,[ref]$pattern)){
+  ([System.Windows.Automation.TogglePattern]$pattern).Toggle()
+  return
+ }
+ # If Edge/WebView2 exposes neither action pattern, use the real keyboard
+ # activation of this focused button. Fail closed unless UIA confirms that
+ # the exact target button, not a neighboring control, holds keyboard focus.
+ if(-not $element.Current.IsKeyboardFocusable){
+  throw "Managed toggle has no UIA Invoke/TogglePattern and cannot receive keyboard focus."
+ }
+ $element.SetFocus()
+ $focused=[System.Windows.Automation.AutomationElement]::FocusedElement
+ if($null -eq $focused -or $focused.Current.Name -ne $name -or
+    $focused.Current.ControlType -ne [System.Windows.Automation.ControlType]::Button -or
+    ([string]::Join('.', $focused.GetRuntimeId())) -ne ([string]::Join('.', $element.GetRuntimeId()))){
+  throw "Managed toggle focus could not be verified; refusing blind keyboard input."
+ }
+ Add-Type -AssemblyName System.Windows.Forms
+ [System.Windows.Forms.SendKeys]::SendWait('{SPACE}')
 }
 function Open-App{
  $script:app=Start-Process -FilePath $ExecutablePath -PassThru
