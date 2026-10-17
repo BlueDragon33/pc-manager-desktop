@@ -78,9 +78,9 @@ try {
   Expect-Rejection 'identical-payload' 'IDENTICAL_PAYLOAD' $samePayloadCandidate $candidateVersion $baselineHash
   Check-Installed-Identity
   Evidence 'post-rejection-identity' 'PASS' 'Installed executable SHA and owned HKCU handler unchanged after all seven denied candidates.'
-  & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $ExecutablePath -EvidencePath ($EvidencePath + '.uia.json') -SourceRevision $SourceRevision -VerifyStoredStateOnly
+  & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $ExecutablePath -EvidencePath ($EvidencePath + '.uia.json') -SourceRevision $SourceRevision -VerifyStoredStateOnly -StoredStateContext rejected-upgrade-preflight
   $uiProof = Get-Content -LiteralPath ($EvidencePath + '.uia.json') -Raw | ConvertFrom-Json
-  if (-not $uiProof.success) { throw 'Real WebView2 state readback after rejected candidates failed.' }
+  if (-not $uiProof.success -or $uiProof.verificationMode -ne 'rejected-upgrade-preflight') { throw 'Real WebView2 post-rejection state readback failed or misclassified.' }
   Evidence 'post-rejection-native-state' 'PASS' 'Real installed Windows UIA retained managed OFF, dark appearance, compact sidebar and Health report.'
   $positive = & $preflight -BaselineInstallerPath $BaselineInstallerPath -CandidateInstallerPath $CandidateInstallerPath -ExpectedCandidateVersion $candidateVersion -ExpectedCandidateSha256 $ExpectedCandidateSha256
   if ($positive.candidateSha256 -cne $ExpectedCandidateSha256.ToLowerInvariant() -or $positive.signedTrustVerified -ne $false) {
