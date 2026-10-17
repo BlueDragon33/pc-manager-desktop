@@ -654,3 +654,30 @@ installer. No Production update manager or signature trust is introduced.
   verification, tamper-proof distribution, TOCTOU elimination, two-source-version
   upgrade, human airgap acceptance or signed Production readiness. P5–P12
   release-acceptance statuses remain pending. No privileged IPC or cleanup.
+
+
+## P21 — SHA-pinned NSIS candidate handoff with a write-denying file handle
+
+Product-critical next action after merged P20: fail closed if the unsigned
+development upgrade candidate is currently writable or changes across final
+preflight and the NSIS launch boundary, without granting updater authority.
+
+- [x] Keep an open, read-only `FileShare.Read` handle from final P20 version
+  and SHA256 preflight through the child installer process exit; recompute
+  SHA256 directly from the locked handle before invoking NSIS.
+- [x] Refuse a candidate that cannot be locked. Run a genuine negative case
+  with an existing writable handle on a disposable candidate copy and verify
+  the installed executable SHA256 and owned HKCU handler remain unchanged.
+- [x] Replace the positive P19 NSIS execution path with the only locked
+  handoff; preserve existing P20 negative cases and native state readback.
+- [ ] Parse all scripts and require Constitution, CI, unsigned NSIS Preview,
+  real Windows negative and positive tests on **the same exact PR SHA** before
+  a merge. Observe native NSIS startup under the held read handle; do not
+  infer compatibility from syntax alone.
+- [ ] Full filesystem/path/symlink TOCTOU resistance, publisher/signature
+  trust, signed releases, failure-mid-install rollback, two-source-version
+  migration and real user Windows acceptance are **UNVERIFIED**. This is
+  a bounded, unsigned developer-runner test, not a Production updater.
+
+Do not alter privileged IPC, cleanup execution, App Manager authority,
+Production status or the nine mandatory pending P5–P12 release gates.
