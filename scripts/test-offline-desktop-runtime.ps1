@@ -4,7 +4,8 @@ param(
  [Parameter(Mandatory=$true)][string]$EvidencePath,
  [Parameter(Mandatory=$true)][string]$SourceRevision,
  [switch]$VerifyStoredStateOnly,
- [ValidateSet('same-version-repair','rejected-upgrade-preflight')][string]$StoredStateContext='same-version-repair'
+ [ValidateSet('same-version-repair','rejected-upgrade-preflight')][string]$StoredStateContext='same-version-repair',
+ [string]$ExpectedUpgradeMarker
 )
 $ErrorActionPreference='Stop'
 $checks=[System.Collections.Generic.List[object]]::new()
@@ -134,6 +135,10 @@ try{
   $null=Find-UI $ui 'Off: standalone mode; no automatic gateway sync.'
   $null=Find-UI $ui 'Dark theme selected'
   $null=Find-UI $ui 'Compact sidebar on'
+  if($ExpectedUpgradeMarker){
+   $null=Find-UI $ui $ExpectedUpgradeMarker 30
+   Record 'p22-candidate-marker' 'PASS' 'Newer source Settings content observed through native Windows UIA after actual NSIS upgrade.'
+  }
   Click-UI $ui 'Health Check'
   $null=Find-UI $ui 'Latest completed scan' 30
   if($StoredStateContext -eq 'rejected-upgrade-preflight'){
