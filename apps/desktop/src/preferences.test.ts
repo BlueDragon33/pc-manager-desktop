@@ -96,7 +96,9 @@ describe("offline appearance preference persistence", () => {
     vi.stubGlobal("window", {
       localStorage: {
         getItem: (key: string) => values.get(key) ?? null,
-        setItem: () => { throw new Error("quota exceeded"); },
+        setItem: () => {
+          throw new Error("quota exceeded");
+        },
       },
     });
     expect(writeThemePreference("dark")).toBe(false);
