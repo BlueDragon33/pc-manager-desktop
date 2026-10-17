@@ -265,6 +265,12 @@ function PlaceholderPage({
   );
 }
 
+function themeAccessibilityLabel(option: ThemePreference, selected: boolean): string {
+  const name = option[0].toUpperCase() + option.slice(1);
+  const state = selected ? "selected" : "not selected";
+  return `${name} theme ${state}`;
+}
+
 function SettingsPage({
   theme,
   onThemeChange,
@@ -301,7 +307,7 @@ function SettingsPage({
           <div className="segmented-control">
             {(["system", "dark", "light"] as const).map((option) => (
               <button
-                aria-label={`${option[0].toUpperCase() + option.slice(1)} theme ${theme === option ? "selected" : "not selected"}`}
+                aria-label={themeAccessibilityLabel(option, theme === option)}
                 aria-pressed={theme === option}
                 className={theme === option ? "selected" : ""}
                 key={option}
@@ -532,7 +538,9 @@ export default function App() {
 
   const updateTheme = (nextTheme: ThemePreference) => {
     if (!writeThemePreference(nextTheme)) {
-      setAppearanceError("Local storage is unavailable. Theme was not changed.");
+      setAppearanceError(
+        "Local storage is unavailable. Theme was not changed.",
+      );
       return;
     }
     setAppearanceError(null);
@@ -541,7 +549,9 @@ export default function App() {
 
   const updateSidebar = (collapsed: boolean) => {
     if (!writeSidebarCollapsed(collapsed)) {
-      setAppearanceError("Local storage is unavailable. Sidebar was not changed.");
+      setAppearanceError(
+        "Local storage is unavailable. Sidebar was not changed.",
+      );
       return;
     }
     setAppearanceError(null);
