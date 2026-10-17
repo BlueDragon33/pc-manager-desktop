@@ -550,9 +550,19 @@ export default function App() {
 
   const updateManagedMode = (enabled: boolean) => {
     if (!writeManagedModeEnabled(enabled)) {
-      setManagedModeError(
-        "Local preference storage is unavailable. Managed mode was not changed.",
-      );
+      if (!enabled) {
+        // Disabling optional network activity is fail-safe even if persistence
+        // is denied. The previous saved ON may return after a later restart.
+        setManagedEnabled(false);
+        setAppManagerState(null);
+        setManagedModeError(
+          "Central management is OFF for this session, but OFF could not be saved. Check it again after restarting.",
+        );
+      } else {
+        setManagedModeError(
+          "Local preference storage is unavailable. Central management was not enabled.",
+        );
+      }
       return;
     }
     setManagedModeError(null);
