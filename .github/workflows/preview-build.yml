@@ -145,7 +145,29 @@ jobs:
           Set-Content -LiteralPath (Join-Path $stageDir 'candidate-executable.sha256') -Value $candidateExeSha -Encoding ascii
           $baselineExeSha = (Get-Content (Join-Path $env:RUNNER_TEMP 'pc-manager-p22-baseline/baseline-executable.sha256') -Raw).Trim()
           if ($baselineExeSha -ceq $candidateExeSha) { throw 'P22 executable bytes unchanged across different app sources.' }
+          $baselineRevision = '83645a56987666144020dbdc85b3eec12815d003'
+          $candidateRevision = (git rev-parse HEAD).Trim()
+          $changedAppFiles = @(git diff --name-only $baselineRevision $candidateRevision -- apps/desktop/src apps/desktop/src-tauri/src crates)
+          if ($LASTEXITCODE -ne 0 -or 'apps/desktop/src/App.tsx' -cnotin $changedAppFiles) {
+            throw 'Cannot attest candidate application-source difference.'
+          }
           New-Item -ItemType Directory -Force artifacts | Out-Null
+          [pscustomobject]@{
+            schema = 'pc-manager.two-source-build/v1'
+            checkoutRevision = $candidateRevision
+            fromSourceRevision = $baselineRevision
+            toSourceRevision = $candidateRevision
+            changedAppFiles = @($changedAppFiles)
+            fromVersion = $baseVersion.ToString()
+            toVersion = $nextVersion
+            baselineExecutableSha256 = $baselineExeSha
+            candidateExecutableSha256 = $candidateExeSha
+            sameSourceCode = $false
+            sourceChanged = $true
+            signedTrustVerified = $false
+            realUserWindowsAccepted = $false
+            success = $true
+          } | ConvertTo-Json -Depth 5 | Set-Content artifacts/offline-two-source-build-evidence.json -Encoding utf8
           Copy-Item -LiteralPath $candidate.FullName -Destination artifacts
           @(
             'UNSIGNED PREVIEW - NOT PRODUCTION; NO SIGNATURE TRUST',
@@ -193,5 +215,6 @@ jobs:
             artifacts/offline-version-transition-evidence.json
             artifacts/offline-preflight-evidence.json
             artifacts/offline-preflight-evidence.json.uia.json
+            artifacts/offline-two-source-build-evidence.json
           if-no-files-found: warn
           retention-days: 14
