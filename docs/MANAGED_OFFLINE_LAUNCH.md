@@ -126,3 +126,15 @@ full process restart, then explicit OFF across another restart. These are
 automated disposable-runner checks with per-executable outbound firewall
 rules; they do not prove a completely disconnected computer, signed
 installer/upgrade state preservation or human Product acceptance.
+
+## P18 disposable unsigned repair readback
+
+The CI Windows Preview pilot silently runs the same unsigned NSIS package
+again (same version, same per-user install), while the app is closed.
+It checks the owned handler and installed executable, then reopens the
+real app under per-executable outbound firewall deny rules and confirms
+the OFF preference, dark theme, compact sidebar and persisted Health report.
+An independently uploaded JSON artifact marks this as a
+`unsigned-same-version-repair` check. This does **not** prove signed
+version upgrades, retention of provisioned CNG credentials, a full airgap,
+or real user acceptance; all separate gates remain pending.

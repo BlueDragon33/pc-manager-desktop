@@ -4,6 +4,7 @@ param(
   [Parameter(Mandatory = $true)]
   [string]$InstallerPath,
   [string]$RuntimeEvidencePath,
+  [string]$RepairEvidencePath,
   [string]$SourceRevision
 )
 $ErrorActionPreference = 'Stop'
@@ -22,6 +23,9 @@ if (-not (Test-Path -LiteralPath $InstallerPath -PathType Leaf)) {
 }
 if (Test-Path -LiteralPath $scheme) {
   throw 'Runner is not disposable: pcmanager scheme exists, refusing to overwrite.'
+}
+if ($RepairEvidencePath -and (-not $RuntimeEvidencePath -or -not $SourceRevision)) {
+  throw 'NSIS repair needs an earlier real native runtime run and exact source revision.'
 }
 
 try {
@@ -46,6 +50,17 @@ try {
   if ($RuntimeEvidencePath) {
     if (-not $SourceRevision) { throw 'Exact source revision missing.' }
     & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $exe -EvidencePath $RuntimeEvidencePath -SourceRevision $SourceRevision
+  }
+  if ($RepairEvidencePath) {
+    # No signed-upgrade claim. Repair the *same* unsigned version only on the
+    # disposable Windows runner after the app has been closed by UIA smoke.
+    Invoke-Installer -path $InstallerPath -operation 'NSIS same-version repair'
+    if (-not (Test-Path -LiteralPath $exe -PathType Leaf) -or
+        -not (Test-Path -LiteralPath $commandKey) -or
+        ([string](Get-Item -LiteralPath $commandKey).GetValue('')) -ne $actual) {
+      throw 'NSIS repair changed the installed executable or owned protocol handler.'
+    }
+    & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $exe -EvidencePath $RepairEvidencePath -SourceRevision $SourceRevision -VerifyStoredStateOnly
   }
   Invoke-Installer -path $uninstaller -operation 'NSIS uninstall'
   $installed = $false
