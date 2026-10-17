@@ -3,7 +3,8 @@ param(
  [Parameter(Mandatory=$true)][string]$ExecutablePath,
  [Parameter(Mandatory=$true)][string]$EvidencePath,
  [Parameter(Mandatory=$true)][string]$SourceRevision,
- [switch]$VerifyStoredStateOnly
+ [switch]$VerifyStoredStateOnly,
+ [ValidateSet('same-version-repair','rejected-upgrade-preflight')][string]$StoredStateContext='same-version-repair'
 )
 $ErrorActionPreference='Stop'
 $checks=[System.Collections.Generic.List[object]]::new()
@@ -135,7 +136,11 @@ try{
   $null=Find-UI $ui 'Compact sidebar on'
   Click-UI $ui 'Health Check'
   $null=Find-UI $ui 'Latest completed scan' 30
-  Record 'repair-state' 'PASS' 'Same-version unsigned NSIS repair retained managed OFF, appearance and Health report in real WebView2.'
+  if($StoredStateContext -eq 'rejected-upgrade-preflight'){
+   Record 'post-preflight-native-state' 'PASS' 'Rejected unsigned candidates left real WebView2 managed OFF, appearance and Health report intact.'
+  }else{
+   Record 'repair-state' 'PASS' 'Same-version unsigned NSIS repair retained managed OFF, appearance and Health report in real WebView2.'
+  }
  }else{
  $ui=Open-App
  if($null -eq $ui){throw 'No UI Automation root.'}
@@ -202,7 +207,7 @@ try{
   sourceRevision=$SourceRevision
   checkoutRevision=(git rev-parse HEAD)
   kind='native-ui-automation-not-human-acceptance'
-  verificationMode=$(if($VerifyStoredStateOnly){'unsigned-same-version-repair'}else{'native-offline-smoke'})
+  verificationMode=$(if($VerifyStoredStateOnly){if($StoredStateContext -eq 'rejected-upgrade-preflight'){'rejected-upgrade-preflight'}else{'unsigned-same-version-repair'}}else{'native-offline-smoke'})
   networkScope=$scope
   productionSigned=$false
   userWindowsAccepted=$false
