@@ -716,10 +716,15 @@ of the same tree (P19–P21). Preserve offline-first, zero Production authority.
   post-bundle `target/release` and installed executable. Fail closed on
   either mismatch, log the bundle-stage mutation separately, and record
   four SHA checkpoints for each revision in an exact-HEAD evidence JSON.
-  Tauri's documented binary-type patch is a plausible transformation,
-  not a verified root cause until matched with the pinned runner's log
-  and hash transition. Signing, production update and all nine P5-P12
-  release gates remain blocked.
+  Independent source audit of tauri-bundler 2.10.1 and exact Windows
+  logs shows a temporary NSIS bundle-type substitution followed by restoring
+  the original executable: the on-disk hash before/after bundle remains
+  equal, while the NSIS payload differs. A targeted CI-only read-only
+  verifier now recomputes the patched executable SHA256 IN MEMORY by
+  replacing exactly one ASCII token UNK -> NSS; it must match each NSIS
+  payload SHA256 and real installed binary. This is a test proposal until
+  exact-HEAD CI evidence confirms it. It does not sign, publish or certify
+  Production; all nine P5-P12 release gates stay blocked.
 - [x] Require the newer source's accessible Settings group marker in actual
   post-upgrade WebView2 UIA, plus proof that baseline built JS excludes it and
   candidate built JS contains it. Preserve local Health report, managed OFF,
