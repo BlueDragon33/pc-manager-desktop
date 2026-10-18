@@ -71,7 +71,9 @@ if ($UpgradeInstallerPath) {
       $CandidateSourceRevision -cnotmatch '^[a-fA-F0-9]{40}$' -or
       $BaselineSourceRevision -ceq $CandidateSourceRevision -or
       $ExpectedBaselineExeSha256 -cnotmatch '^[a-fA-F0-9]{64}$' -or
-      $ExpectedCandidateExeSha256 -cnotmatch '^[a-fA-F0-9]{64}
+      $ExpectedCandidateExeSha256 -cnotmatch '^[a-fA-F0-9]{64}$' -or
+      $ExpectedBaselinePreBundleSha256 -cnotmatch '^[a-fA-F0-9]{64}$' -or
+      $ExpectedCandidatePreBundleSha256 -cnotmatch '^[a-fA-F0-9]{64}$' -or
       $ExpectedBaselineExeSha256 -ceq $ExpectedCandidateExeSha256 -or
       $ExpectedUpgradeMarker -cne 'Offline-first state on this device') {
     throw 'P22 real two-source SHA, compiled executable hash or UI marker missing.'
