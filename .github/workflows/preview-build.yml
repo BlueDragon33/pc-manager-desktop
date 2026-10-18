@@ -35,7 +35,7 @@ jobs:
       - name: Parse PowerShell Windows acceptance scripts before expensive builds
         shell: pwsh
         run: |
-          foreach ($script in @('scripts/test-offline-nsis-install.ps1', 'scripts/test-offline-desktop-runtime.ps1', 'scripts/assert-nsis-upgrade-preflight.ps1', 'scripts/test-nsis-upgrade-preflight.ps1', 'scripts/invoke-pinned-nsis-candidate.ps1', 'scripts/read-nsis-executable-payload.ps1')) {
+          foreach ($script in @('scripts/test-offline-nsis-install.ps1', 'scripts/test-offline-desktop-runtime.ps1', 'scripts/assert-nsis-upgrade-preflight.ps1', 'scripts/test-nsis-upgrade-preflight.ps1', 'scripts/invoke-pinned-nsis-candidate.ps1', 'scripts/read-nsis-executable-payload.ps1', 'scripts/assert-tauri-nsis-bundle-patch.ps1')) {
             $tokens = $null
             $parseErrors = $null
             $null = [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path -LiteralPath $script).Path, [ref]$tokens, [ref]$parseErrors)
@@ -144,6 +144,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path $stageDir | Out-Null
           Copy-Item -LiteralPath $oldInstaller.FullName -Destination (Join-Path $stageDir $oldInstaller.Name)
           $exeSha = (Get-FileHash -LiteralPath $oldExe -Algorithm SHA256).Hash.ToLowerInvariant()
+          Copy-Item -LiteralPath $oldExe -Destination (Join-Path $stageDir 'baseline-unpatched.exe')
           $preBundleSha = (Get-Content (Join-Path $stageDir 'baseline-prebundle-executable.sha256') -Raw).Trim()
           Write-Host "P22 baseline post-bundle executable SHA256=$exeSha; binaryMutatedByBundling=$($preBundleSha -cne $exeSha)"
           Set-Content -LiteralPath (Join-Path $stageDir 'baseline-executable.sha256') -Value $exeSha -Encoding ascii
@@ -203,6 +204,7 @@ jobs:
           New-Item -ItemType Directory -Path $stageDir -Force | Out-Null
           Copy-Item -LiteralPath $candidate.FullName -Destination (Join-Path $stageDir $candidate.Name)
           $candidateExeSha = (Get-FileHash -LiteralPath $candidateExe -Algorithm SHA256).Hash.ToLowerInvariant()
+          Copy-Item -LiteralPath $candidateExe -Destination (Join-Path $stageDir 'candidate-unpatched.exe')
           Write-Host "P22 candidate post-bundle executable SHA256=$candidateExeSha; binaryMutatedByBundling=$($candidatePreBundleSha -cne $candidateExeSha)"
           Set-Content -LiteralPath (Join-Path $stageDir 'candidate-executable.sha256') -Value $candidateExeSha -Encoding ascii
           $baselineExeSha = (Get-Content (Join-Path $env:RUNNER_TEMP 'pc-manager-p22-baseline/baseline-executable.sha256') -Raw).Trim()
@@ -262,7 +264,7 @@ jobs:
           $candidateExeHash = (Get-Content (Join-Path $env:RUNNER_TEMP 'pc-manager-p22-candidate/candidate-executable.sha256') -Raw).Trim()
           $baselinePreBundleHash = (Get-Content (Join-Path $env:RUNNER_TEMP 'pc-manager-p22-baseline/baseline-prebundle-executable.sha256') -Raw).Trim()
           $candidatePreBundleHash = (Get-Content (Join-Path $env:RUNNER_TEMP 'pc-manager-p22-candidate/candidate-prebundle-executable.sha256') -Raw).Trim()
-          ./scripts/test-offline-nsis-install.ps1 -InstallerPath $installer.FullName -RuntimeEvidencePath artifacts/offline-runtime-evidence.json -RepairEvidencePath artifacts/offline-repair-runtime-evidence.json -UpgradeInstallerPath $upgrade.FullName -UpgradeEvidencePath artifacts/offline-version-transition-evidence.json -ExpectedUpgradeSha256 $upgradeHash -PreflightEvidencePath artifacts/offline-preflight-evidence.json -SourceRevision $revision -BaselineSourceRevision $baselineRevision -CandidateSourceRevision $revision -ExpectedBaselineExeSha256 $baselineExeHash -ExpectedCandidateExeSha256 $candidateExeHash -ExpectedBaselinePreBundleSha256 $baselinePreBundleHash -ExpectedCandidatePreBundleSha256 $candidatePreBundleHash -ExpectedUpgradeMarker 'Offline-first state on this device' -BinaryProvenanceEvidencePath artifacts/offline-binary-provenance-evidence.json
+          ./scripts/test-offline-nsis-install.ps1 -InstallerPath $installer.FullName -RuntimeEvidencePath artifacts/offline-runtime-evidence.json -RepairEvidencePath artifacts/offline-repair-runtime-evidence.json -UpgradeInstallerPath $upgrade.FullName -UpgradeEvidencePath artifacts/offline-version-transition-evidence.json -ExpectedUpgradeSha256 $upgradeHash -PreflightEvidencePath artifacts/offline-preflight-evidence.json -SourceRevision $revision -BaselineSourceRevision $baselineRevision -CandidateSourceRevision $revision -ExpectedBaselineExeSha256 $baselineExeHash -ExpectedCandidateExeSha256 $candidateExeHash -ExpectedBaselinePreBundleSha256 $baselinePreBundleHash -ExpectedCandidatePreBundleSha256 $candidatePreBundleHash -ExpectedUpgradeMarker 'Offline-first state on this device' -BinaryProvenanceEvidencePath artifacts/offline-binary-provenance-evidence.json -BaselineUnpatchedExecutablePath (Join-Path $env:RUNNER_TEMP 'pc-manager-p22-baseline/baseline-unpatched.exe') -CandidateUnpatchedExecutablePath (Join-Path $env:RUNNER_TEMP 'pc-manager-p22-candidate/candidate-unpatched.exe')
 
       - name: Generate preview metadata and checksums
         shell: pwsh
