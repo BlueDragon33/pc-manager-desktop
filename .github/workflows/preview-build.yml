@@ -35,7 +35,7 @@ jobs:
       - name: Parse PowerShell Windows acceptance scripts before expensive builds
         shell: pwsh
         run: |
-          foreach ($script in @('scripts/test-offline-nsis-install.ps1', 'scripts/test-offline-desktop-runtime.ps1', 'scripts/assert-nsis-upgrade-preflight.ps1', 'scripts/test-nsis-upgrade-preflight.ps1', 'scripts/invoke-pinned-nsis-candidate.ps1')) {
+          foreach ($script in @('scripts/test-offline-nsis-install.ps1', 'scripts/test-offline-desktop-runtime.ps1', 'scripts/assert-nsis-upgrade-preflight.ps1', 'scripts/test-nsis-upgrade-preflight.ps1', 'scripts/invoke-pinned-nsis-candidate.ps1', 'scripts/read-nsis-executable-payload.ps1')) {
             $tokens = $null
             $parseErrors = $null
             $null = [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path -LiteralPath $script).Path, [ref]$tokens, [ref]$parseErrors)
@@ -208,7 +208,7 @@ jobs:
           $upgradeHash = (Get-FileHash -LiteralPath $upgrade.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
           $baselineExeHash = (Get-Content (Join-Path $env:RUNNER_TEMP 'pc-manager-p22-baseline/baseline-executable.sha256') -Raw).Trim()
           $candidateExeHash = (Get-Content (Join-Path $env:RUNNER_TEMP 'pc-manager-p22-candidate/candidate-executable.sha256') -Raw).Trim()
-          ./scripts/test-offline-nsis-install.ps1 -InstallerPath $installer.FullName -RuntimeEvidencePath artifacts/offline-runtime-evidence.json -RepairEvidencePath artifacts/offline-repair-runtime-evidence.json -UpgradeInstallerPath $upgrade.FullName -UpgradeEvidencePath artifacts/offline-version-transition-evidence.json -ExpectedUpgradeSha256 $upgradeHash -PreflightEvidencePath artifacts/offline-preflight-evidence.json -SourceRevision $revision -BaselineSourceRevision $baselineRevision -CandidateSourceRevision $revision -ExpectedBaselineExeSha256 $baselineExeHash -ExpectedCandidateExeSha256 $candidateExeHash -ExpectedUpgradeMarker 'Offline-first state on this device'
+          ./scripts/test-offline-nsis-install.ps1 -InstallerPath $installer.FullName -RuntimeEvidencePath artifacts/offline-runtime-evidence.json -RepairEvidencePath artifacts/offline-repair-runtime-evidence.json -UpgradeInstallerPath $upgrade.FullName -UpgradeEvidencePath artifacts/offline-version-transition-evidence.json -ExpectedUpgradeSha256 $upgradeHash -PreflightEvidencePath artifacts/offline-preflight-evidence.json -SourceRevision $revision -BaselineSourceRevision $baselineRevision -CandidateSourceRevision $revision -ExpectedBaselineExeSha256 $baselineExeHash -ExpectedCandidateExeSha256 $candidateExeHash -ExpectedUpgradeMarker 'Offline-first state on this device' -BinaryProvenanceEvidencePath artifacts/offline-binary-provenance-evidence.json
 
       - name: Generate preview metadata and checksums
         shell: pwsh
@@ -236,5 +236,6 @@ jobs:
             artifacts/offline-preflight-evidence.json
             artifacts/offline-preflight-evidence.json.uia.json
             artifacts/offline-two-source-build-evidence.json
+            artifacts/offline-binary-provenance-evidence.json
           if-no-files-found: warn
           retention-days: 14
