@@ -703,15 +703,23 @@ of the same tree (P19–P21). Preserve offline-first, zero Production authority.
   measure hashes of the *actually installed* baseline and upgraded executable.
   Require different installed binaries and the newer source's real UI marker.
   Record, but do not infer, build-file versus installed-file byte equality.
-- [~] Three-way provenance diagnostic: extract each staged, unsigned NSIS
-  archive read-only using the disposable runner's 7-Zip, hash its one
-  `pc-manager-desktop.exe` payload, and require that exact SHA256 to match
-  the actual installed executable for **both** source revisions. Fail closed
-  on ambiguous/missing payloads; export exact-SHA JSON even on test failure.
-  Retain independent post-build executable hashes: a build-vs-package mismatch
-  does **not** prove why the build output changed. The exact Tauri bundle-stage
-  cause is still UNVERIFIED, and Production signer trust remains blocked.
-  Do not claim exact post-build-to-installed byte identity unless proven.
+- [x] Three-way provenance diagnostic: read-only 7-Zip NSIS payload versus
+  actual installed executable passes for **both** source revisions at
+  `0b7f291c5d5f3a35bd839cc953e37ff73b5dc31e`. The old measurement
+  labeled the executable after `tauri build --bundles nsis` as post-build;
+  that command had already bundled it. A mismatch with installed bytes is
+  now a separate issue to investigate, NOT license to claim Production.
+- [~] P22 root-cause instrumentation: split the *same* Tauri build into
+  `tauri build --no-bundle` and `tauri bundle --bundles nsis --verbose`
+  for both pinned source revisions; save SHA256 before and after bundling,
+  then compare the actual NSIS archive's extracted executable to both
+  post-bundle `target/release` and installed executable. Fail closed on
+  either mismatch, log the bundle-stage mutation separately, and record
+  four SHA checkpoints for each revision in an exact-HEAD evidence JSON.
+  Tauri's documented binary-type patch is a plausible transformation,
+  not a verified root cause until matched with the pinned runner's log
+  and hash transition. Signing, production update and all nine P5-P12
+  release gates remain blocked.
 - [x] Require the newer source's accessible Settings group marker in actual
   post-upgrade WebView2 UIA, plus proof that baseline built JS excludes it and
   candidate built JS contains it. Preserve local Health report, managed OFF,
