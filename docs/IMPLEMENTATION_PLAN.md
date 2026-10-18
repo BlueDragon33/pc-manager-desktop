@@ -703,10 +703,15 @@ of the same tree (P19–P21). Preserve offline-first, zero Production authority.
   measure hashes of the *actually installed* baseline and upgraded executable.
   Require different installed binaries and the newer source's real UI marker.
   Record, but do not infer, build-file versus installed-file byte equality.
-- [ ] Explain and independently verify any differences between the post-bundle
-  build executable SHA and executable extracted during NSIS installation;
-  Tauri's bundle-type patch is a possible contributing step, not proven root
-  cause. Do not claim exact build-to-installed byte identity while unresolved.
+- [~] Three-way provenance diagnostic: extract each staged, unsigned NSIS
+  archive read-only using the disposable runner's 7-Zip, hash its one
+  `pc-manager-desktop.exe` payload, and require that exact SHA256 to match
+  the actual installed executable for **both** source revisions. Fail closed
+  on ambiguous/missing payloads; export exact-SHA JSON even on test failure.
+  Retain independent post-build executable hashes: a build-vs-package mismatch
+  does **not** prove why the build output changed. The exact Tauri bundle-stage
+  cause is still UNVERIFIED, and Production signer trust remains blocked.
+  Do not claim exact post-build-to-installed byte identity unless proven.
 - [x] Require the newer source's accessible Settings group marker in actual
   post-upgrade WebView2 UIA, plus proof that baseline built JS excludes it and
   candidate built JS contains it. Preserve local Health report, managed OFF,
