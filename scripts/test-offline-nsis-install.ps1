@@ -14,13 +14,19 @@ param(
   [string]$CandidateSourceRevision,
   [string]$ExpectedBaselineExeSha256,
   [string]$ExpectedCandidateExeSha256,
-  [string]$ExpectedUpgradeMarker
+  [string]$ExpectedUpgradeMarker,
+  [string]$BinaryProvenanceEvidencePath
 )
 $ErrorActionPreference = 'Stop'
 $scheme = 'HKCU:\Software\Classes\pcmanager'
 $commandKey = Join-Path $scheme 'shell\open\command'
 $exe = $null
 $installed = $false
+$baselinePayload = $null
+$candidatePayload = $null
+$installedBaselineHash = $null
+$candidateInstalledHash = $null
+$binaryProvenanceVerified = $false
 
 function Invoke-Installer([string]$path, [string]$operation) {
   $process = Start-Process -FilePath $path -ArgumentList '/S' -Wait -PassThru
@@ -49,6 +55,9 @@ if ([bool]$UpgradeInstallerPath -ne [bool]$UpgradeEvidencePath) {
 }
 if ($UpgradeInstallerPath -and (-not $RepairEvidencePath -or -not $SourceRevision)) {
   throw 'Cross-version pilot requires successful same-version repair and exact revision.'
+}
+if ($UpgradeInstallerPath -and (-not $BinaryProvenanceEvidencePath)) {
+  throw 'P22 requires independent three-way binary provenance artifact.'
 }
 if ($UpgradeInstallerPath -and ((-not $PreflightEvidencePath) -or (-not $ExpectedUpgradeSha256))) {
   throw 'P20 requires pinned expected candidate SHA256 and separate preflight evidence.'
@@ -84,6 +93,18 @@ if ($UpgradeInstallerPath) {
 }
 
 try {
+  if ($UpgradeInstallerPath) {
+    # P22: inspect both actual NSIS archives independent of the post-build path
+    # and independent of installation. 7-Zip only extracts; it never runs NSIS.
+    $baselinePayload = & "$PSScriptRoot/read-nsis-executable-payload.ps1" -InstallerPath $InstallerPath
+    $candidatePayload = & "$PSScriptRoot/read-nsis-executable-payload.ps1" -InstallerPath $UpgradeInstallerPath
+    if ($baselinePayload.installerSha256 -cne $baselineHash -or
+        $candidatePayload.installerSha256 -cne $candidateHash -or
+        $baselinePayload.payloadExecutableSha256 -ceq $candidatePayload.payloadExecutableSha256) {
+      throw 'P22 NSIS payload provenance mismatched staged installer or source versions.'
+    }
+    Write-Host "P22 NSIS package readback baselinePayload=$($baselinePayload.payloadExecutableSha256) candidatePayload=$($candidatePayload.payloadExecutableSha256)"
+  }
   $installed = $true
   Invoke-Installer -path $InstallerPath -operation 'NSIS installation'
   if (-not (Test-Path -LiteralPath $commandKey)) {
@@ -100,6 +121,10 @@ try {
   }
   $installedBaselineHash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
   $baselineCompiledBytesMatchInstalled = ($installedBaselineHash -ceq $ExpectedBaselineExeSha256.ToLowerInvariant())
+  if ($UpgradeInstallerPath -and
+      $installedBaselineHash -cne $baselinePayload.payloadExecutableSha256) {
+    throw 'P22 baseline installed executable is not the executable extracted from its NSIS installer.'
+  }
   if ($UpgradeInstallerPath) {
     Write-Host "P22 baseline builtExeSha256=$($ExpectedBaselineExeSha256.ToLowerInvariant()); installedExeSha256=$installedBaselineHash; bytesEqual=$baselineCompiledBytesMatchInstalled"
     if (-not $baselineCompiledBytesMatchInstalled) {
@@ -155,6 +180,11 @@ try {
     }
     $candidateInstalledHash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
     $candidateCompiledBytesMatchInstalled = ($candidateInstalledHash -ceq $ExpectedCandidateExeSha256.ToLowerInvariant())
+    if ($candidateInstalledHash -cne $candidatePayload.payloadExecutableSha256) {
+      throw 'P22 upgraded installed executable is not the executable extracted from candidate NSIS.'
+    }
+    $binaryProvenanceVerified = $true
+    Write-Host 'PASS P22 NSIS payload-to-installed SHA256 exact for both source versions.'
     Write-Host "P22 candidate builtExeSha256=$($ExpectedCandidateExeSha256.ToLowerInvariant()); installedExeSha256=$candidateInstalledHash; bytesEqual=$candidateCompiledBytesMatchInstalled"
     if ($candidateInstalledHash -ceq $beforeExeHash) {
       throw 'P22 installed candidate is byte-identical to the installed baseline.'
@@ -181,6 +211,10 @@ try {
       candidateBuiltExecutableSha256 = $ExpectedCandidateExeSha256.ToLowerInvariant()
       baselineInstalledExecutableSha256 = $installedBaselineHash
       candidateInstalledExecutableSha256 = $candidateInstalledHash
+      baselineNsisPayloadSha256 = $baselinePayload.payloadExecutableSha256
+      candidateNsisPayloadSha256 = $candidatePayload.payloadExecutableSha256
+      nsisPayloadMatchesInstalled = $binaryProvenanceVerified
+      postBuildToNsisMutationExplained = $false
       baselineBuiltBytesEqualInstalled = $baselineCompiledBytesMatchInstalled
       candidateBuiltBytesEqualInstalled = $candidateCompiledBytesMatchInstalled
       installedExecutableBytesChanged = ($installedBaselineHash -cne $candidateInstalledHash)
@@ -199,7 +233,30 @@ try {
     throw 'Uninstaller did not remove its own registered URL handler.'
   }
   Write-Output 'PASS signed-off scope: actual unsigned NSIS install/owned protocol/uninstall.'
-} finally {
+ } finally {
+  if ($UpgradeInstallerPath -and $BinaryProvenanceEvidencePath) {
+    $parent = Split-Path -Parent $BinaryProvenanceEvidencePath
+    if ($parent) { New-Item -ItemType Directory -Force -Path $parent | Out-Null }
+    [pscustomobject]@{
+      schema = 'pc-manager.nsis-binary-provenance/v1'
+      sourceRevision = $SourceRevision
+      checkoutRevision = (git rev-parse HEAD).Trim()
+      fromSourceRevision = $BaselineSourceRevision
+      toSourceRevision = $CandidateSourceRevision
+      baselinePostBuildSha256 = $ExpectedBaselineExeSha256.ToLowerInvariant()
+      candidatePostBuildSha256 = $ExpectedCandidateExeSha256.ToLowerInvariant()
+      baselineNsisPayloadSha256 = $(if ($baselinePayload) { $baselinePayload.payloadExecutableSha256 } else { $null })
+      candidateNsisPayloadSha256 = $(if ($candidatePayload) { $candidatePayload.payloadExecutableSha256 } else { $null })
+      baselineInstalledSha256 = $installedBaselineHash
+      candidateInstalledSha256 = $candidateInstalledHash
+      payloadMatchesInstalledBoth = $binaryProvenanceVerified
+      postBuildToNsisMutationCauseVerified = $false
+      installerExecutionUnsigned = $true
+      signedTrustVerified = $false
+      humanWindowsAccepted = $false
+      success = $binaryProvenanceVerified
+    } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $BinaryProvenanceEvidencePath -Encoding utf8
+  }
   if ($installed -and $exe -and (Test-Path -LiteralPath $exe -PathType Leaf)) {
     $uninstaller = Join-Path (Split-Path -Parent $exe) 'uninstall.exe'
     if (Test-Path -LiteralPath $uninstaller -PathType Leaf) {
