@@ -16,6 +16,8 @@ param(
   [string]$ExpectedCandidateExeSha256,
   [string]$ExpectedBaselinePreBundleSha256,
   [string]$ExpectedCandidatePreBundleSha256,
+  [string]$BaselineUnpatchedExecutablePath,
+  [string]$CandidateUnpatchedExecutablePath,
   [string]$ExpectedUpgradeMarker,
   [string]$BinaryProvenanceEvidencePath
 )
@@ -29,6 +31,9 @@ $candidatePayload = $null
 $installedBaselineHash = $null
 $candidateInstalledHash = $null
 $binaryProvenanceVerified = $false
+$temporaryPatchVerified = $false
+$baselinePatchProof = $null
+$candidatePatchProof = $null
 
 function Invoke-Installer([string]$path, [string]$operation) {
   $process = Start-Process -FilePath $path -ArgumentList '/S' -Wait -PassThru
@@ -111,6 +116,11 @@ try {
       throw 'P22 NSIS payload provenance mismatched staged installer or source versions.'
     }
     Write-Host "P22 NSIS package readback baselinePayload=$($baselinePayload.payloadExecutableSha256) candidatePayload=$($candidatePayload.payloadExecutableSha256)"
+    $baselinePatchProof = & "$PSScriptRoot/assert-tauri-nsis-bundle-patch.ps1" -UnpatchedExecutablePath $BaselineUnpatchedExecutablePath -ExpectedUnpatchedSha256 $ExpectedBaselineExeSha256 -ExpectedNsisPayloadSha256 $baselinePayload.payloadExecutableSha256
+    $candidatePatchProof = & "$PSScriptRoot/assert-tauri-nsis-bundle-patch.ps1" -UnpatchedExecutablePath $CandidateUnpatchedExecutablePath -ExpectedUnpatchedSha256 $ExpectedCandidateExeSha256 -ExpectedNsisPayloadSha256 $candidatePayload.payloadExecutableSha256
+    if (-not $baselinePatchProof.success -or -not $candidatePatchProof.success) { throw 'P22 temporary Tauri token patch did not reproduce exact NSIS payload.' }
+    $temporaryPatchVerified = $true
+    Write-Host 'PASS P22 Tauri NSIS token patch reproduced exact payload SHA256 for both source revisions.'
   }
   $installed = $true
   Invoke-Installer -path $InstallerPath -operation 'NSIS installation'
@@ -128,8 +138,8 @@ try {
   }
   $installedBaselineHash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
   $baselineCompiledBytesMatchInstalled = ($installedBaselineHash -ceq $ExpectedBaselineExeSha256.ToLowerInvariant())
-  if ($UpgradeInstallerPath -and -not $baselineCompiledBytesMatchInstalled) {
-    throw 'P22 baseline post-bundle target/release executable differs from NSIS-installed bytes.'
+  if ($UpgradeInstallerPath -and $baselineCompiledBytesMatchInstalled) {
+    throw 'P22 baseline payload unexpectedly matches the restored unpatched executable.'
   }
   if ($UpgradeInstallerPath -and
       $installedBaselineHash -cne $baselinePayload.payloadExecutableSha256) {
@@ -190,8 +200,8 @@ try {
     }
     $candidateInstalledHash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
     $candidateCompiledBytesMatchInstalled = ($candidateInstalledHash -ceq $ExpectedCandidateExeSha256.ToLowerInvariant())
-    if (-not $candidateCompiledBytesMatchInstalled) {
-      throw 'P22 candidate post-bundle target/release executable differs from NSIS-installed bytes.'
+    if ($candidateCompiledBytesMatchInstalled) {
+      throw 'P22 candidate payload unexpectedly matches the restored unpatched executable.'
     }
     if ($candidateInstalledHash -cne $candidatePayload.payloadExecutableSha256) {
       throw 'P22 upgraded installed executable is not the executable extracted from candidate NSIS.'
@@ -231,7 +241,7 @@ try {
       baselineNsisPayloadSha256 = $baselinePayload.payloadExecutableSha256
       candidateNsisPayloadSha256 = $candidatePayload.payloadExecutableSha256
       nsisPayloadMatchesInstalled = $binaryProvenanceVerified
-      postBuildToNsisMutationExplained = $false
+      postBuildToNsisMutationExplained = $temporaryPatchVerified
       baselineBuiltBytesEqualInstalled = $baselineCompiledBytesMatchInstalled
       candidateBuiltBytesEqualInstalled = $candidateCompiledBytesMatchInstalled
       installedExecutableBytesChanged = ($installedBaselineHash -cne $candidateInstalledHash)
@@ -272,11 +282,12 @@ try {
       baselineInstalledSha256 = $installedBaselineHash
       candidateInstalledSha256 = $candidateInstalledHash
       payloadMatchesInstalledBoth = $binaryProvenanceVerified
-      postBuildToNsisMutationCauseVerified = $false
+      postBuildToNsisMutationCauseVerified = $temporaryPatchVerified
+      tauriTemporaryPatchRestored = $temporaryPatchVerified
       installerExecutionUnsigned = $true
       signedTrustVerified = $false
       humanWindowsAccepted = $false
-      success = $binaryProvenanceVerified
+      success = ($binaryProvenanceVerified -and $temporaryPatchVerified)
     } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $BinaryProvenanceEvidencePath -Encoding utf8
   }
   if ($installed -and $exe -and (Test-Path -LiteralPath $exe -PathType Leaf)) {
