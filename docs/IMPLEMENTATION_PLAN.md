@@ -681,3 +681,78 @@ preflight and the NSIS launch boundary, without granting updater authority.
 
 Do not alter privileged IPC, cleanup execution, App Manager authority,
 Production status or the nine mandatory pending P5–P12 release gates.
+
+
+## P22 — genuine two-source unsigned NSIS upgrade on disposable Windows
+
+Product goal: move from a real earlier compiled application's local state to
+a **different application source revision**, not merely a version-label bump
+of the same tree (P19–P21). Preserve offline-first, zero Production authority.
+
+- [x] Pin the older-source baseline to real main
+  `83645a56987666144020dbdc85b3eec12815d003`, fetch it into a distinct
+  detached worktree, verify Git HEAD, and compile its actual 0.1.0 Windows NSIS
+  with the normal Tauri workflow. Keep its installer in runner TEMP only.
+- [x] Require nonempty changed app source paths on the candidate HEAD, with a
+  small, meaningful Settings clarification about local user-profile ownership.
+  Build the candidate from **exact PR HEAD**, not the synthesized PR merge ref.
+- [x] Use a temporary **unsigned development-only** 0.1.1 Tauri version
+  override for the newer source while the repo declares 0.1.0; artifact
+  labels explain this distinction. This is not a Production version bump.
+- [x] Pin and compare both built executable SHA256 values, then separately
+  measure hashes of the *actually installed* baseline and upgraded executable.
+  Require different installed binaries and the newer source's real UI marker.
+  Record, but do not infer, build-file versus installed-file byte equality.
+- [x] Three-way provenance diagnostic: read-only 7-Zip NSIS payload versus
+  actual installed executable passes for **both** source revisions at
+  `0b7f291c5d5f3a35bd839cc953e37ff73b5dc31e`. The old measurement
+  labeled the executable after `tauri build --bundles nsis` as post-build;
+  that command had already bundled it. A mismatch with installed bytes is
+  now a separate issue to investigate, NOT license to claim Production.
+- [x] P22 root-cause instrumentation: split the *same* Tauri build into
+  `tauri build --no-bundle` and `tauri bundle --bundles nsis --verbose`
+  for both pinned source revisions; save SHA256 before and after bundling,
+  then compare the actual NSIS archive's extracted executable to both
+  post-bundle `target/release` and installed executable. Fail closed on
+  either mismatch, log the bundle-stage mutation separately, and record
+  four SHA checkpoints for each revision in an exact-HEAD evidence JSON.
+  Independent source audit of tauri-bundler 2.10.1 and exact Windows
+  logs shows a temporary NSIS bundle-type substitution followed by restoring
+  the original executable: the on-disk hash before/after bundle remains
+  equal, while the NSIS payload differs. A targeted CI-only read-only
+  verifier now recomputes the patched executable SHA256 IN MEMORY by
+  replacing exactly one ASCII token UNK -> NSS; it must match each NSIS
+  payload SHA256 and real installed binary. Verified by native Windows log
+  for exact candidate `9c7290999bdd0395eb8f7bebc3a22550e27db3ae`,
+  run `39143508758`; do not extrapolate to a newer SHA without its own
+  checks. It does not sign, publish or certify Production; all nine P5-P12
+  release gates stay blocked.
+
+- [~] P22 evidence truth after advisory review: baseline native scan, repair
+  and rejected-upgrade preflight must record `sourceRevision` of the
+  **installed historical baseline** (`83645a56987666144020dbdc85b3eec12815d003`)
+  while their `checkoutRevision` remains the **candidate harness HEAD**.
+  The post-upgrade native UIA `sourceRevision` must be candidate HEAD.
+  A fail-closed JSON guard asserts both fields, success and exact SHA for
+  baseline scan, repair, preflight+UIA and upgraded UIA. Fast positive/negative
+  guard fixtures run before costly Windows build. Candidate patch implemented;
+  exact new SHA Windows evidence is still required before checkbox PASS.
+- [x] Require the newer source's accessible Settings group marker in actual
+  post-upgrade WebView2 UIA, plus proof that baseline built JS excludes it and
+  candidate built JS contains it. Preserve local Health report, managed OFF,
+  dark theme and compact sidebar under app/WebView2-scoped outbound deny.
+  Retain P20 rejection cases,
+  P21 locked candidate handoff and HKCU exact handler validation.
+- [x] Emit SHA-bound `offline-two-source-build-evidence.json` and separate
+  native upgrade/readback JSON in the **unsigned Preview CI** artifacts.
+- [ ] Before merge: Constitution 1.3.0, frontend/Rust/Windows native checks,
+  PowerShell parser, NSIS installer lifecycle, real native UIA, SHA and binary
+  provenance evidence must all PASS for the exact candidate SHA. Review gate
+  and GitHub main readback are required.
+
+**Limitations:** no signed Authenticode trust, signer continuity, actual
+mid-install failure/rollback, production two-release migration contract, full
+device airgap, user Windows acceptance or P5–P12 release-gate promotion.
+The baseline is immutable historical source and the candidate is an unsigned
+CI development artifact; not an approved user update. No elevated service,
+remote shell, privileged IPC or destructive maintenance is introduced.

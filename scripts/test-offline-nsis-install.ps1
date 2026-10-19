@@ -9,17 +9,39 @@ param(
   [string]$UpgradeEvidencePath,
   [string]$PreflightEvidencePath,
   [string]$ExpectedUpgradeSha256,
-  [string]$SourceRevision
+  [string]$SourceRevision,
+  [string]$BaselineSourceRevision,
+  [string]$CandidateSourceRevision,
+  [string]$ExpectedBaselineExeSha256,
+  [string]$ExpectedCandidateExeSha256,
+  [string]$ExpectedBaselinePreBundleSha256,
+  [string]$ExpectedCandidatePreBundleSha256,
+  [string]$BaselineUnpatchedExecutablePath,
+  [string]$CandidateUnpatchedExecutablePath,
+  [string]$ExpectedUpgradeMarker,
+  [string]$BinaryProvenanceEvidencePath
 )
 $ErrorActionPreference = 'Stop'
 $scheme = 'HKCU:\Software\Classes\pcmanager'
 $commandKey = Join-Path $scheme 'shell\open\command'
 $exe = $null
 $installed = $false
+$baselinePayload = $null
+$candidatePayload = $null
+$installedBaselineHash = $null
+$candidateInstalledHash = $null
+$binaryProvenanceVerified = $false
+$temporaryPatchVerified = $false
+$baselinePatchProof = $null
+$candidatePatchProof = $null
 
 function Invoke-Installer([string]$path, [string]$operation) {
   $process = Start-Process -FilePath $path -ArgumentList '/S' -Wait -PassThru
   if ($process.ExitCode -ne 0) { throw "$operation returned $($process.ExitCode)" }
+}
+
+function Assert-P22Evidence([string]$path,[string]$installedSource,[string]$checkout) {
+  & "$PSScriptRoot/assert-p22-evidence-revisions.ps1" -EvidencePath $path -ExpectedSourceRevision $installedSource -ExpectedCheckoutRevision $checkout
 }
 
 function Get-NsisBundleVersion([string]$path) {
@@ -45,10 +67,32 @@ if ([bool]$UpgradeInstallerPath -ne [bool]$UpgradeEvidencePath) {
 if ($UpgradeInstallerPath -and (-not $RepairEvidencePath -or -not $SourceRevision)) {
   throw 'Cross-version pilot requires successful same-version repair and exact revision.'
 }
+if ($UpgradeInstallerPath -and (-not $BinaryProvenanceEvidencePath)) {
+  throw 'P22 requires independent three-way binary provenance artifact.'
+}
+if ($UpgradeInstallerPath -and
+    ($ExpectedBaselinePreBundleSha256 -cnotmatch '^[a-fA-F0-9]{64}$' -or
+     $ExpectedCandidatePreBundleSha256 -cnotmatch '^[a-fA-F0-9]{64}$')) {
+  throw 'P22 pre-bundle SHA256 checkpoints must be pinned.'
+}
 if ($UpgradeInstallerPath -and ((-not $PreflightEvidencePath) -or (-not $ExpectedUpgradeSha256))) {
   throw 'P20 requires pinned expected candidate SHA256 and separate preflight evidence.'
 }
 if ($UpgradeInstallerPath) {
+  # P22: the installed app source and compiled bytes must have independent provenance.
+  if ($CandidateSourceRevision -cne $SourceRevision -or
+      $BaselineSourceRevision -cnotmatch '^[a-fA-F0-9]{40}$' -or
+      $CandidateSourceRevision -cnotmatch '^[a-fA-F0-9]{40}$' -or
+      $BaselineSourceRevision -ceq $CandidateSourceRevision -or
+      $ExpectedBaselineExeSha256 -cnotmatch '^[a-fA-F0-9]{64}$' -or
+      $ExpectedCandidateExeSha256 -cnotmatch '^[a-fA-F0-9]{64}$' -or
+      $ExpectedBaselineExeSha256 -ceq $ExpectedCandidateExeSha256 -or
+      $ExpectedUpgradeMarker -cne 'Offline-first state on this device') {
+    throw 'P22 real two-source SHA, compiled executable hash or UI marker missing.'
+  }
+  if ((git rev-parse HEAD).Trim() -cne $CandidateSourceRevision) {
+    throw 'P22 harness checkout does not match the exact candidate source.'
+  }
   if (-not (Test-Path -LiteralPath $UpgradeInstallerPath -PathType Leaf)) {
     throw 'Unsigned development upgrade bundle is missing.'
   }
@@ -64,7 +108,32 @@ if ($UpgradeInstallerPath) {
   }
 }
 
+# P22 installed-app source and harness checkout have different identities
+# until the NSIS upgrade. Never attribute old installed UIA to candidate source.
+$baselineEvidenceSource = if ($UpgradeInstallerPath) { $BaselineSourceRevision } else { $SourceRevision }
+$harnessCheckout = (git rev-parse HEAD).Trim()
+if ($UpgradeInstallerPath -and $harnessCheckout -cne $CandidateSourceRevision) {
+  throw 'P22 evidence harness checkout differs from candidate source.'
+}
+
 try {
+  if ($UpgradeInstallerPath) {
+    # P22: inspect both actual NSIS archives independent of the post-build path
+    # and independent of installation. 7-Zip only extracts; it never runs NSIS.
+    $baselinePayload = & "$PSScriptRoot/read-nsis-executable-payload.ps1" -InstallerPath $InstallerPath
+    $candidatePayload = & "$PSScriptRoot/read-nsis-executable-payload.ps1" -InstallerPath $UpgradeInstallerPath
+    if ($baselinePayload.installerSha256 -cne $baselineHash -or
+        $candidatePayload.installerSha256 -cne $candidateHash -or
+        $baselinePayload.payloadExecutableSha256 -ceq $candidatePayload.payloadExecutableSha256) {
+      throw 'P22 NSIS payload provenance mismatched staged installer or source versions.'
+    }
+    Write-Host "P22 NSIS package readback baselinePayload=$($baselinePayload.payloadExecutableSha256) candidatePayload=$($candidatePayload.payloadExecutableSha256)"
+    $baselinePatchProof = & "$PSScriptRoot/assert-tauri-nsis-bundle-patch.ps1" -UnpatchedExecutablePath $BaselineUnpatchedExecutablePath -ExpectedUnpatchedSha256 $ExpectedBaselineExeSha256 -ExpectedNsisPayloadSha256 $baselinePayload.payloadExecutableSha256
+    $candidatePatchProof = & "$PSScriptRoot/assert-tauri-nsis-bundle-patch.ps1" -UnpatchedExecutablePath $CandidateUnpatchedExecutablePath -ExpectedUnpatchedSha256 $ExpectedCandidateExeSha256 -ExpectedNsisPayloadSha256 $candidatePayload.payloadExecutableSha256
+    if (-not $baselinePatchProof.success -or -not $candidatePatchProof.success) { throw 'P22 temporary Tauri token patch did not reproduce exact NSIS payload.' }
+    $temporaryPatchVerified = $true
+    Write-Host 'PASS P22 Tauri NSIS token patch reproduced exact payload SHA256 for both source revisions.'
+  }
   $installed = $true
   Invoke-Installer -path $InstallerPath -operation 'NSIS installation'
   if (-not (Test-Path -LiteralPath $commandKey)) {
@@ -79,13 +148,29 @@ try {
   if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) {
     throw 'Registered application executable not installed.'
   }
+  $installedBaselineHash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+  $baselineCompiledBytesMatchInstalled = ($installedBaselineHash -ceq $ExpectedBaselineExeSha256.ToLowerInvariant())
+  if ($UpgradeInstallerPath -and $baselineCompiledBytesMatchInstalled) {
+    throw 'P22 baseline payload unexpectedly matches the restored unpatched executable.'
+  }
+  if ($UpgradeInstallerPath -and
+      $installedBaselineHash -cne $baselinePayload.payloadExecutableSha256) {
+    throw 'P22 baseline installed executable is not the executable extracted from its NSIS installer.'
+  }
+  if ($UpgradeInstallerPath) {
+    Write-Host "P22 baseline builtExeSha256=$($ExpectedBaselineExeSha256.ToLowerInvariant()); installedExeSha256=$installedBaselineHash; bytesEqual=$baselineCompiledBytesMatchInstalled"
+    if (-not $baselineCompiledBytesMatchInstalled) {
+      Write-Warning 'P22 NSIS installed bytes differ from post-build executable; record separately; do not claim exact compiled-byte equivalence.'
+    }
+  }
   $uninstaller = Join-Path (Split-Path -Parent $exe) 'uninstall.exe'
   if (-not (Test-Path -LiteralPath $uninstaller -PathType Leaf)) {
     throw 'Uninstaller was not packaged.'
   }
   if ($RuntimeEvidencePath) {
     if (-not $SourceRevision) { throw 'Exact source revision missing.' }
-    & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $exe -EvidencePath $RuntimeEvidencePath -SourceRevision $SourceRevision
+    & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $exe -EvidencePath $RuntimeEvidencePath -SourceRevision $baselineEvidenceSource
+    if ($UpgradeInstallerPath) { Assert-P22Evidence $RuntimeEvidencePath $BaselineSourceRevision $harnessCheckout }
   }
   if ($RepairEvidencePath) {
     # No signed-upgrade claim. Repair the *same* unsigned version only on the
@@ -96,17 +181,23 @@ try {
         ([string](Get-Item -LiteralPath $commandKey).GetValue('')) -ne $actual) {
       throw 'NSIS repair changed the installed executable or owned protocol handler.'
     }
-    & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $exe -EvidencePath $RepairEvidencePath -SourceRevision $SourceRevision -VerifyStoredStateOnly
+    & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $exe -EvidencePath $RepairEvidencePath -SourceRevision $baselineEvidenceSource -VerifyStoredStateOnly -ForbiddenUpgradeMarker $ExpectedUpgradeMarker
+    if ($UpgradeInstallerPath) { Assert-P22Evidence $RepairEvidencePath $BaselineSourceRevision $harnessCheckout }
+    if ($UpgradeInstallerPath -and (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant() -cne $installedBaselineHash) {
+      throw 'P22 same-version repair altered installed baseline executable bytes.'
+    }
   }
   if ($UpgradeInstallerPath) {
     # P20 DENY tests run with the installed old version and persisted state.
     # They invoke no NSIS executable. A positive preflight is required before
     # the only higher-version installer call below.
-    & "$PSScriptRoot/test-nsis-upgrade-preflight.ps1" -BaselineInstallerPath $InstallerPath -CandidateInstallerPath $UpgradeInstallerPath -ExpectedCandidateSha256 $ExpectedUpgradeSha256 -ExecutablePath $exe -ExpectedOwnedHandler $actual -EvidencePath $PreflightEvidencePath -SourceRevision $SourceRevision
+    & "$PSScriptRoot/test-nsis-upgrade-preflight.ps1" -BaselineInstallerPath $InstallerPath -CandidateInstallerPath $UpgradeInstallerPath -ExpectedCandidateSha256 $ExpectedUpgradeSha256 -ExecutablePath $exe -ExpectedOwnedHandler $actual -EvidencePath $PreflightEvidencePath -SourceRevision $BaselineSourceRevision
     $preflightProof = Get-Content -LiteralPath $PreflightEvidencePath -Raw | ConvertFrom-Json
     if (-not $preflightProof.success -or $preflightProof.checks.Count -ne 11) {
       throw 'P20/P21 negative and positive preflight evidence missing or incomplete.'
     }
+    Assert-P22Evidence $PreflightEvidencePath $BaselineSourceRevision $harnessCheckout
+    Assert-P22Evidence ($PreflightEvidencePath + '.uia.json') $BaselineSourceRevision $harnessCheckout
     # P21: hold a write-denying read handle for final P20 validation,
     # rehash and the complete child process lifetime. Never bypass this
     # with a bare Start-Process when the handoff cannot be locked.
@@ -123,25 +214,63 @@ try {
         ([string](Get-Item -LiteralPath $commandKey).GetValue('')) -ne $actual) {
       throw 'Version-transition installer failed to retain executable and owned URL handler.'
     }
-    & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $exe -EvidencePath $UpgradeEvidencePath -SourceRevision $SourceRevision -VerifyStoredStateOnly
+    $candidateInstalledHash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+    $candidateCompiledBytesMatchInstalled = ($candidateInstalledHash -ceq $ExpectedCandidateExeSha256.ToLowerInvariant())
+    if ($candidateCompiledBytesMatchInstalled) {
+      throw 'P22 candidate payload unexpectedly matches the restored unpatched executable.'
+    }
+    if ($candidateInstalledHash -cne $candidatePayload.payloadExecutableSha256) {
+      throw 'P22 upgraded installed executable is not the executable extracted from candidate NSIS.'
+    }
+    $binaryProvenanceVerified = $true
+    Write-Host 'PASS P22 NSIS payload-to-installed SHA256 exact for both source versions.'
+    Write-Host "P22 candidate builtExeSha256=$($ExpectedCandidateExeSha256.ToLowerInvariant()); installedExeSha256=$candidateInstalledHash; bytesEqual=$candidateCompiledBytesMatchInstalled"
+    if ($candidateInstalledHash -ceq $beforeExeHash) {
+      throw 'P22 installed candidate is byte-identical to the installed baseline.'
+    }
+    if (-not $candidateCompiledBytesMatchInstalled) {
+      Write-Warning 'P22 NSIS installed bytes differ from post-build executable; no exact compiled-byte equivalence claim.'
+    }
+    & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $exe -EvidencePath $UpgradeEvidencePath -SourceRevision $CandidateSourceRevision -VerifyStoredStateOnly -ExpectedUpgradeMarker $ExpectedUpgradeMarker
+    Assert-P22Evidence $UpgradeEvidencePath $CandidateSourceRevision $harnessCheckout
     $proof = Get-Content -LiteralPath $UpgradeEvidencePath -Raw | ConvertFrom-Json
     if (-not $proof.success -or $proof.verificationMode -ne 'unsigned-same-version-repair') {
       throw 'Upgrade application state was not actually verified by native UIA.'
     }
     $afterExeHash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
-    $proof.verificationMode = 'unsigned-version-only-package-transition'
+    $proof.verificationMode = 'unsigned-two-source-package-transition'
     $proof | Add-Member -NotePropertyName packageTransition -NotePropertyValue ([ordered]@{
       fromVersion = $baselineVersion.ToString()
       toVersion = $candidateVersion.ToString()
       fromInstallerSha256 = $baselineHash
       toInstallerSha256 = $candidateHash
       executableBytesChanged = ($beforeExeHash -ne $afterExeHash)
-      sameSourceCode = $true
+      fromSourceRevision = $BaselineSourceRevision
+      toSourceRevision = $CandidateSourceRevision
+      baselineBuiltExecutableSha256 = $ExpectedBaselineExeSha256.ToLowerInvariant()
+      candidateBuiltExecutableSha256 = $ExpectedCandidateExeSha256.ToLowerInvariant()
+      baselinePreBundleExecutableSha256 = $ExpectedBaselinePreBundleSha256.ToLowerInvariant()
+      candidatePreBundleExecutableSha256 = $ExpectedCandidatePreBundleSha256.ToLowerInvariant()
+      baselineMutatedDuringBundle = ($ExpectedBaselinePreBundleSha256.ToLowerInvariant() -cne $ExpectedBaselineExeSha256.ToLowerInvariant())
+      candidateMutatedDuringBundle = ($ExpectedCandidatePreBundleSha256.ToLowerInvariant() -cne $ExpectedCandidateExeSha256.ToLowerInvariant())
+      baselineInstalledExecutableSha256 = $installedBaselineHash
+      candidateInstalledExecutableSha256 = $candidateInstalledHash
+      baselineNsisPayloadSha256 = $baselinePayload.payloadExecutableSha256
+      candidateNsisPayloadSha256 = $candidatePayload.payloadExecutableSha256
+      nsisPayloadMatchesInstalled = $binaryProvenanceVerified
+      postBuildToNsisMutationExplained = $temporaryPatchVerified
+      baselineBuiltBytesEqualInstalled = $baselineCompiledBytesMatchInstalled
+      candidateBuiltBytesEqualInstalled = $candidateCompiledBytesMatchInstalled
+      installedExecutableBytesChanged = ($installedBaselineHash -cne $candidateInstalledHash)
+      changedApplicationSource = $true
+      sameSourceCode = $false
+      candidateUiMarkerObserved = $true
       signedUpgrade = $false
       automaticRollbackVerified = $false
     })
     $proof | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $UpgradeEvidencePath -Encoding utf8
-    Write-Output "PASS version-transition : unsigned $baselineVersion -> $candidateVersion preserved real WebView2 preferences and Health report."
+    Assert-P22Evidence $UpgradeEvidencePath $CandidateSourceRevision $harnessCheckout
+    Write-Output "PASS P22 two-source-transition : $BaselineSourceRevision -> $CandidateSourceRevision; unsigned $baselineVersion -> $candidateVersion preserved native WebView2 local state and the new source UI marker."
   }
   Invoke-Installer -path $uninstaller -operation 'NSIS uninstall'
   $installed = $false
@@ -149,7 +278,36 @@ try {
     throw 'Uninstaller did not remove its own registered URL handler.'
   }
   Write-Output 'PASS signed-off scope: actual unsigned NSIS install/owned protocol/uninstall.'
-} finally {
+ } finally {
+  if ($UpgradeInstallerPath -and $BinaryProvenanceEvidencePath) {
+    $parent = Split-Path -Parent $BinaryProvenanceEvidencePath
+    if ($parent) { New-Item -ItemType Directory -Force -Path $parent | Out-Null }
+    [pscustomobject]@{
+      schema = 'pc-manager.nsis-binary-provenance/v1'
+      sourceRevision = $SourceRevision
+      checkoutRevision = (git rev-parse HEAD).Trim()
+      fromSourceRevision = $BaselineSourceRevision
+      toSourceRevision = $CandidateSourceRevision
+      baselinePostBuildSha256 = $ExpectedBaselineExeSha256.ToLowerInvariant()
+      candidatePostBuildSha256 = $ExpectedCandidateExeSha256.ToLowerInvariant()
+      baselinePreBundleSha256 = $ExpectedBaselinePreBundleSha256.ToLowerInvariant()
+      candidatePreBundleSha256 = $ExpectedCandidatePreBundleSha256.ToLowerInvariant()
+      baselineMutatedDuringBundle = ($ExpectedBaselinePreBundleSha256.ToLowerInvariant() -cne $ExpectedBaselineExeSha256.ToLowerInvariant())
+      candidateMutatedDuringBundle = ($ExpectedCandidatePreBundleSha256.ToLowerInvariant() -cne $ExpectedCandidateExeSha256.ToLowerInvariant())
+      bundleMutationLocationMeasured = $true
+      baselineNsisPayloadSha256 = $(if ($baselinePayload) { $baselinePayload.payloadExecutableSha256 } else { $null })
+      candidateNsisPayloadSha256 = $(if ($candidatePayload) { $candidatePayload.payloadExecutableSha256 } else { $null })
+      baselineInstalledSha256 = $installedBaselineHash
+      candidateInstalledSha256 = $candidateInstalledHash
+      payloadMatchesInstalledBoth = $binaryProvenanceVerified
+      postBuildToNsisMutationCauseVerified = $temporaryPatchVerified
+      tauriTemporaryPatchRestored = $temporaryPatchVerified
+      installerExecutionUnsigned = $true
+      signedTrustVerified = $false
+      humanWindowsAccepted = $false
+      success = ($binaryProvenanceVerified -and $temporaryPatchVerified)
+    } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $BinaryProvenanceEvidencePath -Encoding utf8
+  }
   if ($installed -and $exe -and (Test-Path -LiteralPath $exe -PathType Leaf)) {
     $uninstaller = Join-Path (Split-Path -Parent $exe) 'uninstall.exe'
     if (Test-Path -LiteralPath $uninstaller -PathType Leaf) {
