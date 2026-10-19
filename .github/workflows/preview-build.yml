@@ -35,7 +35,7 @@ jobs:
       - name: Parse PowerShell Windows acceptance scripts before expensive builds
         shell: pwsh
         run: |
-          foreach ($script in @('scripts/test-offline-nsis-install.ps1', 'scripts/test-offline-desktop-runtime.ps1', 'scripts/assert-nsis-upgrade-preflight.ps1', 'scripts/test-nsis-upgrade-preflight.ps1', 'scripts/invoke-pinned-nsis-candidate.ps1', 'scripts/read-nsis-executable-payload.ps1', 'scripts/assert-tauri-nsis-bundle-patch.ps1')) {
+          foreach ($script in @('scripts/test-offline-nsis-install.ps1', 'scripts/test-offline-desktop-runtime.ps1', 'scripts/assert-nsis-upgrade-preflight.ps1', 'scripts/test-nsis-upgrade-preflight.ps1', 'scripts/invoke-pinned-nsis-candidate.ps1', 'scripts/read-nsis-executable-payload.ps1', 'scripts/assert-tauri-nsis-bundle-patch.ps1', 'scripts/assert-p22-evidence-revisions.ps1', 'scripts/test-p22-evidence-revisions.ps1')) {
             $tokens = $null
             $parseErrors = $null
             $null = [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path -LiteralPath $script).Path, [ref]$tokens, [ref]$parseErrors)
@@ -45,6 +45,10 @@ jobs:
             }
             Write-Host "PASS PowerShell parse : $script"
           }
+
+      - name: P22 fail-closed evidence SHA attribution fixtures (no NSIS)
+        shell: pwsh
+        run: ./scripts/test-p22-evidence-revisions.ps1
 
       - name: Setup Node
         uses: actions/setup-node@v4
