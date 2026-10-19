@@ -40,6 +40,10 @@ function Invoke-Installer([string]$path, [string]$operation) {
   if ($process.ExitCode -ne 0) { throw "$operation returned $($process.ExitCode)" }
 }
 
+function Assert-P22Evidence([string]$path,[string]$installedSource,[string]$checkout) {
+  & "$PSScriptRoot/assert-p22-evidence-revisions.ps1" -EvidencePath $path -ExpectedSourceRevision $installedSource -ExpectedCheckoutRevision $checkout
+}
+
 function Get-NsisBundleVersion([string]$path) {
   $file = [IO.Path]::GetFileName($path)
   if ($file -notmatch '_(\d+\.\d+\.\d+)_x64-setup[.]exe$') {
@@ -104,6 +108,14 @@ if ($UpgradeInstallerPath) {
   }
 }
 
+# P22 installed-app source and harness checkout have different identities
+# until the NSIS upgrade. Never attribute old installed UIA to candidate source.
+$baselineEvidenceSource = if ($UpgradeInstallerPath) { $BaselineSourceRevision } else { $SourceRevision }
+$harnessCheckout = (git rev-parse HEAD).Trim()
+if ($UpgradeInstallerPath -and $harnessCheckout -cne $CandidateSourceRevision) {
+  throw 'P22 evidence harness checkout differs from candidate source.'
+}
+
 try {
   if ($UpgradeInstallerPath) {
     # P22: inspect both actual NSIS archives independent of the post-build path
@@ -157,7 +169,8 @@ try {
   }
   if ($RuntimeEvidencePath) {
     if (-not $SourceRevision) { throw 'Exact source revision missing.' }
-    & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $exe -EvidencePath $RuntimeEvidencePath -SourceRevision $SourceRevision
+    & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $exe -EvidencePath $RuntimeEvidencePath -SourceRevision $baselineEvidenceSource
+    if ($UpgradeInstallerPath) { Assert-P22Evidence $RuntimeEvidencePath $BaselineSourceRevision $harnessCheckout }
   }
   if ($RepairEvidencePath) {
     # No signed-upgrade claim. Repair the *same* unsigned version only on the
@@ -168,7 +181,8 @@ try {
         ([string](Get-Item -LiteralPath $commandKey).GetValue('')) -ne $actual) {
       throw 'NSIS repair changed the installed executable or owned protocol handler.'
     }
-    & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $exe -EvidencePath $RepairEvidencePath -SourceRevision $SourceRevision -VerifyStoredStateOnly -ForbiddenUpgradeMarker $ExpectedUpgradeMarker
+    & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $exe -EvidencePath $RepairEvidencePath -SourceRevision $baselineEvidenceSource -VerifyStoredStateOnly -ForbiddenUpgradeMarker $ExpectedUpgradeMarker
+    if ($UpgradeInstallerPath) { Assert-P22Evidence $RepairEvidencePath $BaselineSourceRevision $harnessCheckout }
     if ($UpgradeInstallerPath -and (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant() -cne $installedBaselineHash) {
       throw 'P22 same-version repair altered installed baseline executable bytes.'
     }
@@ -177,11 +191,13 @@ try {
     # P20 DENY tests run with the installed old version and persisted state.
     # They invoke no NSIS executable. A positive preflight is required before
     # the only higher-version installer call below.
-    & "$PSScriptRoot/test-nsis-upgrade-preflight.ps1" -BaselineInstallerPath $InstallerPath -CandidateInstallerPath $UpgradeInstallerPath -ExpectedCandidateSha256 $ExpectedUpgradeSha256 -ExecutablePath $exe -ExpectedOwnedHandler $actual -EvidencePath $PreflightEvidencePath -SourceRevision $SourceRevision
+    & "$PSScriptRoot/test-nsis-upgrade-preflight.ps1" -BaselineInstallerPath $InstallerPath -CandidateInstallerPath $UpgradeInstallerPath -ExpectedCandidateSha256 $ExpectedUpgradeSha256 -ExecutablePath $exe -ExpectedOwnedHandler $actual -EvidencePath $PreflightEvidencePath -SourceRevision $BaselineSourceRevision
     $preflightProof = Get-Content -LiteralPath $PreflightEvidencePath -Raw | ConvertFrom-Json
     if (-not $preflightProof.success -or $preflightProof.checks.Count -ne 11) {
       throw 'P20/P21 negative and positive preflight evidence missing or incomplete.'
     }
+    Assert-P22Evidence $PreflightEvidencePath $BaselineSourceRevision $harnessCheckout
+    Assert-P22Evidence ($PreflightEvidencePath + '.uia.json') $BaselineSourceRevision $harnessCheckout
     # P21: hold a write-denying read handle for final P20 validation,
     # rehash and the complete child process lifetime. Never bypass this
     # with a bare Start-Process when the handoff cannot be locked.
@@ -215,7 +231,8 @@ try {
     if (-not $candidateCompiledBytesMatchInstalled) {
       Write-Warning 'P22 NSIS installed bytes differ from post-build executable; no exact compiled-byte equivalence claim.'
     }
-    & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $exe -EvidencePath $UpgradeEvidencePath -SourceRevision $SourceRevision -VerifyStoredStateOnly -ExpectedUpgradeMarker $ExpectedUpgradeMarker
+    & "$PSScriptRoot/test-offline-desktop-runtime.ps1" -ExecutablePath $exe -EvidencePath $UpgradeEvidencePath -SourceRevision $CandidateSourceRevision -VerifyStoredStateOnly -ExpectedUpgradeMarker $ExpectedUpgradeMarker
+    Assert-P22Evidence $UpgradeEvidencePath $CandidateSourceRevision $harnessCheckout
     $proof = Get-Content -LiteralPath $UpgradeEvidencePath -Raw | ConvertFrom-Json
     if (-not $proof.success -or $proof.verificationMode -ne 'unsigned-same-version-repair') {
       throw 'Upgrade application state was not actually verified by native UIA.'
@@ -252,6 +269,7 @@ try {
       automaticRollbackVerified = $false
     })
     $proof | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $UpgradeEvidencePath -Encoding utf8
+    Assert-P22Evidence $UpgradeEvidencePath $CandidateSourceRevision $harnessCheckout
     Write-Output "PASS P22 two-source-transition : $BaselineSourceRevision -> $CandidateSourceRevision; unsigned $baselineVersion -> $candidateVersion preserved native WebView2 local state and the new source UI marker."
   }
   Invoke-Installer -path $uninstaller -operation 'NSIS uninstall'
