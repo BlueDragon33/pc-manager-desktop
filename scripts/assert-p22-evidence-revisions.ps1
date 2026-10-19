@@ -24,7 +24,7 @@ if ($null -eq $proof -or $proof -is [array] -or
     'success' -cnotin $proof.PSObject.Properties.Name) {
   Reject 'MISSING_REQUIRED_FIELDS'
 }
-if ($proof.success -cne $true) { Reject 'EVIDENCE_NOT_SUCCESSFUL' }
+if ($proof.success -isnot [bool] -or -not $proof.success) { Reject 'EVIDENCE_NOT_SUCCESSFUL' }
 $source = [string]$proof.sourceRevision
 $checkout = [string]$proof.checkoutRevision
 if ($source -cnotmatch $shaPattern -or $checkout -cnotmatch $shaPattern) {
