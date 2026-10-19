@@ -709,7 +709,7 @@ of the same tree (P19–P21). Preserve offline-first, zero Production authority.
   labeled the executable after `tauri build --bundles nsis` as post-build;
   that command had already bundled it. A mismatch with installed bytes is
   now a separate issue to investigate, NOT license to claim Production.
-- [~] P22 root-cause instrumentation: split the *same* Tauri build into
+- [x] P22 root-cause instrumentation: split the *same* Tauri build into
   `tauri build --no-bundle` and `tauri bundle --bundles nsis --verbose`
   for both pinned source revisions; save SHA256 before and after bundling,
   then compare the actual NSIS archive's extracted executable to both
@@ -722,9 +722,21 @@ of the same tree (P19–P21). Preserve offline-first, zero Production authority.
   equal, while the NSIS payload differs. A targeted CI-only read-only
   verifier now recomputes the patched executable SHA256 IN MEMORY by
   replacing exactly one ASCII token UNK -> NSS; it must match each NSIS
-  payload SHA256 and real installed binary. This is a test proposal until
-  exact-HEAD CI evidence confirms it. It does not sign, publish or certify
-  Production; all nine P5-P12 release gates stay blocked.
+  payload SHA256 and real installed binary. Verified by native Windows log
+  for exact candidate `9c7290999bdd0395eb8f7bebc3a22550e27db3ae`,
+  run `39143508758`; do not extrapolate to a newer SHA without its own
+  checks. It does not sign, publish or certify Production; all nine P5-P12
+  release gates stay blocked.
+
+- [~] P22 evidence truth after advisory review: baseline native scan, repair
+  and rejected-upgrade preflight must record `sourceRevision` of the
+  **installed historical baseline** (`83645a56987666144020dbdc85b3eec12815d003`)
+  while their `checkoutRevision` remains the **candidate harness HEAD**.
+  The post-upgrade native UIA `sourceRevision` must be candidate HEAD.
+  A fail-closed JSON guard asserts both fields, success and exact SHA for
+  baseline scan, repair, preflight+UIA and upgraded UIA. Fast positive/negative
+  guard fixtures run before costly Windows build. Candidate patch implemented;
+  exact new SHA Windows evidence is still required before checkbox PASS.
 - [x] Require the newer source's accessible Settings group marker in actual
   post-upgrade WebView2 UIA, plus proof that baseline built JS excludes it and
   candidate built JS contains it. Preserve local Health report, managed OFF,
